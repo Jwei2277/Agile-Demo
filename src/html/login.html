@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ===== Design tokens ===a== */
+/* ===== Design tokens ===a== s4GtLUQ7ERF13mWn c74PqtCmphkAg8CT */
 :root {
   --navy-950: #071a33;
   --navy-900: #0b2545;
@@ -434,15 +434,16 @@ body {
       : '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>';
   });
 
-  // Minimal front-end validation + fake submit feedback
+  // Front-end validation + real submit to the backend
   const form = document.getElementById('loginForm');
   const alertBox = document.getElementById('loginAlert');
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     let valid = true;
     const identifier = document.getElementById('identifier');
     const password = document.getElementById('password');
+    const rememberMe = document.getElementById('rememberMe');
 
     document.getElementById('identifierError').classList.remove('show');
     document.getElementById('passwordError').classList.remove('show');
@@ -467,8 +468,43 @@ body {
       return;
     }
 
-    alertBox.textContent = 'Signed in successfully. Redirecting to your dashboard…';
-    alertBox.classList.add('show', 'success');
+    const submitBtn = form.querySelector('.btn-primary');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: identifier.value.trim(),
+          password: password.value
+        })
+      });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alertBox.textContent = body.detail || 'Invalid student ID/email or password.';
+        alertBox.classList.add('show', 'error');
+        return;
+      }
+
+      // Store the session. sessionStorage clears when the tab closes;
+      // localStorage persists, so only use it when "Remember me" is checked.
+      const storage = rememberMe.checked ? window.localStorage : window.sessionStorage;
+      storage.setItem('access_token', body.access_token);
+      storage.setItem('refresh_token', body.refresh_token);
+      storage.setItem('user', JSON.stringify(body.user));
+
+      alertBox.textContent = 'Signed in successfully. Redirecting to your dashboard…';
+      alertBox.classList.add('show', 'success');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+    } catch (err) {
+      alertBox.textContent = 'Network error — please check your connection and try again.';
+      alertBox.classList.add('show', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
   });
 
   // Build the illuminated window grid (signature visual): two wings, some rooms lit

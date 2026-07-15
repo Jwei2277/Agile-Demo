@@ -378,8 +378,8 @@ body {
           <div class="field-grid">
             <div class="field">
               <label for="studentId">Student ID</label>
-              <input type="text" id="studentId" name="studentId" placeholder="e.g. SD210345" autocomplete="off" required>
-              <span class="field-error">Enter a valid student ID.</span>
+              <input type="text" id="studentId" name="studentId" placeholder="e.g. SD123456" autocomplete="off" required>
+              <span class="field-error" id="studentIdError">Format: 2 uppercase letters + 6 digits, e.g. SD123456.</span>
             </div>
 
             <div class="field">
@@ -477,7 +477,7 @@ body {
   const form = document.getElementById('registerForm');
   const alertBox = document.getElementById('registerAlert');
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     let valid = true;
 
@@ -500,6 +500,13 @@ body {
       valid = false;
     }
 
+    const studentIdInput = document.getElementById('studentId');
+    if (studentIdInput.value && !/^[A-Z]{2}\d{6}$/.test(studentIdInput.value.trim())) {
+      studentIdInput.classList.add('invalid');
+      document.getElementById('studentIdError').classList.add('show');
+      valid = false;
+    }
+
     const pwd = document.getElementById('password');
     const confirm = document.getElementById('confirmPassword');
     if (pwd.value !== confirm.value || !confirm.value) {
@@ -517,8 +524,41 @@ body {
       return;
     }
 
-    alertBox.textContent = 'Account created. Check your university email to verify your address.';
-    alertBox.classList.add('show', 'success');
+    const submitBtn = form.querySelector('.btn-primary');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: document.getElementById('fullName').value.trim(),
+          student_id: document.getElementById('studentId').value.trim(),
+          email: emailInput.value.trim(),
+          password: pwd.value
+        })
+      });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alertBox.textContent = body.detail || 'Could not create your account. Please try again.';
+        alertBox.classList.add('show', 'error');
+        return;
+      }
+
+      alertBox.textContent = body.message || 'Account created. Check your university email to verify your address.';
+      alertBox.classList.add('show', 'success');
+      form.reset();
+      meterBars.forEach(bar => bar.className = '');
+      strengthLabel.textContent = 'Password strength';
+      setTimeout(() => { window.location.href = 'login.html'; }, 1800);
+    } catch (err) {
+      alertBox.textContent = 'Network error — please check your connection and try again.';
+      alertBox.classList.add('show', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
   });
 
   // Build the illuminated window grid (signature visual)

@@ -5,3 +5,4 @@ __pycache__/
 coverage.xml
 dist/
 .cache/
+src/agile_ci_demo/.env
