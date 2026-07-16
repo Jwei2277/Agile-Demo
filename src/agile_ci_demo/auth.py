@@ -75,9 +75,21 @@ def login(data: Login):
             .limit(1)
             .execute()
         )
+
         if not lookup.data:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        email = lookup.data[0]["email"]
+
+        user_record = lookup.data[0]
+
+        if not isinstance(user_record, dict):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        email_value = user_record.get("email")
+
+        if not isinstance(email_value, str):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        email = email_value
 
     try:
         response = supabase.auth.sign_in_with_password({"email": email, "password": data.password})
