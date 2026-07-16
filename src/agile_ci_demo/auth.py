@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
-from services.supabase_service import supabase, supabase_admin
+from agile_ci_demo.services.supabase_service import (
+    supabase,
+    supabase_admin,
+)
 from supabase import AuthApiError
 
 router = APIRouter(prefix="/auth")
