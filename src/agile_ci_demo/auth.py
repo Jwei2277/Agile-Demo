@@ -35,6 +35,11 @@ class ResetPassword(BaseModel):
 
 @router.post("/register", status_code=201)
 def register(data: Register):
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
     try:
         response = supabase.auth.sign_up(
             {
@@ -69,6 +74,12 @@ def register(data: Register):
 
 @router.post("/login")
 def login(data: Login):
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
+
     identifier = data.identifier.strip()
     is_email = "@" in identifier
 
