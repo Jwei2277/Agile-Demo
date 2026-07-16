@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Dashboard (All Clear)</title>
+<title>HostelEase — Admin Maintenance</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -127,6 +127,7 @@ a { color: inherit; }
 }
 .nav-links a { text-decoration: none; }
 .nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a.nav-disabled { color: #6d84a8; opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 .nav-links a:hover { color: var(--white); }
 .nav-right { display: flex; align-items: center; gap: 14px; }
 .icon-btn {
@@ -413,7 +414,48 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .mini-stat-row:last-child { border-bottom: none; }
 .mini-stat-row strong { font-family: var(--font-display); font-size: 15px; }
+
+/* ===================== Extra: forms, tables, filters (added for Bookings/Maintenance/Rooms pages) ===================== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.form-field input, .form-field select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--sky-100); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none;
+}
+.form-field input:focus-visible, .form-field select:focus-visible { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18); }
+.form-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+.room-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.room-table th, .room-table td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.room-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--slate-600); font-weight: 600; }
+.room-table tr:last-child td { border-bottom: none; }
+.room-table tr.inactive-row td { opacity: 0.5; }
+.room-table td.actions-cell { display: flex; gap: 8px; }
+
+.status-filter { display: flex; gap: 8px; align-items: center; }
+.status-filter select {
+  padding: 9px 12px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+
+.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
+.quick-link-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.quick-link-card:hover { box-shadow: 0 14px 34px -20px rgba(11,37,69,0.4); transform: translateY(-2px); }
+.quick-link-card .qa-icon {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--sky-100); color: var(--blue-600);
+  display: flex; align-items: center; justify-content: center;
+}
+.quick-link-card .qa-icon svg { width: 19px; height: 19px; }
+.quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
+.quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
 </style>
+
 </head>
 <body>
 
@@ -426,102 +468,140 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       </div>
       <span class="eyebrow-chip">Admin Console</span>
       <nav class="nav-links">
-        <a href="#" class="current">Dashboard</a>
-        <a href="#">Bookings</a>
-        <a href="#">Rooms</a>
-        <a href="#">Maintenance</a>
-        <a href="#">Visitors</a>
-        <a href="#">Reports</a>
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-bookings.html">Bookings</a>
+        <a href="admin-rooms.html">Rooms</a>
+        <a href="admin-maintenance.html" class="current">Maintenance</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle">HA</div><span class="avatar-name">Hafiz A.</span></div>
+        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+      <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <div class="dash-hero">
+    <div class="section-head" style="margin-top:0;">
       <div>
-        <h1>Good afternoon, Hafiz</h1>
-        <p>Here's what's happening across all hostel blocks today.</p>
+        <h2>Maintenance</h2>
+        <p id="maintCountSub">Loading…</p>
       </div>
-      <select class="semester-select"><option>Semester 1, 2026/27</option><option>Semester 2, 2025/26</option></select>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Available rooms</span>
-        <span class="stat-value">42</span>
-        <span class="stat-sub">Across 4 blocks</span>
-      </div>
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.6"/></svg>Occupied rooms</span>
-        <span class="stat-value">188</span>
-        <span class="stat-sub">Of 230 total</span>
-      </div>
-      <div class="stat-card card attention" id="statPendingBookings">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg>Pending bookings</span>
-        <span class="stat-value" id="valPendingBookings">7</span>
-        <span class="stat-sub">Awaiting your review</span>
-      </div>
-      <div class="stat-card card attention" id="statPendingMaint">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Maintenance requests</span>
-        <span class="stat-value" id="valPendingMaint">4</span>
-        <span class="stat-sub">Unassigned</span>
+      <div class="status-filter">
+        <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
+        <select id="statusFilter">
+          <option value="pending" selected>Pending</option>
+          <option value="assigned">Assigned</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="all">All</option>
+        </select>
       </div>
     </div>
-
-    <div class="occ-panel card">
-      <div class="occ-grid" id="occGrid" aria-hidden="true"></div>
-      <div class="occ-copy">
-        <strong class="big">82% occupancy</strong>
-        <p>188 of 230 beds are filled this semester. Each square represents roughly 1% of total capacity.</p>
-      </div>
+    <div class="request-list" id="maintList">
+      <p style="color:var(--slate-600);">Loading requests…</p>
     </div>
-    <section id="adminClear" class="view">
-      <div class="two-col" style="margin-top:8px;">
-        <div>
-          <div class="section-head">
-            <div>
-              <h2>Requests awaiting action</h2>
-              <p>Nothing needs your attention right now.</p>
-            </div>
-          </div>
-          <div class="empty-state card">
-            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <h3>You're all caught up</h3>
-            <p>No booking, document, maintenance, or visitor requests are waiting. New requests will appear here as students submit them.</p>
-            <div class="empty-actions">
-              <button class="btn-secondary btn-sm">View occupancy report</button>
-              <button class="btn-secondary btn-sm">Manage rooms</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card side-card">
-          <h3>Payment summary</h3>
-          <p class="hint">This semester, so far.</p>
-          <div class="mini-stat-row"><span>Collected</span><strong>RM 87,400</strong></div>
-          <div class="mini-stat-row"><span>Outstanding</span><strong style="color:var(--success-fg)">RM 0</strong></div>
-          <div class="mini-stat-row"><span>Receipts issued</span><strong>230</strong></div>
-          <button class="btn-secondary" style="width:100%; margin-top:14px;">Generate report</button>
-        </div>
-      </div>
-    </section>
   </main>
 </div>
 
 <script>
-  const occGrid = document.getElementById('occGrid');
-  const occPct = 82;
-  const totalSquares = 40;
-  const litSquares = Math.round((occPct / 100) * totalSquares);
-  for (let i = 0; i < totalSquares; i++) {
-    const s = document.createElement('span');
-    if (i < litSquares) s.classList.add('lit');
-    occGrid.appendChild(s);
+  function getToken() {
+    return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
   }
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try {
+      if (token) {
+        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      }
+    } catch (err) {
+      // Even if the server call fails (e.g. offline), still clear the
+      // local session so the user is signed out on this device.
+    }
+    window.localStorage.removeItem('access_token');
+    window.localStorage.removeItem('refresh_token');
+    window.localStorage.removeItem('user');
+    window.sessionStorage.removeItem('access_token');
+    window.sessionStorage.removeItem('refresh_token');
+    window.sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${getToken()}` };
+  }
+
+  function maintRowHTML(m) {
+    const createdAgo = new Date(m.created_at).toLocaleDateString();
+    const statusPillClass = { pending: 'pill-warning', assigned: 'pill-warning', completed: 'pill-success', cancelled: 'pill-error' }[m.status] || 'pill-warning';
+    const actions = m.status === 'pending'
+      ? `<button class="btn-primary btn-sm" data-action="complete" data-id="${m.id}">Mark resolved</button>`
+      : `<span class="pill ${statusPillClass}">${m.status}</span>`;
+    return `
+      <div class="request-row card" data-maint-id="${m.id}">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        <div class="request-main">
+          <div class="request-top"><span class="request-title">${m.title}</span><span class="chip chip-blue">Maintenance</span><span class="pill pill-warning">${m.priority}</span></div>
+          <p class="request-sub">Reported by ${m.student_name || 'Unknown'} · Category: ${m.category}</p>
+        </div>
+        <span class="request-time">${createdAgo}</span>
+        <div class="request-actions">${actions}</div>
+      </div>`;
+  }
+
+  async function loadMaintenance() {
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const status = document.getElementById('statusFilter').value;
+    const list = document.getElementById('maintList');
+    list.innerHTML = '<p style="color:var(--slate-600);">Loading requests…</p>';
+
+    try {
+      const res = await fetch(`/admin/maintenance?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
+      if (res.status === 403) {
+        alert('Admin access required.');
+        window.location.href = 'login.html';
+        return;
+      }
+      const items = await res.json();
+
+      document.getElementById('maintCountSub').textContent =
+        `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
+
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Nothing here</h3>
+            <p>No maintenance requests match this filter.</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = items.map(maintRowHTML).join('');
+      list.querySelectorAll('[data-action="complete"]').forEach((btn) =>
+        btn.addEventListener('click', () => completeMaintenance(btn.dataset.id)));
+    } catch (err) {
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load requests. Please try again.</p>';
+    }
+  }
+
+  async function completeMaintenance(id) {
+    try {
+      const res = await fetch(`/admin/maintenance/${id}/complete`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok && res.status !== 204) { alert('Could not update request.'); return; }
+      loadMaintenance();
+    } catch (err) {
+      alert('Network error — please try again.');
+    }
+  }
+
+  document.getElementById('statusFilter').addEventListener('change', loadMaintenance);
+  loadMaintenance();
 </script>
 </body>
 </html>

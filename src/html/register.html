@@ -167,7 +167,8 @@ body {
 
 .field input[type="text"],
 .field input[type="email"],
-.field input[type="password"] {
+.field input[type="password"],
+.field select {
   width: 100%;
   padding: 12px 14px;
   font-size: 14px;
@@ -180,11 +181,12 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .field input::placeholder { color: var(--slate-400); }
-.field input:focus-visible {
+.field input:focus-visible,
+.field select:focus-visible {
   border-color: var(--blue-600);
   box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.18);
 }
-.field input.invalid { border-color: var(--error-fg); background: var(--error-bg); }
+.field input.invalid, .field select.invalid { border-color: var(--error-fg); background: var(--error-bg); }
 
 .field-error {
   display: none;
@@ -390,6 +392,17 @@ body {
           </div>
 
           <div class="field">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+              <option value="" disabled selected>Select your gender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+            </select>
+            <span class="field-error" id="genderError">Select your gender — some hostel rooms are gender-restricted.</span>
+            <p style="margin:6px 0 0; font-size:12px; color:var(--slate-600);">Used to check eligibility for female-only / male-only rooms.</p>
+          </div>
+
+          <div class="field">
             <label for="password">Password</label>
             <div class="password-wrap">
               <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required>
@@ -507,6 +520,15 @@ body {
       valid = false;
     }
 
+    const genderInput = document.getElementById('gender');
+    genderInput.classList.remove('invalid');
+    document.getElementById('genderError').classList.remove('show');
+    if (!genderInput.value) {
+      genderInput.classList.add('invalid');
+      document.getElementById('genderError').classList.add('show');
+      valid = false;
+    }
+
     const pwd = document.getElementById('password');
     const confirm = document.getElementById('confirmPassword');
     if (pwd.value !== confirm.value || !confirm.value) {
@@ -535,6 +557,7 @@ body {
           full_name: document.getElementById('fullName').value.trim(),
           student_id: document.getElementById('studentId').value.trim(),
           email: emailInput.value.trim(),
+          gender: genderInput.value,
           password: pwd.value
         })
       });

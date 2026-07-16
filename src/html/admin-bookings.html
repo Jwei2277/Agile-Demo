@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Browse Hostels</title>
+<title>HostelEase — Admin Bookings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -294,42 +294,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   position: relative;
 }
 .room-photo svg { width: 34px; height: 34px; }
-/* ===================== Booking modal ===================== */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px; z-index: 100;
-}
-.modal-overlay[hidden] { display: none; }
-.modal-card {
-  background: var(--white); border-radius: var(--radius-lg, 14px);
-  max-width: 420px; width: 100%; padding: 24px 26px;
-  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
-}
-.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
-.modal-card p.modal-sub { margin: 0 0 18px; font-size: 13px; color: var(--slate-600); }
-.occupant-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-.occupant-option {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
-  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
-}
-.occupant-option.selected { border-color: var(--blue-600); background: var(--sky-100); }
-.occupant-option input[type="radio"] { margin-top: 3px; }
-.occupant-option .opt-title { font-weight: 600; font-size: 13.5px; }
-.occupant-option .opt-desc { font-size: 12px; color: var(--slate-600); margin-top: 2px; }
-.extra-occupant-fields { display: none; flex-direction: column; gap: 12px; margin-bottom: 16px; }
-.extra-occupant-fields.show { display: flex; }
-.extra-occupant-fields .form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
-.extra-occupant-fields .form-field input,
-.extra-occupant-fields .form-field select {
-  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
-  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
-}
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
-.modal-error.show { display: block; }
-
 .room-photo .avail-badge {
   position: absolute; top: 10px; right: 10px;
 }
@@ -450,159 +414,102 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .mini-stat-row:last-child { border-bottom: none; }
 .mini-stat-row strong { font-family: var(--font-display); font-size: 15px; }
+
+/* ===================== Extra: forms, tables, filters (added for Bookings/Maintenance/Rooms pages) ===================== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.form-field input, .form-field select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--sky-100); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none;
+}
+.form-field input:focus-visible, .form-field select:focus-visible { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18); }
+.form-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+.room-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.room-table th, .room-table td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.room-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--slate-600); font-weight: 600; }
+.room-table tr:last-child td { border-bottom: none; }
+.room-table tr.inactive-row td { opacity: 0.5; }
+.room-table td.actions-cell { display: flex; gap: 8px; }
+
+.status-filter { display: flex; gap: 8px; align-items: center; }
+.status-filter select {
+  padding: 9px 12px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+
+.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
+.quick-link-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.quick-link-card:hover { box-shadow: 0 14px 34px -20px rgba(11,37,69,0.4); transform: translateY(-2px); }
+.quick-link-card .qa-icon {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--sky-100); color: var(--blue-600);
+  display: flex; align-items: center; justify-content: center;
+}
+.quick-link-card .qa-icon svg { width: 19px; height: 19px; }
+.quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
+.quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
 </style>
+
 </head>
 <body>
 
-<div id="studentApp" class="app">
+<div id="adminApp" class="app">
   <header class="topnav">
     <div class="topnav-inner">
       <div class="brand-mark">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>HostelEase</span>
       </div>
-      <span class="eyebrow-chip">Student Portal</span>
+      <span class="eyebrow-chip">Admin Console</span>
       <nav class="nav-links">
-        <a href="student-home.html">Home</a>
-        <a href="student-browse-hostels.html" class="current">Browse rooms</a>
-        <a href="student-my-booking.html">My booking</a>
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-bookings.html" class="current">Bookings</a>
+        <a href="admin-rooms.html">Rooms</a>
+        <a href="admin-maintenance.html">Maintenance</a>
         <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></div>
+        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <section id="studentNotBooked" class="view">
-      <div class="hero-browse">
-        <div class="hero-top">
-          <h1>Find your room for Semester 1, 2026/27</h1>
-          <p>You haven't submitted a booking yet. Compare rooms across every block, check facilities and fees, then apply in a few minutes.</p>
-        </div>
-        <div class="hero-strip" id="heroStrip" aria-hidden="true"></div>
+    <div class="section-head" style="margin-top:0;">
+      <div>
+        <h2>Bookings</h2>
+        <p id="bookingCountSub">Loading…</p>
       </div>
-
-      <div class="filter-bar">
-        <div class="filter-field">
-          <label for="fGender">Gender</label>
-          <select id="fGender"><option value="">All</option><option value="Female only">Female only</option><option value="Male only">Male only</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="fType">Room type</label>
-          <select id="fType"><option value="">All types</option><option value="Single Room">Single Room</option><option value="Master Room">Master Room</option><option value="Balcony Room">Balcony Room</option><option value="Middle Room">Middle Room</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="fBlock">Hostel block</label>
-          <select id="fBlock"><option value="">All blocks</option><option>Block A</option><option>Block B</option><option>Block C</option><option>Block D</option></select>
-        </div>
-        <div class="filter-actions">
-          <button class="btn-secondary" id="resetFiltersBtn">Reset filters</button>
-          <button class="btn-primary" id="searchBtn">Search</button>
-        </div>
-      </div>
-
-      <div class="section-head">
-        <div>
-          <h2 id="roomCountHeading">Loading rooms…</h2>
-          <p>Sorted by availability. Tap a room to view photos and facilities.</p>
-        </div>
-      </div>
-
-      <div class="room-grid" id="roomGrid">
-        <p style="color:var(--slate-600);">Loading available rooms…</p>
-      </div>
-    </section>
-  </main>
-</div>
-
-<div class="modal-overlay" id="bookingModal" hidden>
-  <div class="modal-card">
-    <h3 id="modalTitle">Book this room</h3>
-    <p class="modal-sub" id="modalSub">Choose how many people will stay in this room.</p>
-
-    <div class="modal-error" id="modalError" role="alert"></div>
-
-    <div class="occupant-options" id="occupantOptions">
-      <label class="occupant-option selected" data-count="1">
-        <input type="radio" name="occupantCount" value="1" checked>
-        <div>
-          <div class="opt-title">1 occupant</div>
-          <div class="opt-desc">Just me.</div>
-        </div>
-      </label>
-      <label class="occupant-option" data-count="2">
-        <input type="radio" name="occupantCount" value="2">
-        <div>
-          <div class="opt-title">2 occupants (+RM50/month)</div>
-          <div class="opt-desc">Bring a roommate into this booking.</div>
-        </div>
-      </label>
-    </div>
-
-    <div class="extra-occupant-fields" id="extraOccupantFields">
-      <div class="form-field">
-        <label for="extraName">2nd occupant's full name</label>
-        <input type="text" id="extraName" placeholder="Required">
-      </div>
-      <div class="form-field">
-        <label for="extraEmail">2nd occupant's university email</label>
-        <input type="email" id="extraEmail" placeholder="Required">
-      </div>
-      <div class="form-field">
-        <label for="extraStudentId">2nd occupant's student ID</label>
-        <input type="text" id="extraStudentId" placeholder="e.g. SD123456 — Required">
-      </div>
-      <div class="form-field">
-        <label for="extraGender">2nd occupant's gender</label>
-        <select id="extraGender">
-          <option value="" selected disabled>Select gender — Required</option>
-          <option value="Female">Female</option>
-          <option value="Male">Male</option>
+      <div class="status-filter">
+        <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
+        <select id="statusFilter">
+          <option value="pending" selected>Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="all">All</option>
         </select>
       </div>
     </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary btn-sm" id="modalCancelBtn">Cancel</button>
-      <button class="btn-primary btn-sm" id="modalConfirmBtn">Confirm booking</button>
+    <div class="request-list" id="bookingList">
+      <p style="color:var(--slate-600);">Loading bookings…</p>
     </div>
-  </div>
+  </main>
 </div>
 
 <script>
-  const roomGrid = document.getElementById('roomGrid');
-  const roomCountHeading = document.getElementById('roomCountHeading');
-  const fGender = document.getElementById('fGender');
-  const fType = document.getElementById('fType');
-  const fBlock = document.getElementById('fBlock');
-
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
   }
-
-  function initials(name) {
-    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
-  }
-
-  async function loadProfileChip() {
-    const token = getToken();
-    if (!token) return;
-    try {
-      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!res.ok) return;
-      const me = await res.json();
-      document.getElementById('avatarName').textContent = me.full_name || me.email;
-      document.getElementById('avatarInitials').textContent = initials(me.full_name);
-    } catch (err) {
-      // Non-fatal — the rest of the page still works without the name shown.
-    }
-  }
-  loadProfileChip();
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     const token = getToken();
@@ -623,239 +530,81 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     window.location.href = 'login.html';
   });
 
-  function roomCardHTML(room) {
-    const badgeClass = room.is_available ? 'pill-success' : 'pill-error';
-    const badgeText = room.is_available ? 'Available' : 'Booked';
-    const occupancyText = room.capacity > 1 ? `Up to ${room.capacity} pax` : '1 pax';
-    const feeNote = room.capacity > 1 ? `<small> / month (+RM50 for 2nd occupant)</small>` : `<small> / month</small>`;
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${getToken()}` };
+  }
+
+  function bookingRowHTML(b) {
+    const requestedAgo = new Date(b.requested_at).toLocaleDateString();
+    const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[b.status] || 'pill-warning';
+    const actions = b.status === 'pending'
+      ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
+         <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`
+      : `<span class="pill ${statusPillClass}">${b.status}</span>`;
     return `
-      <div class="room-card card">
-        <div class="room-photo">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="avail-badge pill ${badgeClass}">${badgeText}</span>
+      <div class="request-row card" data-booking-id="${b.id}">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <div class="request-main">
+          <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
+          <p class="request-sub">Requested ${b.room_label} · ${b.semester}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
         </div>
-        <div class="room-body">
-          <div class="room-title-row">
-            <div><p class="room-title">${room.room_type}</p><p class="room-block">${room.block_name} · Level ${room.level}</p></div>
-          </div>
-          <div class="room-meta">
-            <span>${occupancyText}</span>
-            <span>${room.gender_policy}</span>
-          </div>
-          <div class="room-fee">RM ${room.fee_monthly.toFixed(0)}${feeNote}</div>
-          <div class="room-footer">
-            <button class="btn-secondary btn-sm" disabled>View details</button>
-            <button class="btn-primary btn-sm" ${room.is_available ? '' : 'disabled'} data-room-id="${room.id}" data-capacity="${room.capacity}" data-room-type="${room.room_type}" data-gender-policy="${room.gender_policy}">Book now</button>
-          </div>
-        </div>
+        <span class="request-time">${requestedAgo}</span>
+        <div class="request-actions">${actions}</div>
       </div>`;
   }
 
-  async function loadRooms() {
-    roomGrid.innerHTML = '<p style="color:var(--slate-600);">Loading available rooms…</p>';
-    const params = new URLSearchParams();
-    if (fGender.value) params.set('gender', fGender.value);
-    if (fType.value) params.set('room_type', fType.value);
-    if (fBlock.value) params.set('block', fBlock.value);
+  async function loadBookings() {
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const status = document.getElementById('statusFilter').value;
+    const list = document.getElementById('bookingList');
+    list.innerHTML = '<p style="color:var(--slate-600);">Loading bookings…</p>';
 
     try {
-      const res = await fetch('/rooms?' + params.toString());
-      if (!res.ok) throw new Error('Failed to load rooms');
-      const rooms = await res.json();
+      const res = await fetch(`/admin/bookings?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
+      if (res.status === 403) {
+        alert('Admin access required.');
+        window.location.href = 'login.html';
+        return;
+      }
+      const bookings = await res.json();
 
-      roomCountHeading.textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} available`;
-      roomGrid.innerHTML = rooms.length
-        ? rooms.map(roomCardHTML).join('')
-        : '<p style="color:var(--slate-600);">No rooms match these filters.</p>';
+      document.getElementById('bookingCountSub').textContent =
+        `${bookings.length} booking${bookings.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
 
-      roomGrid.querySelectorAll('[data-room-id]').forEach((btn) => {
-        btn.addEventListener('click', () => bookRoom(Number(btn.dataset.roomId), Number(btn.dataset.capacity), btn.dataset.roomType, btn.dataset.genderPolicy));
-      });
+      if (!bookings.length) {
+        list.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Nothing here</h3>
+            <p>No bookings match this filter.</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = bookings.map(bookingRowHTML).join('');
+      list.querySelectorAll('[data-action="approve"]').forEach((btn) =>
+        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'approve')));
+      list.querySelectorAll('[data-action="reject"]').forEach((btn) =>
+        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'reject')));
     } catch (err) {
-      roomGrid.innerHTML = '<p style="color:var(--error-fg);">Could not load rooms. Please try again.</p>';
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load bookings. Please try again.</p>';
     }
   }
 
-  // ---------------------------------------------------------------
-  // Booking modal (replaces native confirm()/prompt() dialogs — some
-  // browsers throttle or silently block back-to-back synchronous
-  // dialogs, which made the old flow look like it did nothing after
-  // clicking OK).
-  // ---------------------------------------------------------------
-  const bookingModal = document.getElementById('bookingModal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalSub = document.getElementById('modalSub');
-  const modalError = document.getElementById('modalError');
-  const occupantOptions = document.getElementById('occupantOptions');
-  const extraOccupantFields = document.getElementById('extraOccupantFields');
-  const extraNameInput = document.getElementById('extraName');
-  const extraEmailInput = document.getElementById('extraEmail');
-  const extraStudentIdInput = document.getElementById('extraStudentId');
-  const extraGenderInput = document.getElementById('extraGender');
-  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-  const modalCancelBtn = document.getElementById('modalCancelBtn');
-
-  let pendingRoomId = null;
-
-  function openBookingModal(roomId, capacity, roomType, genderPolicy) {
-    pendingRoomId = roomId;
-    modalError.classList.remove('show');
-    modalError.textContent = '';
-    extraNameInput.value = '';
-    extraEmailInput.value = '';
-    extraStudentIdInput.value = '';
-    extraGenderInput.value = '';
-
-    const genderNote = genderPolicy && genderPolicy !== 'Mixed block' ? ` This room is ${genderPolicy.toLowerCase()}.` : '';
-
-    if (capacity <= 1) {
-      // Single Room: nothing to choose, just confirm.
-      modalTitle.textContent = `Book ${roomType}`;
-      modalSub.textContent = `This room is for 1 occupant.${genderNote}`;
-      occupantOptions.style.display = 'none';
-      extraOccupantFields.classList.remove('show');
-    } else {
-      modalTitle.textContent = `Book ${roomType}`;
-      modalSub.textContent = `This room can fit up to ${capacity} people.${genderNote}`;
-      occupantOptions.style.display = 'flex';
-      occupantOptions.querySelector('input[value="1"]').checked = true;
-      occupantOptions.querySelectorAll('.occupant-option').forEach(el =>
-        el.classList.toggle('selected', el.dataset.count === '1'));
-      extraOccupantFields.classList.remove('show');
-    }
-
-    bookingModal.hidden = false;
-  }
-
-  function closeBookingModal() {
-    bookingModal.hidden = true;
-    pendingRoomId = null;
-  }
-
-  occupantOptions.querySelectorAll('.occupant-option').forEach((option) => {
-    option.addEventListener('click', () => {
-      occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.remove('selected'));
-      option.classList.add('selected');
-      option.querySelector('input[type="radio"]').checked = true;
-      extraOccupantFields.classList.toggle('show', option.dataset.count === '2');
-    });
-  });
-
-  modalCancelBtn.addEventListener('click', closeBookingModal);
-  bookingModal.addEventListener('click', (e) => {
-    if (e.target === bookingModal) closeBookingModal();
-  });
-
-  modalConfirmBtn.addEventListener('click', async () => {
-    if (!pendingRoomId) return;
-
-    const selectedCount = occupantOptions.style.display === 'none'
-      ? 1
-      : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
-
-    let extraOccupantName = null;
-    let extraOccupantEmail = null;
-    let extraOccupantStudentId = null;
-    let extraOccupantGender = null;
-
-    if (selectedCount === 2) {
-      const name = extraNameInput.value.trim();
-      const email = extraEmailInput.value.trim();
-      const studentId = extraStudentIdInput.value.trim().toUpperCase();
-      const gender = extraGenderInput.value;
-
-      if (!name) {
-        modalError.textContent = "The 2nd occupant's full name is required.";
-        modalError.classList.add('show');
-        return;
-      }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        modalError.textContent = "Enter a valid email for the 2nd occupant.";
-        modalError.classList.add('show');
-        return;
-      }
-      if (!/^[A-Z]{2}\d{6}$/.test(studentId)) {
-        modalError.textContent = "2nd occupant's student ID must be 2 letters + 6 digits, e.g. SD123456.";
-        modalError.classList.add('show');
-        return;
-      }
-      if (!gender) {
-        modalError.textContent = "Select the 2nd occupant's gender — some rooms are gender-restricted.";
-        modalError.classList.add('show');
-        return;
-      }
-
-      extraOccupantName = name;
-      extraOccupantEmail = email;
-      extraOccupantStudentId = studentId;
-      extraOccupantGender = gender;
-    }
-
-    const token = getToken();
-    if (!token) {
-      window.location.href = 'login.html';
-      return;
-    }
-
-    modalConfirmBtn.disabled = true;
+  async function decideBooking(id, action) {
     try {
-      const res = await fetch('/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          room_id: pendingRoomId,
-          semester: 'Semester 1, 2026/27',
-          occupant_count: selectedCount,
-          extra_occupant_name: extraOccupantName,
-          extra_occupant_email: extraOccupantEmail,
-          extra_occupant_student_id: extraOccupantStudentId,
-          extra_occupant_gender: extraOccupantGender,
-        })
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        modalError.textContent = body.detail || 'Could not submit booking.';
-        modalError.classList.add('show');
-        return;
-      }
-      window.location.href = 'student-my-booking.html';
+      const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok && res.status !== 204) { alert('Could not update booking.'); return; }
+      loadBookings();
     } catch (err) {
-      modalError.textContent = 'Network error — please try again.';
-      modalError.classList.add('show');
-    } finally {
-      modalConfirmBtn.disabled = false;
-    }
-  });
-
-  function bookRoom(roomId, capacity, roomType, genderPolicy) {
-    const token = getToken();
-    if (!token) {
-      window.location.href = 'login.html';
-      return;
-    }
-    openBookingModal(roomId, capacity, roomType, genderPolicy);
-  }
-
-  document.getElementById('searchBtn').addEventListener('click', (e) => { e.preventDefault(); loadRooms(); });
-  document.getElementById('resetFiltersBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    fGender.value = ''; fType.value = ''; fBlock.value = '';
-    loadRooms();
-  });
-
-  loadRooms();
-
-  function buildStrip(el, count, litRatio) {
-    for (let i = 0; i < count; i++) {
-      const w = document.createElement('span');
-      if (Math.random() < litRatio) {
-        w.classList.add('lit');
-        w.style.animationDelay = (Math.random() * 6).toFixed(2) + 's';
-      }
-      el.appendChild(w);
+      alert('Network error — please try again.');
     }
   }
-  buildStrip(document.getElementById('heroStrip'), 21, 0.4);
+
+  document.getElementById('statusFilter').addEventListener('change', loadBookings);
+  loadBookings();
 </script>
 </body>
 </html>

@@ -7,10 +7,18 @@ from pydantic import BaseModel
 
 from pathlib import Path
 from agile_ci_demo.auth import router
+from agile_ci_demo.rooms import router as rooms_router
+from agile_ci_demo.bookings import router as bookings_router
+from agile_ci_demo.maintenance import router as maintenance_router
+from agile_ci_demo.admin import router as admin_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
 app.include_router(router)
+app.include_router(rooms_router)
+app.include_router(bookings_router)
+app.include_router(maintenance_router)
+app.include_router(admin_router)
 # =========================
 # Allow frontend connection
 # =========================
@@ -63,6 +71,57 @@ def forgot_password_page():
 @app.get("/reset-password.html")
 def reset_password_page():
     return FileResponse(HTML_DIR / "resetPassword.html")
+
+
+@app.get("/student-browse-hostels.html")
+def browse_hostels_page():
+    return FileResponse(HTML_DIR / "student-browse-hostels.html")
+
+
+@app.get("/student-my-booking.html")
+def my_booking_page():
+    return FileResponse(HTML_DIR / "student-my-booking.html")
+
+
+@app.get("/student-home.html")
+def student_home_page():
+    return FileResponse(HTML_DIR / "student-home.html")
+
+
+@app.get("/admin-dashboard.html")
+def admin_dashboard_page():
+    return FileResponse(HTML_DIR / "admin-dashboard.html")
+
+
+@app.get("/admin-bookings.html")
+def admin_bookings_page():
+    return FileResponse(HTML_DIR / "admin-bookings.html")
+
+
+@app.get("/admin-maintenance.html")
+def admin_maintenance_page():
+    return FileResponse(HTML_DIR / "admin-maintenance.html")
+
+
+@app.get("/admin-rooms.html")
+def admin_rooms_page():
+    return FileResponse(HTML_DIR / "admin-rooms.html")
+
+
+# The dashboard used to be one page mixing stats + a combined request
+# queue (with two mockup states — "pending" and "clear"). It's now split
+# into admin-dashboard.html (stats only) + admin-bookings.html +
+# admin-maintenance.html + admin-rooms.html. These two routes are kept
+# so any old bookmarks/links still resolve, just pointed at the new
+# stats-only dashboard instead of the old combined page.
+@app.get("/admin-dashboard-pending.html")
+def admin_dashboard_pending_page():
+    return FileResponse(HTML_DIR / "admin-dashboard.html")
+
+
+@app.get("/admin-dashboard-clear.html")
+def admin_dashboard_clear_page():
+    return FileResponse(HTML_DIR / "admin-dashboard.html")
 
 
 # =========================

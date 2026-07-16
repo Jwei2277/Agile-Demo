@@ -127,6 +127,7 @@ a { color: inherit; }
 }
 .nav-links a { text-decoration: none; }
 .nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a.nav-disabled { color: #6d84a8; opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 .nav-links a:hover { color: var(--white); }
 .nav-right { display: flex; align-items: center; gap: 14px; }
 .icon-btn {
@@ -426,96 +427,205 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       </div>
       <span class="eyebrow-chip">Student Portal</span>
       <nav class="nav-links">
-        <a href="#" class="current">Home</a>
-        <a href="#">Browse rooms</a>
-        <a href="#">My booking</a>
-        <a href="#">Visitors</a>
-        <a href="#">Payments</a>
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html">Browse rooms</a>
+        <a href="student-my-booking.html" class="current">My booking</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle">AR</div><span class="avatar-name">Aisyah R.</span></div>
+        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></div>
+      <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <section id="studentBooked" class="view">
+    <section id="studentBooked" class="view" hidden>
       <div class="status-hero">
         <div class="status-left">
           <p class="status-eyebrow">Your booking</p>
-          <h1 class="status-room">Block B · Room 214</h1>
-          <span class="pill pill-success"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Approved</span>
+          <h1 class="status-room" id="statusRoom">Loading…</h1>
+          <span class="pill" id="statusPill"></span>
           <div class="status-meta-row">
-            <span>Semester: <strong>1, 2026/27</strong></span>
-            <span>Move-in date: <strong>12 Sep 2026</strong></span>
-            <span>Payment: <strong style="color:var(--success-fg)">Paid</strong></span>
+            <span>Semester: <strong id="statusSemester">—</strong></span>
+            <span>Requested: <strong id="statusRequested">—</strong></span>
+            <span>Fee: <strong id="statusFee">—</strong></span>
+            <span>Occupants: <strong id="statusOccupants">—</strong></span>
           </div>
         </div>
         <div class="status-actions">
-          <button class="btn-primary">View booking details</button>
-          <button class="btn-secondary">Download receipt</button>
+          <button class="btn-secondary" id="cancelBookingBtn">Cancel booking</button>
         </div>
       </div>
 
       <div class="quick-actions">
-        <button class="quick-action card">
+        <button class="quick-action card" id="reportIssueBtn">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
           <strong>Report an issue</strong>
           <span class="desc">Let facilities know about a maintenance problem in your room.</span>
         </button>
-        <button class="quick-action card">
+        <button class="quick-action card" disabled>
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 20c.6-3.4 3-5.2 5.5-5.2s4.9 1.8 5.5 5.2M17 8.5v5M14.5 11h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Register a visitor</strong>
-          <span class="desc">Add a guest and pick a visiting date before they arrive.</span>
+          <span class="desc">Coming soon.</span>
         </button>
-        <button class="quick-action card">
+        <button class="quick-action card" disabled>
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Booking history</strong>
-          <span class="desc">Review past applications and their outcomes.</span>
+          <span class="desc">Coming soon.</span>
         </button>
-        <button class="quick-action card">
+        <button class="quick-action card" disabled>
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.9-4 3.7-6 7.5-6s6.6 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Update profile</strong>
-          <span class="desc">Keep your contact and emergency details current.</span>
+          <span class="desc">Coming soon.</span>
         </button>
       </div>
+    </section>
 
-      <div class="two-col" style="margin-top:12px;">
-        <div class="card" style="padding:22px 24px;">
-          <div class="section-head" style="margin:0 0 6px;">
-            <h2 style="font-size:16px;">Booking timeline</h2>
-          </div>
-          <div class="timeline">
-            <div class="timeline-item done">
-              <div class="timeline-dot-col"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
-              <div class="timeline-content"><strong>Application submitted</strong><span>2 Jul 2026</span></div>
-            </div>
-            <div class="timeline-item done">
-              <div class="timeline-dot-col"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
-              <div class="timeline-content"><strong>Documents verified</strong><span>5 Jul 2026</span></div>
-            </div>
-            <div class="timeline-item done">
-              <div class="timeline-dot-col"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
-              <div class="timeline-content"><strong>Booking approved</strong><span>8 Jul 2026</span></div>
-            </div>
-            <div class="timeline-item done">
-              <div class="timeline-dot-col"><div class="timeline-dot"></div></div>
-              <div class="timeline-content"><strong>Payment received</strong><span>10 Jul 2026 · RM 380 receipt available</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="card side-card">
-          <h3>Move-in checklist</h3>
-          <p class="hint">A few things to sort before 12 Sep.</p>
-          <div class="mini-stat-row"><span>Payment</span><strong style="color:var(--success-fg)">Done</strong></div>
-          <div class="mini-stat-row"><span>Documents</span><strong style="color:var(--success-fg)">Verified</strong></div>
-          <div class="mini-stat-row"><span>Room key collection</span><strong style="color:var(--warning-fg)">Pending</strong></div>
-          <div class="mini-stat-row"><span>Visitor registration</span><strong style="color:var(--slate-600)">Not needed yet</strong></div>
-        </div>
-      </div>
+    <section id="studentNotBookedEmpty" class="view empty-state card" hidden>
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3>No active booking yet</h3>
+      <p>You haven't applied for a room. Browse available rooms and submit an application to get started.</p>
+      <div class="empty-actions"><a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a></div>
     </section>
   </main>
 </div>
+
+<script>
+  const bookedSection = document.getElementById('studentBooked');
+  const emptySection = document.getElementById('studentNotBookedEmpty');
+
+  function getToken() {
+    return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
+  }
+
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+  }
+
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {
+      // Non-fatal — the rest of the page still works without the name shown.
+    }
+  }
+  loadProfileChip();
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try {
+      if (token) {
+        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      }
+    } catch (err) {
+      // Even if the server call fails (e.g. offline), still clear the
+      // local session so the user is signed out on this device.
+    }
+    window.localStorage.removeItem('access_token');
+    window.localStorage.removeItem('refresh_token');
+    window.localStorage.removeItem('user');
+    window.sessionStorage.removeItem('access_token');
+    window.sessionStorage.removeItem('refresh_token');
+    window.sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  const statusLabels = {
+    pending: { text: 'Pending review', cls: 'pill-warning' },
+    approved: { text: 'Approved', cls: 'pill-success' },
+    rejected: { text: 'Rejected', cls: 'pill-error' },
+  };
+
+  async function loadBooking() {
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    try {
+      const res = await fetch('/bookings/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to load booking');
+      const booking = await res.json();
+
+      if (!booking) {
+        bookedSection.hidden = true;
+        emptySection.hidden = false;
+        return;
+      }
+
+      bookedSection.hidden = false;
+      emptySection.hidden = true;
+
+      document.getElementById('statusRoom').textContent = `${booking.room.block_name} · Room ${booking.room.room_number}`;
+      const statusInfo = statusLabels[booking.status] || { text: booking.status, cls: 'pill-warning' };
+      const pill = document.getElementById('statusPill');
+      pill.className = `pill ${statusInfo.cls}`;
+      pill.textContent = statusInfo.text;
+      document.getElementById('statusSemester').textContent = booking.semester;
+      document.getElementById('statusRequested').textContent = new Date(booking.requested_at).toLocaleDateString();
+      document.getElementById('statusFee').textContent = `RM ${booking.total_fee.toFixed(0)} / month`;
+      const occupantsEl = document.getElementById('statusOccupants');
+      occupantsEl.textContent = booking.occupant_count === 2
+        ? `2 — with ${booking.extra_occupant_name || 'unnamed'} (${booking.extra_occupant_gender || '—'}, ${booking.extra_occupant_student_id || '—'}, ${booking.extra_occupant_email || '—'})`
+        : '1';
+
+      window.__currentBookingId = booking.id;
+    } catch (err) {
+      bookedSection.hidden = true;
+      emptySection.hidden = false;
+    }
+  }
+
+  document.getElementById('cancelBookingBtn').addEventListener('click', async () => {
+    const token = getToken();
+    if (!token || !window.__currentBookingId) return;
+    if (!confirm('Cancel your booking application?')) return;
+
+    try {
+      const res = await fetch(`/bookings/${window.__currentBookingId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok && res.status !== 204) {
+        alert('Could not cancel booking.');
+        return;
+      }
+      loadBooking();
+    } catch (err) {
+      alert('Network error — please try again.');
+    }
+  });
+
+  document.getElementById('reportIssueBtn').addEventListener('click', async () => {
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+    const title = prompt('Briefly describe the issue:');
+    if (!title) return;
+
+    try {
+      const res = await fetch('/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, category: 'General', priority: 'Normal' }),
+      });
+      if (!res.ok) { alert('Could not submit report.'); return; }
+      alert('Thanks — your report has been submitted.');
+    } catch (err) {
+      alert('Network error — please try again.');
+    }
+  });
+
+  loadBooking();
+</script>
 </body>
 </html>
