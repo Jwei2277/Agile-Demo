@@ -6,18 +6,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from pathlib import Path
+from agile_ci_demo.auth import router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
-
+app.include_router(router)
 # =========================
 # Allow frontend connection
 # =========================
+# Note: allow_credentials=True cannot be combined with allow_origins=["*"]
+# (browsers reject that combination). This app uses a bearer token rather
+# than cookies, so credentials aren't needed here.
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -39,6 +43,26 @@ HTML_DIR = BASE_DIR / "html"
 @app.get("/")
 def login_page():
     return FileResponse(HTML_DIR / "login.html")
+
+
+@app.get("/login.html")
+def login_page_explicit():
+    return FileResponse(HTML_DIR / "login.html")
+
+
+@app.get("/register.html")
+def register_page():
+    return FileResponse(HTML_DIR / "register.html")
+
+
+@app.get("/forgot-password.html")
+def forgot_password_page():
+    return FileResponse(HTML_DIR / "forgotPassword.html")
+
+
+@app.get("/reset-password.html")
+def reset_password_page():
+    return FileResponse(HTML_DIR / "resetPassword.html")
 
 
 # =========================

@@ -1,7 +1,11 @@
 __pycache__/
 *.pyc
+*.egg-info/
+.hypothesis/
+.env
 .venv/
 .coverage
 coverage.xml
 dist/
 .cache/
+src/agile_ci_demo/.env
