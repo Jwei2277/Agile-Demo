@@ -79,3 +79,40 @@ def test_mark_done():
     r = client.patch("/items/3/done")
     assert r.status_code == 200
     assert r.json()["done"] is True
+
+
+def test_student_room_details_page_is_served():
+    """
+    Scenario: Student room details page is available
+      Given the student portal page is requested
+      When the room details route is opened
+      Then the page is served successfully
+    """
+    r = client.get("/student-room-details.html")
+    assert r.status_code == 200
+    assert "Room details" in r.text
+    assert "Book this room" in r.text
+
+
+def test_student_home_browse_link_uses_absolute_route():
+    """
+    Scenario: Student home browse link is clickable from the summary card
+      Given the student home page is requested
+      When the browse room link is rendered
+      Then it uses an absolute route that works from any page path
+    """
+    r = client.get("/student-home.html")
+    assert r.status_code == 200
+    assert 'href="/student-browse-hostels.html"' in r.text
+
+
+def test_student_browse_page_uses_button_navigation_for_details():
+    """
+    Scenario: Browse rooms page navigates to room details via a direct button action
+      Given the browse rooms page is requested
+      When the room card template is rendered
+      Then it includes the details navigation hook for click handling
+    """
+    r = client.get("/student-browse-hostels.html")
+    assert r.status_code == 200
+    assert "data-detail-room-id" in r.text

@@ -64,6 +64,39 @@ class BookingCreate(BaseModel):
         return self
 
 
+class BookingUpdate(BaseModel):
+    room_id: int | None = None
+    occupant_count: int = Field(default=1, ge=1, le=2)
+    extra_occupant_name: str | None = Field(default=None, min_length=1)
+    extra_occupant_email: EmailStr | None = None
+    extra_occupant_student_id: str | None = Field(default=None, pattern=r"^[A-Z]{2}\d{6}$")
+    extra_occupant_gender: str | None = Field(default=None, pattern=r"^(Male|Female)$")
+
+    @model_validator(mode="after")
+    def _require_extra_occupant_details(self):
+        if self.occupant_count == 2:
+            missing = [
+                label
+                for label, value in (
+                    ("extra_occupant_name", self.extra_occupant_name),
+                    ("extra_occupant_email", self.extra_occupant_email),
+                    ("extra_occupant_student_id", self.extra_occupant_student_id),
+                    ("extra_occupant_gender", self.extra_occupant_gender),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError(
+                    f"2nd occupant's full name, email, student ID, and gender are all required: missing {', '.join(missing)}"
+                )
+        if self.occupant_count == 1:
+            self.extra_occupant_name = None
+            self.extra_occupant_email = None
+            self.extra_occupant_student_id = None
+            self.extra_occupant_gender = None
+        return self
+
+
 class BookingOut(BaseModel):
     id: int
     status: str
@@ -77,6 +110,7 @@ class BookingOut(BaseModel):
     extra_occupant_gender: str | None = None
     total_fee: float
     room: RoomOut
+    pending_transfer_room: RoomOut | None = None
 
 
 class BookingAdminOut(BaseModel):
@@ -94,6 +128,32 @@ class BookingAdminOut(BaseModel):
     extra_occupant_student_id: str | None = None
     extra_occupant_gender: str | None = None
     total_fee: float
+
+
+class TransferRoomRequestCreate(BaseModel):
+    room_id: int
+    reason: str = Field(min_length=1)
+
+
+class TransferRoomRequestOut(BaseModel):
+    id: int
+    booking_id: int
+    requested_room_id: int
+    reason: str
+    status: str
+    requested_at: datetime
+
+
+class TransferRequestAdminOut(BaseModel):
+    id: int
+    booking_id: int
+    student_name: str
+    room_label: str
+    requested_room_id: int
+    requested_room_label: str
+    reason: str
+    status: str
+    requested_at: datetime
 
 
 class MaintenanceCreate(BaseModel):

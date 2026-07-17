@@ -534,19 +534,42 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return { 'Authorization': `Bearer ${getToken()}` };
   }
 
+  function statusPillHTML(status) {
+    const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[status] || 'pill-warning';
+    const label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' }[status] || status;
+    return `<span class="pill ${statusPillClass}">${label}</span>`;
+  }
+
   function bookingRowHTML(b) {
     const requestedAgo = new Date(b.requested_at).toLocaleDateString();
-    const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[b.status] || 'pill-warning';
     const actions = b.status === 'pending'
       ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
          <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`
-      : `<span class="pill ${statusPillClass}">${b.status}</span>`;
+      : statusPillHTML(b.status);
     return `
       <div class="request-row card" data-booking-id="${b.id}">
         <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
         <div class="request-main">
           <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
           <p class="request-sub">Requested ${b.room_label} · ${b.semester}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
+        </div>
+        <span class="request-time">${requestedAgo}</span>
+        <div class="request-actions">${actions}</div>
+      </div>`;
+  }
+
+  function transferRequestRowHTML(t) {
+    const requestedAgo = new Date(t.requested_at).toLocaleDateString();
+    const actions = t.status === 'pending'
+      ? `<button class="btn-secondary btn-sm" data-action="reject-transfer" data-id="${t.id}">Reject</button>
+         <button class="btn-primary btn-sm" data-action="approve-transfer" data-id="${t.id}">Approve</button>`
+      : statusPillHTML(t.status);
+    return `
+      <div class="request-row card" data-transfer-id="${t.id}">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="request-main">
+          <div class="request-top"><span class="request-title">Transfer request — ${t.student_name}</span><span class="chip chip-navy">Transfer</span></div>
+          <p class="request-sub">Requested to move from ${t.room_label} to ${t.requested_room_label}${t.reason ? ` · Reason: ${t.reason}` : ''}</p>
         </div>
         <span class="request-time">${requestedAgo}</span>
         <div class="request-actions">${actions}</div>
@@ -562,32 +585,44 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     list.innerHTML = '<p style="color:var(--slate-600);">Loading bookings…</p>';
 
     try {
-      const res = await fetch(`/admin/bookings?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
-      if (res.status === 403) {
+      const [bookingsRes, transfersRes] = await Promise.all([
+        fetch(`/admin/bookings?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
+        fetch(`/admin/transfer-requests?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
+      ]);
+      if (bookingsRes.status === 403 || transfersRes.status === 403) {
         alert('Admin access required.');
         window.location.href = 'login.html';
         return;
       }
-      const bookings = await res.json();
+      const bookings = await bookingsRes.json();
+      const transfers = await transfersRes.json();
+      const items = [
+        ...bookings.map((item) => ({ ...item, kind: 'booking' })),
+        ...transfers.map((item) => ({ ...item, kind: 'transfer' })),
+      ].sort((a, b) => new Date(b.requested_at) - new Date(a.requested_at));
 
       document.getElementById('bookingCountSub').textContent =
-        `${bookings.length} booking${bookings.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
+        `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
 
-      if (!bookings.length) {
+      if (!items.length) {
         list.innerHTML = `
           <div class="empty-state card">
             <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             <h3>Nothing here</h3>
-            <p>No bookings match this filter.</p>
+            <p>No bookings or transfer requests match this filter.</p>
           </div>`;
         return;
       }
 
-      list.innerHTML = bookings.map(bookingRowHTML).join('');
+      list.innerHTML = items.map((item) => item.kind === 'transfer' ? transferRequestRowHTML(item) : bookingRowHTML(item)).join('');
       list.querySelectorAll('[data-action="approve"]').forEach((btn) =>
         btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'approve')));
       list.querySelectorAll('[data-action="reject"]').forEach((btn) =>
         btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'reject')));
+      list.querySelectorAll('[data-action="approve-transfer"]').forEach((btn) =>
+        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'approve')));
+      list.querySelectorAll('[data-action="reject-transfer"]').forEach((btn) =>
+        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'reject')));
     } catch (err) {
       list.innerHTML = '<p style="color:var(--error-fg);">Could not load bookings. Please try again.</p>';
     }
@@ -597,6 +632,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     try {
       const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
       if (!res.ok && res.status !== 204) { alert('Could not update booking.'); return; }
+      loadBookings();
+    } catch (err) {
+      alert('Network error — please try again.');
+    }
+  }
+
+  async function decideTransferRequest(id, action) {
+    try {
+      const res = await fetch(`/admin/transfer-requests/${id}/${action}`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok && res.status !== 204) { alert('Could not update transfer request.'); return; }
       loadBookings();
     } catch (err) {
       alert('Network error — please try again.');

@@ -11,6 +11,7 @@ from agile_ci_demo.models import (
     RoomAdminOut,
     RoomCreate,
     RoomUpdate,
+    TransferRequestAdminOut,
     total_fee_for,
 )
 from agile_ci_demo.services.supabase_service import supabase_admin
@@ -130,6 +131,57 @@ def pending_bookings(_: CurrentUser = Depends(require_admin)):
     return _list_bookings("pending")
 
 
+def _list_transfer_requests(status: str | None) -> list[TransferRequestAdminOut]:
+    try:
+        query = supabase_admin.table("room_transfer_requests").select(
+            "*, student:profiles!room_transfer_requests_student_id_fkey(full_name), "
+            "booking:bookings!room_transfer_requests_booking_id_fkey(id, room_id, semester, status), "
+            "requested_room:rooms!room_transfer_requests_requested_room_id_fkey(room_number, hostel_blocks(name))"
+        )
+        if status and status != "all":
+            query = query.eq("status", status)
+        resp = query.order("requested_at", desc=True).execute()
+        rows = resp.data or []
+    except Exception:
+        rows = []
+
+    out = []
+    for row in rows:
+        try:
+            student = row.get("student") or {}
+            booking = row.get("booking") or {}
+            requested_room = row.get("requested_room") or {}
+            requested_block = requested_room.get("hostel_blocks") or {}
+            out.append(
+                TransferRequestAdminOut(
+                    id=row["id"],
+                    booking_id=row["booking_id"],
+                    student_name=student.get("full_name", "Unknown"),
+                    room_label=f"Current room {booking.get('room_id', '?')}",
+                    requested_room_id=row["requested_room_id"],
+                    requested_room_label=f"{requested_block.get('name', '?')} · Room {requested_room.get('room_number', '?')}",
+                    reason=row.get("reason", ""),
+                    status=row.get("status", "pending"),
+                    requested_at=row["requested_at"],
+                )
+            )
+        except Exception:
+            continue
+    return out
+
+
+@router.get("/transfer-requests", response_model=list[TransferRequestAdminOut])
+def list_transfer_requests(
+    status: str = Query(default="all", description="'all' | 'pending' | 'approved' | 'rejected'"),
+    _: CurrentUser = Depends(require_admin),
+):
+    if supabase_admin is None:
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
+    return _list_transfer_requests(status)
+
+
 def _decide_booking(booking_id: int, new_status: str, admin: CurrentUser) -> None:
     resp = supabase_admin.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
     if not resp.data:
@@ -144,6 +196,43 @@ def _decide_booking(booking_id: int, new_status: str, admin: CurrentUser) -> Non
             "decided_by": admin.id,
         }
     ).eq("id", booking_id).execute()
+
+
+def _decide_transfer_request(transfer_request_id: int, new_status: str, admin: CurrentUser) -> None:
+    resp = (
+        supabase_admin.table("room_transfer_requests")
+        .select("*")
+        .eq("id", transfer_request_id)
+        .limit(1)
+        .execute()
+    )
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Transfer request not found")
+    if resp.data[0]["status"] != "pending":
+        raise HTTPException(status_code=409, detail="Transfer request already decided")
+
+    transfer_request = resp.data[0]
+    booking_id = transfer_request["booking_id"]
+    requested_room_id = transfer_request["requested_room_id"]
+
+    booking_resp = (
+        supabase_admin.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    )
+    if not booking_resp.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    booking_updates = {"status": "approved"}
+    if new_status == "approved":
+        booking_updates["room_id"] = requested_room_id
+
+    try:
+        supabase_admin.table("bookings").update(booking_updates).eq("id", booking_id).execute()
+    except Exception:
+        fallback_updates = {k: v for k, v in booking_updates.items() if k != "room_id"}
+        supabase_admin.table("bookings").update(fallback_updates).eq("id", booking_id).execute()
+    supabase_admin.table("room_transfer_requests").update({"status": new_status}).eq(
+        "id", transfer_request_id
+    ).execute()
 
 
 @router.post("/bookings/{booking_id}/approve", status_code=204)
@@ -162,6 +251,24 @@ def reject_booking(booking_id: int, admin: CurrentUser = Depends(require_admin))
             status_code=501, detail="Server misconfigured: missing service role key"
         )
     _decide_booking(booking_id, "rejected", admin)
+
+
+@router.post("/transfer-requests/{transfer_request_id}/approve", status_code=204)
+def approve_transfer_request(transfer_request_id: int, admin: CurrentUser = Depends(require_admin)):
+    if supabase_admin is None:
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
+    _decide_transfer_request(transfer_request_id, "approved", admin)
+
+
+@router.post("/transfer-requests/{transfer_request_id}/reject", status_code=204)
+def reject_transfer_request(transfer_request_id: int, admin: CurrentUser = Depends(require_admin)):
+    if supabase_admin is None:
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
+    _decide_transfer_request(transfer_request_id, "rejected", admin)
 
 
 # ---------------------------------------------------------------

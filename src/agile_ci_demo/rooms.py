@@ -1,17 +1,24 @@
+from typing import Any, cast
+
 from fastapi import APIRouter, HTTPException, Query
 
 from agile_ci_demo.models import RoomOut
 from agile_ci_demo.services.supabase_service import supabase_admin
 
+
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 
 
-def _room_to_out(row: dict, booked_room_ids: set[int]) -> RoomOut:
-    # Rooms are rented as a whole unit now (condo-style): one active
-    # booking (pending/approved) occupies the entire room regardless of
-    # how many people it's for. "capacity" is just the max occupants
-    # that one booking may include (1 for Single Room, up to 2 otherwise).
+def _room_to_out(
+    row: dict[str, Any],
+    booked_room_ids: set[int],
+) -> RoomOut:
+    # Rooms are rented as a whole unit now (condo-style):
+    # one active booking (pending/approved) occupies the entire room.
+    # Capacity represents the maximum occupants allowed.
+
     block = row.get("hostel_blocks") or {}
+
     return RoomOut(
         id=row["id"],
         block_name=block.get("name", "Unknown block"),
@@ -27,59 +34,98 @@ def _room_to_out(row: dict, booked_room_ids: set[int]) -> RoomOut:
 
 
 def _booked_room_ids() -> set[int]:
+    if supabase_admin is None:
+        return set()
+
     bookings_resp = (
         supabase_admin.table("bookings")
         .select("room_id")
         .in_("status", ["pending", "approved"])
         .execute()
     )
-    return {b["room_id"] for b in (bookings_resp.data or [])}
+
+    bookings = cast(
+        list[dict[str, Any]],
+        bookings_resp.data or [],
+    )
+
+    return {int(booking["room_id"]) for booking in bookings}
 
 
 @router.get("", response_model=list[RoomOut])
 def list_rooms(
     gender: str | None = Query(
-        default=None, description="'Female only' | 'Male only' | 'Mixed block'"
+        default=None,
+        description="'Female only' | 'Male only' | 'Mixed block'",
     ),
     room_type: str | None = Query(
-        default=None, description="'Single Room' | 'Master Room' | 'Balcony Room' | 'Middle Room'"
+        default=None,
+        description=(
+            "'Single Room' | 'Master Room' | "
+            "'Balcony Room' | 'Middle Room'"
+        ),
     ),
-    block: str | None = Query(default=None, description="Block name, e.g. 'Block A'"),
+    block: str | None = Query(
+        default=None,
+        description="Block name, e.g. 'Block A'",
+    ),
     only_available: bool = Query(default=False),
 ):
     if supabase_admin is None:
         raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
+            status_code=501,
+            detail="Server misconfigured: missing service role key",
         )
 
-    query = supabase_admin.table("rooms").select("*, hostel_blocks(name)").eq("is_active", True)
+    query = (
+        supabase_admin.table("rooms")
+        .select("*, hostel_blocks(name)")
+        .eq("is_active", True)
+    )
 
     if gender:
         query = query.eq("gender_policy", gender)
+
     if room_type:
         query = query.eq("room_type", room_type)
 
     rooms_resp = query.execute()
-    rooms = rooms_resp.data or []
+
+    rooms = cast(
+        list[dict[str, Any]],
+        rooms_resp.data or [],
+    )
 
     if block:
-        rooms = [r for r in rooms if (r.get("hostel_blocks") or {}).get("name") == block]
+        rooms = [
+            room
+            for room in rooms
+            if (room.get("hostel_blocks") or {}).get("name") == block
+        ]
 
     booked_room_ids = _booked_room_ids()
 
-    out = [_room_to_out(r, booked_room_ids) for r in rooms]
+    output = [
+        _room_to_out(room, booked_room_ids)
+        for room in rooms
+    ]
 
     if only_available:
-        out = [r for r in out if r.is_available]
+        output = [
+            room
+            for room in output
+            if room.is_available
+        ]
 
-    return out
+    return output
 
 
 @router.get("/{room_id}", response_model=RoomOut)
 def get_room(room_id: int):
     if supabase_admin is None:
         raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
+            status_code=501,
+            detail="Server misconfigured: missing service role key",
         )
 
     resp = (
@@ -89,7 +135,20 @@ def get_room(room_id: int):
         .limit(1)
         .execute()
     )
-    if not resp.data:
-        raise HTTPException(status_code=404, detail="Room not found")
 
-    return _room_to_out(resp.data[0], _booked_room_ids())
+    if not resp.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Room not found",
+        )
+
+    room = cast(
+        dict[str, Any],
+        resp.data[0],
+    )
+
+    return _room_to_out(
+        room,
+        _booked_room_ids(),
+    )
+    

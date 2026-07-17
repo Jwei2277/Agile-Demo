@@ -78,6 +78,11 @@ def browse_hostels_page():
     return FileResponse(HTML_DIR / "student-browse-hostels.html")
 
 
+@app.get("/student-room-details.html")
+def room_details_page():
+    return FileResponse(HTML_DIR / "student-room-details.html")
+
+
 @app.get("/student-my-booking.html")
 def my_booking_page():
     return FileResponse(HTML_DIR / "student-my-booking.html")
@@ -101,6 +106,11 @@ def admin_bookings_page():
 @app.get("/admin-maintenance.html")
 def admin_maintenance_page():
     return FileResponse(HTML_DIR / "admin-maintenance.html")
+
+
+@app.get("/admin-transfers.html")
+def admin_transfers_page():
+    return FileResponse(HTML_DIR / "admin-transfers.html")
 
 
 @app.get("/admin-rooms.html")
