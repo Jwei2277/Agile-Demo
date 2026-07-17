@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelEase — Browse Hostels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-950: #071a33;
+  --navy-900: #0b2545;
+  --navy-800: #123566;
+  --blue-600: #2f6fed;
+  --blue-500: #4f86f7;
+  --sky-400: #7fb0ff;
+  --sky-100: #eaf2ff;
+  --white: #ffffff;
+  --slate-600: #5b6b82;
+  --slate-400: #8fa0b8;
+  --border: #dce6f5;
+  --success-bg: #e8f7ef;
+  --success-fg: #1f8a55;
+  --error-bg: #fdeceb;
+  --error-fg: #c8352d;
+  --warning-bg: #fff4e0;
+  --warning-fg: #b3760b;
+
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--navy-900);
+  background: var(--sky-100);
+}
+img, svg { display: block; }
+button { font-family: inherit; }
+a { color: inherit; }
+
+/* ===================== Prototype switcher (not part of product UI) ===================== */
+.proto-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--navy-950);
+  border-bottom: 1px dashed rgba(127,176,255,0.4);
+}
+.proto-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sky-400);
+  margin-right: 4px;
+}
+.proto-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(127,176,255,0.35);
+  background: transparent;
+  color: #c7d9f5;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.proto-btn:hover { background: rgba(127,176,255,0.12); }
+.proto-btn.active { background: var(--sky-400); color: var(--navy-950); border-color: var(--sky-400); }
+.proto-divider { width: 1px; height: 20px; background: rgba(127,176,255,0.25); margin: 0 2px; }
+
+/* ===================== Shared top nav ===================== */
+.topnav {
+  background: var(--navy-900);
+  color: var(--white);
+}
+.topnav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.brand-mark svg { color: var(--sky-400); flex-shrink: 0; }
+.eyebrow-chip {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sky-400);
+  border: 1px solid rgba(127,176,255,0.35);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex;
+  gap: 22px;
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c7d9f5;
+  flex: 1;
+}
+.nav-links a { text-decoration: none; }
+.nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a.nav-disabled { color: #6d84a8; opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+.nav-links a:hover { color: var(--white); }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.icon-btn {
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: #c7d9f5;
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.14); }
+.icon-btn .dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ff8a65; border: 1.5px solid var(--navy-900);
+}
+.avatar-chip {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 12px 5px 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+}
+.avatar-chip:hover { background: rgba(255,255,255,0.14); }
+.avatar-circle {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sky-400), var(--blue-600));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 11px; color: var(--navy-950);
+}
+.avatar-name { font-size: 13.5px; font-weight: 600; }
+
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+}
+
+/* ===================== Layout shells ===================== */
+main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 72px; }
+.app[hidden] { display: none; }
+.view[hidden] { display: none; }
+
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 44px 0 18px; flex-wrap: wrap; }
+.section-head h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0; }
+.section-head p { margin: 4px 0 0; font-size: 13.5px; color: var(--slate-600); }
+.section-head:first-of-type { margin-top: 0; }
+
+/* ===================== Buttons & chips ===================== */
+.btn-primary {
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--blue-600);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover { background: #285fd6; }
+.btn-primary:active { transform: translateY(1px); }
+.btn-secondary {
+  padding: 10px 17px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy-900);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-secondary:hover { background: var(--sky-100); }
+.btn-ghost {
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--blue-600);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.btn-ghost:hover { text-decoration: underline; }
+.btn-sm { padding: 7px 12px; font-size: 12.5px; border-radius: 7px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px;
+}
+.chip-blue { background: var(--sky-100); color: var(--blue-600); }
+.chip-navy { background: rgba(11,37,69,0.06); color: var(--navy-900); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+.pill-success { background: var(--success-bg); color: var(--success-fg); }
+.pill-warning { background: var(--warning-bg); color: var(--warning-fg); }
+.pill-error { background: var(--error-bg); color: var(--error-fg); }
+.pill svg { width: 12px; height: 12px; }
+
+/* ===================== Cards ===================== */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ---- Student: browsing hero + window strip ---- */
+.hero-browse {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, var(--navy-950) 0%, var(--navy-900) 60%, var(--navy-800) 100%);
+  border-radius: var(--radius-lg);
+  color: var(--white);
+  padding: 34px 32px;
+}
+.hero-browse .hero-top { max-width: 560px; position: relative; z-index: 1; }
+.hero-browse h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin: 0 0 8px; line-height: 1.3; }
+.hero-browse p { margin: 0; color: #c7d9f5; font-size: 14.5px; line-height: 1.6; }
+.hero-strip {
+  position: absolute; right: -10px; bottom: -10px; top: 18%;
+  width: 46%;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  padding: 10px;
+  opacity: 0.9;
+}
+.hero-strip span { aspect-ratio: 1/1.15; border-radius: 3px; background: rgba(127,176,255,0.08); }
+.hero-strip span.lit { background: var(--sky-400); box-shadow: 0 0 10px 1px rgba(127,176,255,0.55); animation: flicker 5s ease-in-out infinite; }
+@keyframes flicker { 0%,100%{opacity:1;} 45%{opacity:.55;} 55%{opacity:.9;} }
+@media (prefers-reduced-motion: reduce) { .hero-strip span.lit { animation: none; } }
+@media (max-width: 760px) { .hero-strip { display: none; } }
+
+/* ---- Filter bar ---- */
+.filter-bar {
+  display: flex; flex-wrap: wrap; align-items: end; gap: 14px;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 16px 18px; margin-top: -20px; position: relative; z-index: 2;
+  box-shadow: 0 10px 30px -18px rgba(11,37,69,0.35);
+}
+.filter-field { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+.filter-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.filter-field select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--sky-100); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none;
+}
+.filter-field select:focus-visible { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18); }
+.filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* ---- Room grid ---- */
+.room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 20px; }
+@media (max-width: 980px) { .room-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .room-grid { grid-template-columns: 1fr; } }
+
+.room-card { overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s ease, transform .15s ease; }
+.room-card:hover { box-shadow: 0 14px 34px -20px rgba(11,37,69,0.4); transform: translateY(-2px); }
+.room-photo {
+  height: 130px;
+  background: linear-gradient(135deg, var(--sky-100), #dbe9ff);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--sky-400);
+  position: relative;
+}
+.room-photo svg { width: 34px; height: 34px; }
+/* ===================== Booking modal ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg, 14px);
+  max-width: 420px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 18px; font-size: 13px; color: var(--slate-600); }
+.occupant-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.occupant-option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+}
+.occupant-option.selected { border-color: var(--blue-600); background: var(--sky-100); }
+.occupant-option input[type="radio"] { margin-top: 3px; }
+.occupant-option .opt-title { font-weight: 600; font-size: 13.5px; }
+.occupant-option .opt-desc { font-size: 12px; color: var(--slate-600); margin-top: 2px; }
+.extra-occupant-fields { display: none; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.extra-occupant-fields.show { display: flex; }
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.form-field input, .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.form-field input:focus-visible, .form-field select:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.extra-occupant-fields .form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.extra-occupant-fields .form-field input,
+.extra-occupant-fields .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+
+.room-photo .avail-badge {
+  position: absolute; top: 10px; right: 10px;
+}
+.room-body { padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.room-title-row { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.room-title { font-family: var(--font-display); font-size: 15.5px; font-weight: 600; margin: 0; }
+.room-block { font-size: 12.5px; color: var(--slate-600); margin: 2px 0 0; }
+.room-meta { display: flex; gap: 14px; font-size: 12.5px; color: var(--slate-600); }
+.room-meta span { display: flex; align-items: center; gap: 5px; }
+.room-meta svg { width: 14px; height: 14px; color: var(--slate-400); }
+.room-fee { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--navy-900); }
+.room-fee small { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--slate-600); }
+.room-footer { display: flex; gap: 8px; margin-top: auto; }
+.room-footer .btn-secondary, .room-footer .btn-primary { flex: 1; text-align: center; }
+
+/* ---- Student: booked status ---- */
+.status-hero {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 28px 30px; display: flex; gap: 28px; flex-wrap: wrap; align-items: center;
+  position: relative; overflow: hidden;
+}
+.status-hero::before {
+  content: ""; position: absolute; inset: 0; width: 6px; background: var(--success-fg);
+}
+.status-left { flex: 1; min-width: 260px; }
+.status-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--slate-600); margin: 0 0 6px; }
+.status-room { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; }
+.status-meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13.5px; color: var(--slate-600); margin-top: 6px; }
+.status-meta-row strong { color: var(--navy-900); }
+.status-actions { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .quick-actions { grid-template-columns: repeat(2, 1fr); } }
+.quick-action {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  padding: 18px; text-align: left; cursor: pointer;
+}
+.quick-action .qa-icon {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--sky-100); color: var(--blue-600);
+  display: flex; align-items: center; justify-content: center;
+}
+.quick-action .qa-icon svg { width: 19px; height: 19px; }
+.quick-action strong { font-size: 14px; }
+.quick-action span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+.timeline { display: flex; flex-direction: column; }
+.timeline-item { display: flex; gap: 14px; padding: 0 0 22px; position: relative; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot-col { display: flex; flex-direction: column; align-items: center; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--blue-600); flex-shrink: 0; margin-top: 3px; }
+.timeline-item.done .timeline-dot { background: var(--success-fg); }
+.timeline-line { width: 2px; flex: 1; background: var(--border); margin-top: 4px; }
+.timeline-item:last-child .timeline-line { display: none; }
+.timeline-content strong { font-size: 13.5px; display: block; }
+.timeline-content span { font-size: 12.5px; color: var(--slate-600); }
+
+/* ---- Admin dashboard ---- */
+.dash-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.dash-hero h1 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 6px; }
+.dash-hero p { margin: 0; font-size: 13.5px; color: var(--slate-600); }
+.semester-select {
+  padding: 9px 12px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 980px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
+.stat-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.stat-card .stat-label { font-size: 12.5px; color: var(--slate-600); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.stat-card .stat-label svg { width: 15px; height: 15px; color: var(--slate-400); }
+.stat-card .stat-value { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+.stat-card .stat-sub { font-size: 12px; color: var(--slate-600); }
+.stat-card.attention .stat-value { color: var(--warning-fg); }
+
+.occ-panel { display: flex; gap: 22px; align-items: center; padding: 20px 22px; margin-top: 14px; flex-wrap: wrap; }
+.occ-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; width: 210px; }
+.occ-grid span { aspect-ratio: 1/1; border-radius: 3px; background: var(--sky-100); }
+.occ-grid span.lit { background: var(--blue-600); }
+.occ-copy strong.big { font-family: var(--font-display); font-size: 28px; display: block; }
+.occ-copy p { margin: 4px 0 0; font-size: 13px; color: var(--slate-600); max-width: 320px; }
+
+.request-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.request-row {
+  display: flex; align-items: center; gap: 16px; padding: 15px 18px;
+}
+.request-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sky-100); color: var(--blue-600);
+}
+.request-icon svg { width: 19px; height: 19px; }
+.request-main { flex: 1; min-width: 0; }
+.request-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.request-title { font-size: 14px; font-weight: 600; }
+.request-sub { font-size: 12.5px; color: var(--slate-600); margin-top: 3px; }
+.request-time { font-size: 12px; color: var(--slate-400); white-space: nowrap; }
+.request-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 52px 24px; gap: 12px; margin-top: 16px;
+}
+.empty-state .empty-icon {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--success-bg); color: var(--success-fg);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.empty-state .empty-icon svg { width: 26px; height: 26px; }
+.empty-state h3 { font-family: var(--font-display); font-size: 17px; margin: 0; }
+.empty-state p { margin: 0; font-size: 13.5px; color: var(--slate-600); max-width: 380px; }
+.empty-state .empty-actions { display: flex; gap: 10px; margin-top: 10px; }
+
+.two-col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .two-col { grid-template-columns: 1fr; } }
+.side-card { padding: 20px 20px 22px; }
+.side-card h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; }
+.side-card p.hint { margin: 0 0 16px; font-size: 12.5px; color: var(--slate-600); }
+.mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.mini-stat-row:last-child { border-bottom: none; }
+.mini-stat-row strong { font-family: var(--font-display); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div id="studentApp" class="app">
+  <header class="topnav">
+    <div class="topnav-inner">
+      <div class="brand-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>HostelEase</span>
+      </div>
+      <span class="eyebrow-chip">Student Portal</span>
+      <nav class="nav-links">
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html" class="current">Browse rooms</a>
+        <a href="student-my-booking.html">My booking</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
+      </nav>
+      <div class="nav-right">
+        <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none;"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></a>
+      <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="studentNotBooked" class="view">
+      <div class="hero-browse">
+        <div class="hero-top">
+          <h1>Find your room for Semester 1, 2026/27</h1>
+          <p>You haven't submitted a booking yet. Compare rooms across every block, check facilities and fees, then apply in a few minutes.</p>
+        </div>
+        <div class="hero-strip" id="heroStrip" aria-hidden="true"></div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label for="fGender">Gender</label>
+          <select id="fGender"><option value="">All</option><option value="Female only">Female only</option><option value="Male only">Male only</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="fType">Room type</label>
+          <select id="fType"><option value="">All types</option><option value="Single Room">Single Room</option><option value="Master Room">Master Room</option><option value="Balcony Room">Balcony Room</option><option value="Middle Room">Middle Room</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="fBlock">Hostel block</label>
+          <select id="fBlock"><option value="">All blocks</option><option>Block A</option><option>Block B</option><option>Block C</option><option>Block D</option></select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-secondary" id="resetFiltersBtn">Reset filters</button>
+          <button class="btn-primary" id="searchBtn">Search</button>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <h2 id="roomCountHeading">Loading rooms…</h2>
+          <p>Sorted by availability. Tap a room to view photos and facilities.</p>
+        </div>
+      </div>
+
+      <div class="room-grid" id="roomGrid">
+        <p style="color:var(--slate-600);">Loading available rooms…</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="bookingModal" hidden>
+  <div class="modal-card">
+    <h3 id="modalTitle">Book this room</h3>
+    <p class="modal-sub" id="modalSub">Choose how many people will stay in this room.</p>
+
+    <div class="modal-error" id="modalError" role="alert"></div>
+
+    <div class="form-field">
+      <label for="moveInDate">Move-in date</label>
+      <input type="date" id="moveInDate" required>
+    </div>
+    <div class="form-field">
+      <label for="moveOutDate">Move-out date</label>
+      <input type="date" id="moveOutDate" required>
+      <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
+    </div>
+
+    <div class="occupant-options" id="occupantOptions">
+      <label class="occupant-option selected" data-count="1">
+        <input type="radio" name="occupantCount" value="1" checked>
+        <div>
+          <div class="opt-title">1 occupant</div>
+          <div class="opt-desc">Just me.</div>
+        </div>
+      </label>
+      <label class="occupant-option" data-count="2">
+        <input type="radio" name="occupantCount" value="2">
+        <div>
+          <div class="opt-title">2 occupants (+RM50/month)</div>
+          <div class="opt-desc">Bring a roommate into this booking.</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="extra-occupant-fields" id="extraOccupantFields">
+      <div class="form-field">
+        <label for="extraName">2nd occupant's full name</label>
+        <input type="text" id="extraName" placeholder="Required">
+      </div>
+      <div class="form-field">
+        <label for="extraEmail">2nd occupant's university email</label>
+        <input type="email" id="extraEmail" placeholder="Required">
+      </div>
+      <div class="form-field">
+        <label for="extraStudentId">2nd occupant's student ID</label>
+        <input type="text" id="extraStudentId" placeholder="e.g. SD123456 — Required">
+      </div>
+      <div class="form-field">
+        <label for="extraGender">2nd occupant's gender</label>
+        <select id="extraGender">
+          <option value="" selected disabled>Select gender — Required</option>
+          <option value="Female">Female</option>
+          <option value="Male">Male</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="modalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="modalConfirmBtn">Confirm booking</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const roomGrid = document.getElementById('roomGrid');
+  const roomCountHeading = document.getElementById('roomCountHeading');
+  const fGender = document.getElementById('fGender');
+  const fType = document.getElementById('fType');
+  const fBlock = document.getElementById('fBlock');
+
+  function getToken() {
+    return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
+  }
+
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+  }
+
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {
+      // Non-fatal — the rest of the page still works without the name shown.
+    }
+  }
+  loadProfileChip();
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try {
+      if (token) {
+        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      }
+    } catch (err) {
+      // Even if the server call fails (e.g. offline), still clear the
+      // local session so the user is signed out on this device.
+    }
+    window.localStorage.removeItem('access_token');
+    window.localStorage.removeItem('refresh_token');
+    window.localStorage.removeItem('user');
+    window.sessionStorage.removeItem('access_token');
+    window.sessionStorage.removeItem('refresh_token');
+    window.sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  function roomCardHTML(room) {
+    const badgeClass = room.is_available ? 'pill-success' : 'pill-error';
+    const badgeText = room.is_available ? 'Available' : 'Booked';
+    const occupancyText = room.capacity > 1 ? `Up to ${room.capacity} pax` : '1 pax';
+    const feeNote = room.capacity > 1 ? `<small> / month (+RM50 for 2nd occupant)</small>` : `<small> / month</small>`;
+    return `
+      <div class="room-card card">
+        <div class="room-photo">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="avail-badge pill ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="room-body">
+          <div class="room-title-row">
+            <div><p class="room-title">${room.room_type}</p><p class="room-block">${room.block_name} · Level ${room.level}</p></div>
+          </div>
+          <div class="room-meta">
+            <span>${occupancyText}</span>
+            <span>${room.gender_policy}</span>
+          </div>
+          <div class="room-fee">RM ${room.fee_monthly.toFixed(0)}${feeNote}</div>
+          <div class="room-footer">
+            <button class="btn-secondary btn-sm" type="button" data-detail-room-id="${room.id}" style="text-decoration:none; display:inline-flex; justify-content:center; align-items:center;">View details</button>
+            ${room.is_available
+              ? `<button class="btn-primary btn-sm" data-room-id="${room.id}" data-mode="book" data-capacity="${room.capacity}" data-room-type="${room.room_type}" data-gender-policy="${room.gender_policy}">Book now</button>`
+              : `<button class="btn-secondary btn-sm" data-room-id="${room.id}" data-mode="waitlist" data-capacity="${room.capacity}" data-room-type="${room.room_type}" data-gender-policy="${room.gender_policy}">Join waitlist</button>`}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function loadRooms() {
+    roomGrid.innerHTML = '<p style="color:var(--slate-600);">Loading available rooms…</p>';
+    const params = new URLSearchParams();
+    if (fGender.value) params.set('gender', fGender.value);
+    if (fType.value) params.set('room_type', fType.value);
+    if (fBlock.value) params.set('block', fBlock.value);
+
+    try {
+      const res = await fetch('/rooms?' + params.toString());
+      if (!res.ok) throw new Error('Failed to load rooms');
+      const rooms = await res.json();
+
+      roomCountHeading.textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} available`;
+      roomGrid.innerHTML = rooms.length
+        ? rooms.map(roomCardHTML).join('')
+        : '<p style="color:var(--slate-600);">No rooms match these filters.</p>';
+
+      roomGrid.querySelectorAll('[data-room-id]').forEach((btn) => {
+        btn.addEventListener('click', () => bookRoom(Number(btn.dataset.roomId), Number(btn.dataset.capacity), btn.dataset.roomType, btn.dataset.genderPolicy, btn.dataset.mode));
+      });
+
+      roomGrid.querySelectorAll('[data-detail-room-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          window.location.href = `/student-room-details.html?room_id=${btn.dataset.detailRoomId}`;
+        });
+      });
+    } catch (err) {
+      roomGrid.innerHTML = '<p style="color:var(--error-fg);">Could not load rooms. Please try again.</p>';
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Booking modal (replaces native confirm()/prompt() dialogs — some
+  // browsers throttle or silently block back-to-back synchronous
+  // dialogs, which made the old flow look like it did nothing after
+  // clicking OK).
+  // ---------------------------------------------------------------
+  const bookingModal = document.getElementById('bookingModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalError = document.getElementById('modalError');
+  const occupantOptions = document.getElementById('occupantOptions');
+  const extraOccupantFields = document.getElementById('extraOccupantFields');
+  const extraNameInput = document.getElementById('extraName');
+  const extraEmailInput = document.getElementById('extraEmail');
+  const extraStudentIdInput = document.getElementById('extraStudentId');
+  const extraGenderInput = document.getElementById('extraGender');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+  let pendingRoomId = null;
+  let pendingMode = 'book';
+
+  const moveInDateInput = document.getElementById('moveInDate');
+  const moveOutDateInput = document.getElementById('moveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  moveInDateInput.addEventListener('change', () => {
+    if (!moveInDateInput.value) return;
+    moveOutDateInput.min = isoDatePlusDays(moveInDateInput.value, 30);
+    if (moveOutDateInput.value && moveOutDateInput.value < moveOutDateInput.min) {
+      moveOutDateInput.value = moveOutDateInput.min;
+    }
+  });
+
+  function openBookingModal(roomId, capacity, roomType, genderPolicy, mode) {
+    pendingRoomId = roomId;
+    pendingMode = mode || 'book';
+    modalError.classList.remove('show');
+    modalError.textContent = '';
+    extraNameInput.value = '';
+    extraEmailInput.value = '';
+    extraStudentIdInput.value = '';
+    extraGenderInput.value = '';
+
+    const today = new Date().toISOString().slice(0, 10);
+    moveInDateInput.min = today;
+    moveInDateInput.value = today;
+    moveOutDateInput.min = isoDatePlusDays(today, 30);
+    moveOutDateInput.value = isoDatePlusDays(today, 120); // default: one semester (~4 months)
+
+    const genderNote = genderPolicy && genderPolicy !== 'Mixed block' ? ` This room is ${genderPolicy.toLowerCase()}.` : '';
+    const actionVerb = pendingMode === 'waitlist' ? 'Join the waitlist for' : 'Book';
+    modalConfirmBtn.textContent = pendingMode === 'waitlist' ? 'Join waitlist' : 'Confirm booking';
+    const waitlistNote = pendingMode === 'waitlist'
+      ? ' This room is currently taken — choose the move-in date you\'d want if it opens up.'
+      : '';
+
+    if (capacity <= 1) {
+      // Single Room: nothing to choose, just confirm.
+      modalTitle.textContent = `${actionVerb} ${roomType}`;
+      modalSub.textContent = `This room is for 1 occupant.${genderNote}${waitlistNote}`;
+      occupantOptions.style.display = 'none';
+      extraOccupantFields.classList.remove('show');
+    } else {
+      modalTitle.textContent = `${actionVerb} ${roomType}`;
+      modalSub.textContent = `This room can fit up to ${capacity} people.${genderNote}${waitlistNote}`;
+      occupantOptions.style.display = 'flex';
+      occupantOptions.querySelector('input[value="1"]').checked = true;
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el =>
+        el.classList.toggle('selected', el.dataset.count === '1'));
+      extraOccupantFields.classList.remove('show');
+    }
+
+    bookingModal.hidden = false;
+  }
+
+  function closeBookingModal() {
+    bookingModal.hidden = true;
+    pendingRoomId = null;
+  }
+
+  occupantOptions.querySelectorAll('.occupant-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.remove('selected'));
+      option.classList.add('selected');
+      option.querySelector('input[type="radio"]').checked = true;
+      extraOccupantFields.classList.toggle('show', option.dataset.count === '2');
+    });
+  });
+
+  modalCancelBtn.addEventListener('click', closeBookingModal);
+  bookingModal.addEventListener('click', (e) => {
+    if (e.target === bookingModal) closeBookingModal();
+  });
+
+  modalConfirmBtn.addEventListener('click', async () => {
+    if (!pendingRoomId) return;
+
+    const moveIn = moveInDateInput.value;
+    const moveOut = moveOutDateInput.value;
+    if (!moveIn || !moveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const daysBooked = (new Date(moveOut) - new Date(moveIn)) / (1000 * 60 * 60 * 24);
+    if (daysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
+    const selectedCount = occupantOptions.style.display === 'none'
+      ? 1
+      : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
+
+    let extraOccupantName = null;
+    let extraOccupantEmail = null;
+    let extraOccupantStudentId = null;
+    let extraOccupantGender = null;
+
+    if (selectedCount === 2) {
+      const name = extraNameInput.value.trim();
+      const email = extraEmailInput.value.trim();
+      const studentId = extraStudentIdInput.value.trim().toUpperCase();
+      const gender = extraGenderInput.value;
+
+      if (!name) {
+        modalError.textContent = "The 2nd occupant's full name is required.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        modalError.textContent = "Enter a valid email for the 2nd occupant.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!/^[A-Z]{2}\d{6}$/.test(studentId)) {
+        modalError.textContent = "2nd occupant's student ID must be 2 letters + 6 digits, e.g. SD123456.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!gender) {
+        modalError.textContent = "Select the 2nd occupant's gender — some rooms are gender-restricted.";
+        modalError.classList.add('show');
+        return;
+      }
+
+      extraOccupantName = name;
+      extraOccupantEmail = email;
+      extraOccupantStudentId = studentId;
+      extraOccupantGender = gender;
+    }
+
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    modalConfirmBtn.disabled = true;
+    try {
+      // Safety net: if the room became available since the page loaded
+      // (someone else cancelled), book it directly instead of queueing.
+      let effectiveMode = pendingMode;
+      if (effectiveMode === 'waitlist') {
+        try {
+          const checkRes = await fetch(`/rooms/${pendingRoomId}`);
+          if (checkRes.ok) {
+            const roomNow = await checkRes.json();
+            if (roomNow.is_available) effectiveMode = 'book';
+          }
+        } catch (err) {
+          // If the check fails, fall back to the originally chosen mode.
+        }
+      }
+
+      const payload = {
+        occupant_count: selectedCount,
+        extra_occupant_name: extraOccupantName,
+        extra_occupant_email: extraOccupantEmail,
+        extra_occupant_student_id: extraOccupantStudentId,
+        extra_occupant_gender: extraOccupantGender,
+        move_in_date: moveIn,
+        move_out_date: moveOut,
+      };
+
+      const url = effectiveMode === 'waitlist' ? `/waitlist/${pendingRoomId}` : '/bookings';
+      if (effectiveMode !== 'waitlist') {
+        payload.room_id = pendingRoomId;
+        payload.semester = 'Semester 1, 2026/27';
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        modalError.textContent = body.detail || (effectiveMode === 'waitlist' ? 'Could not join the waitlist.' : 'Could not submit booking.');
+        modalError.classList.add('show');
+        return;
+      }
+      window.location.href = 'student-my-booking.html';
+    } catch (err) {
+      modalError.textContent = 'Network error — please try again.';
+      modalError.classList.add('show');
+    } finally {
+      modalConfirmBtn.disabled = false;
+    }
+  });
+
+  function bookRoom(roomId, capacity, roomType, genderPolicy, mode) {
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+    openBookingModal(roomId, capacity, roomType, genderPolicy, mode);
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', (e) => { e.preventDefault(); loadRooms(); });
+  document.getElementById('resetFiltersBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    fGender.value = ''; fType.value = ''; fBlock.value = '';
+    loadRooms();
+  });
+
+  loadRooms();
+
+  function buildStrip(el, count, litRatio) {
+    for (let i = 0; i < count; i++) {
+      const w = document.createElement('span');
+      if (Math.random() < litRatio) {
+        w.classList.add('lit');
+        w.style.animationDelay = (Math.random() * 6).toFixed(2) + 's';
+      }
+      el.appendChild(w);
+    }
+  }
+  buildStrip(document.getElementById('heroStrip'), 21, 0.4);
+</script>
+</body>
+</html>

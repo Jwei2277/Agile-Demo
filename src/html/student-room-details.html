@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelEase — Room details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-950: #071a33;
+  --navy-900: #0b2545;
+  --navy-800: #123566;
+  --blue-600: #2f6fed;
+  --blue-500: #4f86f7;
+  --sky-400: #7fb0ff;
+  --sky-100: #eaf2ff;
+  --white: #ffffff;
+  --slate-600: #5b6b82;
+  --slate-400: #8fa0b8;
+  --border: #dce6f5;
+  --success-bg: #e8f7ef;
+  --success-fg: #1f8a55;
+  --error-bg: #fdeceb;
+  --error-fg: #c8352d;
+  --warning-bg: #fff4e0;
+  --warning-fg: #b3760b;
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--navy-900);
+  background: var(--sky-100);
+}
+a { color: inherit; }
+button { font-family: inherit; }
+.topnav {
+  background: var(--navy-900);
+  color: var(--white);
+}
+.topnav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.brand-mark svg { color: var(--sky-400); flex-shrink: 0; }
+.eyebrow-chip {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sky-400);
+  border: 1px solid rgba(127,176,255,0.35);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex;
+  gap: 22px;
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c7d9f5;
+  flex: 1;
+}
+.nav-links a { text-decoration: none; }
+.nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a.nav-disabled { color: #6d84a8; opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+.nav-links a:hover { color: var(--white); }
+main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue-600);
+  text-decoration: none;
+  margin-bottom: 18px;
+}
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.hero-card {
+  background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 70%, var(--navy-800) 100%);
+  color: var(--white);
+  padding: 28px 30px;
+  display: grid;
+  gap: 16px;
+}
+.hero-card h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin: 0;
+}
+.hero-card p { margin: 0; color: #c7d9f5; line-height: 1.6; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+.detail-panel { padding: 24px; }
+.detail-panel h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0 0 14px;
+}
+.detail-list {
+  display: grid;
+  gap: 12px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+.detail-row strong { color: var(--navy-900); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+.pill-success { background: var(--success-bg); color: var(--success-fg); }
+.pill-error { background: var(--error-bg); color: var(--error-fg); }
+.pill-warning { background: var(--warning-bg); color: var(--warning-fg); }
+.amenities { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.amenity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--sky-100);
+  color: var(--blue-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+.btn-primary, .btn-secondary {
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-primary { color: var(--white); background: var(--blue-600); }
+.btn-secondary { color: var(--navy-900); background: var(--white); border: 1px solid var(--border); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.status-card { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.status-card .price { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+.status-card p { margin: 0; color: var(--slate-600); line-height: 1.6; }
+.empty-state { padding: 24px; color: var(--slate-600); }
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+/* booking modal styles */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg, 14px);
+  max-width: 420px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 18px; font-size: 13px; color: var(--slate-600); }
+.occupant-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.occupant-option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+}
+.occupant-option.selected { border-color: var(--blue-600); background: var(--sky-100); }
+.occupant-option input[type="radio"] { margin-top: 3px; }
+.occupant-option .opt-title { font-weight: 600; font-size: 13.5px; }
+.occupant-option .opt-desc { font-size: 12px; color: var(--slate-600); margin-top: 2px; }
+.extra-occupant-fields { display: none; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.extra-occupant-fields.show { display: flex; }
+.extra-occupant-fields .form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.extra-occupant-fields .form-field input,
+.extra-occupant-fields .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.form-field input, .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.form-field input:focus-visible, .form-field select:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="topnav-inner">
+    <div class="brand-mark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>HostelEase</span>
+    </div>
+    <span class="eyebrow-chip">Student Portal</span>
+    <nav class="nav-links">
+      <a href="student-home.html">Home</a>
+      <a href="student-browse-hostels.html" class="current">Browse rooms</a>
+      <a href="student-my-booking.html">My booking</a>
+      <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+      <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <a class="back-link" href="/student-browse-hostels.html">← Back to browse rooms</a>
+
+  <div class="modal-overlay" id="bookingModal" hidden>
+    <div class="modal-card">
+      <h3 id="modalTitle">Book this room</h3>
+      <p class="modal-sub" id="modalSub">Choose how many people will stay in this room.</p>
+      <div class="modal-error" id="modalError" role="alert"></div>
+      <div class="form-field">
+        <label for="moveInDate">Move-in date</label>
+        <input type="date" id="moveInDate" required>
+      </div>
+      <div class="form-field">
+        <label for="moveOutDate">Move-out date</label>
+        <input type="date" id="moveOutDate" required>
+        <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
+      </div>
+      <div class="occupant-options" id="occupantOptions">
+        <label class="occupant-option selected" data-count="1">
+          <input type="radio" name="occupantCount" value="1" checked>
+          <div>
+            <div class="opt-title">1 occupant</div>
+            <div class="opt-desc">Just me.</div>
+          </div>
+        </label>
+        <label class="occupant-option" data-count="2">
+          <input type="radio" name="occupantCount" value="2">
+          <div>
+            <div class="opt-title">2 occupants (+RM50/month)</div>
+            <div class="opt-desc">Bring a roommate into this booking.</div>
+          </div>
+        </label>
+      </div>
+      <div class="extra-occupant-fields" id="extraOccupantFields">
+        <div class="form-field">
+          <label for="extraName">2nd occupant's full name</label>
+          <input type="text" id="extraName" placeholder="Required">
+        </div>
+        <div class="form-field">
+          <label for="extraEmail">2nd occupant's university email</label>
+          <input type="email" id="extraEmail" placeholder="Required">
+        </div>
+        <div class="form-field">
+          <label for="extraStudentId">2nd occupant's student ID</label>
+          <input type="text" id="extraStudentId" placeholder="e.g. SD123456 — Required">
+        </div>
+        <div class="form-field">
+          <label for="extraGender">2nd occupant's gender</label>
+          <select id="extraGender">
+            <option value="" selected disabled>Select gender — Required</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary btn-sm" id="modalCancelBtn" type="button">Cancel</button>
+        <button class="btn-primary btn-sm" id="modalConfirmBtn" type="button">Confirm booking</button>
+      </div>
+    </div>
+  </div>
+  <section id="detailsContent" class="card hero-card">
+    <div class="pill pill-warning">Room overview</div>
+    <h1 id="roomTitle">Loading room details…</h1>
+    <p id="roomSummary">Please wait while we load the available details for this room.</p>
+  </section>
+
+  <div class="detail-grid">
+    <section class="card detail-panel">
+      <h2>Room information</h2>
+      <div class="detail-list" id="detailList">
+        <div class="empty-state">Loading room information…</div>
+      </div>
+      <div class="actions">
+        <a class="btn-secondary" href="/student-browse-hostels.html">Explore more rooms</a>
+        <button class="btn-primary" id="bookFromDetailsBtn" type="button">Book this room</button>
+      </div>
+    </section>
+
+    <aside class="card status-card">
+      <div id="availabilityBadge" class="pill pill-warning">Checking availability…</div>
+      <div class="price" id="roomFee">RM —</div>
+      <p id="roomStatus">We are retrieving the live room availability and fee details.</p>
+      <div class="amenities" id="amenitiesList"></div>
+    </aside>
+  </div>
+</main>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const roomId = params.get('room_id');
+  const detailsContent = document.getElementById('detailsContent');
+  const roomTitle = document.getElementById('roomTitle');
+  const bookFromDetailsBtn = document.getElementById('bookFromDetailsBtn');
+  const roomSummary = document.getElementById('roomSummary');
+  const detailList = document.getElementById('detailList');
+  const availabilityBadge = document.getElementById('availabilityBadge');
+  const roomFee = document.getElementById('roomFee');
+  const roomStatus = document.getElementById('roomStatus');
+  const amenitiesList = document.getElementById('amenitiesList');
+
+  function getToken() {
+    return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
+  }
+
+  let currentRoom = null;
+  const bookingModal = document.getElementById('bookingModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalError = document.getElementById('modalError');
+  const occupantOptions = document.getElementById('occupantOptions');
+  const extraOccupantFields = document.getElementById('extraOccupantFields');
+  const extraNameInput = document.getElementById('extraName');
+  const extraEmailInput = document.getElementById('extraEmail');
+  const extraStudentIdInput = document.getElementById('extraStudentId');
+  const extraGenderInput = document.getElementById('extraGender');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const moveInDateInput = document.getElementById('moveInDate');
+  const moveOutDateInput = document.getElementById('moveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  moveInDateInput.addEventListener('change', () => {
+    if (!moveInDateInput.value) return;
+    moveOutDateInput.min = isoDatePlusDays(moveInDateInput.value, 30);
+    if (moveOutDateInput.value && moveOutDateInput.value < moveOutDateInput.min) {
+      moveOutDateInput.value = moveOutDateInput.min;
+    }
+  });
+
+  let pendingRoomId = null;
+  let pendingMode = 'book';
+
+  function openBookingModal(room, mode) {
+    pendingRoomId = room.id;
+    pendingMode = mode || 'book';
+    currentRoom = room;
+    modalError.classList.remove('show');
+    modalError.textContent = '';
+    extraNameInput.value = '';
+    extraEmailInput.value = '';
+    extraStudentIdInput.value = '';
+    extraGenderInput.value = '';
+
+    const today = new Date().toISOString().slice(0, 10);
+    moveInDateInput.min = today;
+    moveInDateInput.value = today;
+    moveOutDateInput.min = isoDatePlusDays(today, 30);
+    moveOutDateInput.value = isoDatePlusDays(today, 120);
+
+    const genderNote = room.gender_policy && room.gender_policy !== 'Mixed block' ? ` This room is ${room.gender_policy.toLowerCase()}.` : '';
+    const actionVerb = pendingMode === 'waitlist' ? 'Join the waitlist for' : 'Book';
+    modalConfirmBtn.textContent = pendingMode === 'waitlist' ? 'Join waitlist' : 'Confirm booking';
+    const waitlistNote = pendingMode === 'waitlist'
+      ? ' This room is currently taken — choose the move-in date you\'d want if it opens up.'
+      : '';
+    if (room.capacity <= 1) {
+      modalTitle.textContent = `${actionVerb} ${room.room_type}`;
+      modalSub.textContent = `This room is for 1 occupant.${genderNote}${waitlistNote}`;
+      occupantOptions.style.display = 'none';
+      extraOccupantFields.classList.remove('show');
+    } else {
+      modalTitle.textContent = `${actionVerb} ${room.room_type}`;
+      modalSub.textContent = `This room can fit up to ${room.capacity} people.${genderNote}${waitlistNote}`;
+      occupantOptions.style.display = 'flex';
+      occupantOptions.querySelector('input[value="1"]').checked = true;
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.toggle('selected', el.dataset.count === '1'));
+      extraOccupantFields.classList.remove('show');
+    }
+    bookingModal.hidden = false;
+  }
+
+  function closeBookingModal() {
+    bookingModal.hidden = true;
+    pendingRoomId = null;
+  }
+
+  occupantOptions.querySelectorAll('.occupant-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.remove('selected'));
+      option.classList.add('selected');
+      option.querySelector('input[type="radio"]').checked = true;
+      extraOccupantFields.classList.toggle('show', option.dataset.count === '2');
+    });
+  });
+
+  modalCancelBtn.addEventListener('click', closeBookingModal);
+  bookingModal.addEventListener('click', (e) => {
+    if (e.target === bookingModal) closeBookingModal();
+  });
+
+  modalConfirmBtn.addEventListener('click', async () => {
+    if (!pendingRoomId) return;
+
+    const moveIn = moveInDateInput.value;
+    const moveOut = moveOutDateInput.value;
+    if (!moveIn || !moveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const daysBooked = (new Date(moveOut) - new Date(moveIn)) / (1000 * 60 * 60 * 24);
+    if (daysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
+    const selectedCount = occupantOptions.style.display === 'none'
+      ? 1
+      : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
+
+    let extraOccupantName = null;
+    let extraOccupantEmail = null;
+    let extraOccupantStudentId = null;
+    let extraOccupantGender = null;
+
+    if (selectedCount === 2) {
+      const name = extraNameInput.value.trim();
+      const email = extraEmailInput.value.trim();
+      const studentId = extraStudentIdInput.value.trim().toUpperCase();
+      const gender = extraGenderInput.value;
+
+      if (!name) {
+        modalError.textContent = 'The 2nd occupant\'s full name is required.';
+        modalError.classList.add('show');
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        modalError.textContent = 'Enter a valid email for the 2nd occupant.';
+        modalError.classList.add('show');
+        return;
+      }
+      if (!/^[A-Z]{2}\d{6}$/.test(studentId)) {
+        modalError.textContent = '2nd occupant\'s student ID must be 2 letters + 6 digits, e.g. SD123456.';
+        modalError.classList.add('show');
+        return;
+      }
+      if (!gender) {
+        modalError.textContent = 'Select the 2nd occupant\'s gender — some rooms are gender-restricted.';
+        modalError.classList.add('show');
+        return;
+      }
+      extraOccupantName = name;
+      extraOccupantEmail = email;
+      extraOccupantStudentId = studentId;
+      extraOccupantGender = gender;
+    }
+
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    modalConfirmBtn.disabled = true;
+    try {
+      let effectiveMode = pendingMode;
+      if (effectiveMode === 'waitlist') {
+        try {
+          const checkRes = await fetch(`/rooms/${pendingRoomId}`);
+          if (checkRes.ok) {
+            const roomNow = await checkRes.json();
+            if (roomNow.is_available) effectiveMode = 'book';
+          }
+        } catch (err) {
+          // Fall back to the originally chosen mode.
+        }
+      }
+
+      const payload = {
+        occupant_count: selectedCount,
+        extra_occupant_name: extraOccupantName,
+        extra_occupant_email: extraOccupantEmail,
+        extra_occupant_student_id: extraOccupantStudentId,
+        extra_occupant_gender: extraOccupantGender,
+        move_in_date: moveIn,
+        move_out_date: moveOut,
+      };
+      const url = effectiveMode === 'waitlist' ? `/waitlist/${pendingRoomId}` : '/bookings';
+      if (effectiveMode !== 'waitlist') {
+        payload.room_id = pendingRoomId;
+        payload.semester = 'Semester 1, 2026/27';
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        modalError.textContent = body.detail || (effectiveMode === 'waitlist' ? 'Could not join the waitlist.' : 'Could not submit booking.');
+        modalError.classList.add('show');
+        return;
+      }
+      window.location.href = 'student-my-booking.html';
+    } catch (err) {
+      modalError.textContent = 'Network error — please try again.';
+      modalError.classList.add('show');
+    } finally {
+      modalConfirmBtn.disabled = false;
+    }
+  });
+
+  async function loadRoomDetails() {
+    if (!roomId) {
+      roomTitle.textContent = 'No room selected';
+      roomSummary.textContent = 'Choose a room from the browse page to view its full details.';
+      detailList.innerHTML = '<div class="empty-state">Please return to the browse rooms page and pick a room.</div>';
+      availabilityBadge.textContent = 'Unavailable';
+      availabilityBadge.className = 'pill pill-warning';
+      roomFee.textContent = 'RM —';
+      roomStatus.textContent = 'No room was selected.';
+      amenitiesList.innerHTML = '';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/rooms/${roomId}`);
+      if (!res.ok) throw new Error('Unable to load room');
+      const room = await res.json();
+      currentRoom = room;
+      roomTitle.textContent = `${room.room_type} · ${room.block_name}`;
+      roomSummary.textContent = `Level ${room.level} · Room ${room.room_number} · ${room.gender_policy}`;
+
+      const statusClass = room.is_available ? 'pill-success' : 'pill-error';
+      const statusText = room.is_available ? 'Available now' : 'Booked';
+      availabilityBadge.className = `pill ${statusClass}`;
+      availabilityBadge.textContent = statusText;
+      roomFee.textContent = `RM ${room.fee_monthly.toFixed(0)}`;
+      roomStatus.textContent = room.is_available
+        ? 'This room is ready for a student booking.'
+        : 'This room is currently occupied and cannot be booked right now.';
+
+      if (room.is_available) {
+        bookFromDetailsBtn.textContent = 'Book this room';
+        bookFromDetailsBtn.onclick = () => {
+          const token = getToken();
+          if (!token) { window.location.href = 'login.html'; return; }
+          openBookingModal(currentRoom, 'book');
+        };
+      } else {
+        bookFromDetailsBtn.textContent = 'Join waitlist';
+        bookFromDetailsBtn.onclick = () => {
+          const token = getToken();
+          if (!token) { window.location.href = 'login.html'; return; }
+          openBookingModal(currentRoom, 'waitlist');
+        };
+      }
+
+      const rows = [
+        ['Block', room.block_name],
+        ['Level', `Level ${room.level}`],
+        ['Room number', room.room_number],
+        ['Room type', room.room_type],
+        ['Capacity', `${room.capacity} occupant${room.capacity > 1 ? 's' : ''}`],
+        ['Gender policy', room.gender_policy],
+        ['Monthly fee', `RM ${room.fee_monthly.toFixed(0)}`],
+      ];
+
+      detailList.innerHTML = rows.map(([label, value]) => `
+        <div class="detail-row">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join('');
+
+      amenitiesList.innerHTML = [
+        'Private study space',
+        'Shared bathroom',
+        'Air-conditioned room',
+        'Wi-Fi access',
+      ].map(item => `<span class="amenity-chip">${item}</span>`).join('');
+    } catch (err) {
+      roomTitle.textContent = 'We could not load this room';
+      roomSummary.textContent = 'Please try again in a moment or return to the browse page.';
+      detailList.innerHTML = '<div class="empty-state">The room details could not be loaded right now.</div>';
+      availabilityBadge.textContent = 'Unavailable';
+      availabilityBadge.className = 'pill pill-warning';
+      roomFee.textContent = 'RM —';
+      roomStatus.textContent = 'The request failed. Please try again.';
+      amenitiesList.innerHTML = '';
+      bookFromDetailsBtn.disabled = true;
+    }
+  }
+
+  loadRoomDetails();
+</script>
+</body>
+</html>
