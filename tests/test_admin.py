@@ -96,6 +96,11 @@ class FakeSupabase:
                         "hostel_blocks": {"name": "Block A"},
                     },
                     "occupant_count": 1,
+                    # admin.py's _list_bookings() reads these as
+                    # row["move_in_date"] / row["move_out_date"] (hard
+                    # indexing, not .get), so the fake row needs them.
+                    "move_in_date": "2025-09-01",
+                    "move_out_date": "2026-01-01",
                 }
             ],
             "maintenance_requests": [

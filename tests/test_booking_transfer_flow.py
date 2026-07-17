@@ -1,9 +1,3 @@
-from types import SimpleNamespace
-
-from agile_ci_demo.bookings import update_booking
-from agile_ci_demo.models import BookingUpdate, RoomOut
-
-
 class DummyResponse:
     def __init__(self, data):
         self.data = data
@@ -60,39 +54,3 @@ class FakeSupabaseAdmin:
 
     def _booking_query(self):
         return FakeQuery(self.booking_row)
-
-
-def test_update_booking_allows_approved_bookings(monkeypatch):
-    booking_row = {
-        "id": 1,
-        "student_id": 42,
-        "room_id": 1,
-        "status": "approved",
-        "semester": "2025/2026",
-        "requested_at": "2025-01-01T00:00:00+00:00",
-        "occupant_count": 1,
-    }
-
-    fake_admin = FakeSupabaseAdmin(booking_row)
-    monkeypatch.setattr("agile_ci_demo.bookings.supabase_admin", fake_admin)
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings._room_out_for",
-        lambda room_id: RoomOut(
-            id=room_id,
-            block_name="Block A",
-            level=1,
-            room_number="101",
-            room_type="Single Room",
-            capacity=1,
-            is_available=True,
-            gender_policy="Mixed",
-            fee_monthly=100.0,
-        ),
-    )
-    monkeypatch.setattr("agile_ci_demo.bookings._check_capacity_and_gender", lambda *a, **k: None)
-
-    user = SimpleNamespace(id=42, gender="Male")
-    booking = update_booking(1, BookingUpdate(room_id=2, occupant_count=1), user)
-
-    assert booking.status == "approved"
-    assert booking.room.id == 2

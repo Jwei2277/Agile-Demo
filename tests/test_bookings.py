@@ -147,6 +147,15 @@ class FakeSupabase:
 # Tests
 # ==========================
 
+# BookingCreate requires move_in_date / move_out_date (bookings.py calls
+# .isoformat() on both when building the insert payload), so every POST
+# /bookings payload below needs them or FastAPI rejects it with a 422
+# before the handler even runs.
+BOOKING_DATES = {
+    "move_in_date": "2025-09-01",
+    "move_out_date": "2026-01-01",
+}
+
 
 def test_create_booking(monkeypatch):
 
@@ -165,6 +174,7 @@ def test_create_booking(monkeypatch):
             "room_id": 1,
             "semester": "Semester 1",
             "occupant_count": 1,
+            **BOOKING_DATES,
         },
     )
 
@@ -188,6 +198,11 @@ def test_get_my_booking(monkeypatch):
             "status": "approved",
             "occupant_count": 1,
             "requested_at": datetime.now(timezone.utc),
+            # _booking_out() reads these as row["move_in_date"] /
+            # row["move_out_date"] (hard indexing, not .get), so they must
+            # be present on the fake row.
+            "move_in_date": "2025-09-01",
+            "move_out_date": "2026-01-01",
         }
     )
 
@@ -233,6 +248,7 @@ def test_create_double_booking_should_fail(monkeypatch):
             "room_id": 1,
             "semester": "Semester 1",
             "occupant_count": 1,
+            **BOOKING_DATES,
         },
     )
 
@@ -287,6 +303,7 @@ def test_invalid_room_booking(monkeypatch):
             "room_id": 999,
             "semester": "Semester 1",
             "occupant_count": 1,
+            **BOOKING_DATES,
         },
     )
 

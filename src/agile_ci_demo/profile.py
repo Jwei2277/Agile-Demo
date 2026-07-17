@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
@@ -32,7 +34,10 @@ def update_profile(data: ProfileUpdate, user: CurrentUser = Depends(get_current_
     supabase_admin.table("profiles").update(updates).eq("id", user.id).execute()
 
     profile_resp = supabase_admin.table("profiles").select("*").eq("id", user.id).limit(1).execute()
-    profile = profile_resp.data[0]
+    if not profile_resp.data:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    profile = cast(dict[str, Any], profile_resp.data[0])
     return CurrentUser(
         id=profile["id"],
         email=profile["email"],

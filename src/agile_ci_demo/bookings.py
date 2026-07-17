@@ -196,7 +196,15 @@ def create_booking(
             detail="You already have an active or pending booking",
         )
 
-    room = _room_out_for(data.room_id)
+    try:
+        room = _room_out_for(data.room_id)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=404,
+            detail="Room not found",
+        )
 
     if not room.is_available:
         raise HTTPException(
@@ -439,7 +447,7 @@ def request_room_transfer(
     if booking["status"] != "approved":
         raise HTTPException(
             status_code=409,
-            detail=("Transfer requests are only " "available for approved bookings"),
+            detail="Transfer requests are only available for approved bookings",
         )
 
     if int(booking["room_id"]) == data.room_id:
@@ -448,7 +456,20 @@ def request_room_transfer(
             detail="Choose a different room for transfer",
         )
 
-    room = _room_out_for(data.room_id)
+    try:
+
+        room = _room_out_for(data.room_id)
+
+    except HTTPException:
+
+        raise
+
+    except Exception:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Room not found",
+        )
 
     if not room.is_available:
         raise HTTPException(
@@ -473,38 +494,48 @@ def request_room_transfer(
 
     requested_at = datetime.now(timezone.utc).isoformat()
 
-    payload = cast(
-        Any,
-        {
-            "booking_id": booking_id,
-            "student_id": user.id,
-            "requested_room_id": data.room_id,
-            "reason": data.reason,
-            "status": "pending",
-            "requested_at": requested_at,
-        },
-    )
+    payload = {
+        "booking_id": booking_id,
+        "student_id": user.id,
+        "requested_room_id": data.room_id,
+        "reason": data.reason,
+        "status": "pending",
+        "requested_at": requested_at,
+    }
 
     insert_resp = supabase.table("room_transfer_requests").insert(payload).execute()
+
     rows = _get_rows(insert_resp.data)
+
     if not rows:
+
         raise HTTPException(
             status_code=400,
-            detail="The transfer request was rejected by the database — please try again.",
+            detail="Could not create transfer request",
         )
+
     row = rows[0]
 
-    # Only record that a transfer is pending — do NOT move the booking to
-    # the new room yet. That happens only once an admin approves it (see
-    # admin._decide_transfer_request). Changing room_id here would free up
-    # the current room and occupy the requested one before anyone signed
-    # off on it, and a rejected request would have no way to undo it.
-    supabase.table("bookings").update({"pending_transfer_room_id": data.room_id}).eq(
-        "id", booking_id
+    # Mark booking as waiting for transfer approval
+    # Keep original room until admin approves
+
+    supabase.table("bookings").update(
+        {
+            "status": "pending",
+            "pending_transfer_room_id": data.room_id,
+        }
+    ).eq(
+        "id",
+        booking_id,
     ).execute()
 
     return TransferRoomRequestOut(
-        id=int(row["id"]),
+        id=int(
+            row.get(
+                "id",
+                0,
+            )
+        ),
         booking_id=int(row["booking_id"]),
         requested_room_id=int(row["requested_room_id"]),
         reason=str(row["reason"]),

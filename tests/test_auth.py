@@ -73,6 +73,10 @@ class FakeAuth:
             ),
         )
 
+    # login() sends OTP for untrusted student devices
+    def sign_in_with_otp(self, data):
+        pass
+
     def get_user(self, token):
 
         if token != "valid-token":
@@ -91,7 +95,13 @@ class FakeAuth:
     def sign_out(self):
         pass
 
-    def reset_password_email(self, email):
+    def verify_otp(self, data):
+        pass
+
+    def resend(self, data):
+        pass
+
+    def reset_password_email(self, email, options=None):
         pass
 
     def update_user(self, data):
@@ -244,22 +254,32 @@ def test_login_with_email(monkeypatch):
 
     fake.auth.users["student@example.com"] = {
         "password": "password123",
-        "user": SimpleNamespace(id="user-123", email="student@example.com"),
+        "user": SimpleNamespace(
+            id="user-123",
+            email="student@example.com",
+        ),
     }
 
     monkeypatch.setattr("agile_ci_demo.auth.supabase", fake)
 
+    monkeypatch.setattr("agile_ci_demo.auth.supabase_admin", FakeSupabaseAdmin())
+
     response = client.post(
-        "/auth/login", json={"identifier": "student@example.com", "password": "password123"}
+        "/auth/login",
+        json={
+            "identifier": "student@example.com",
+            "password": "password123",
+        },
     )
 
     assert response.status_code == 200
 
     body = response.json()
 
-    assert body["access_token"] == "fake-access-token"
+    # New login flow:
+    # student + unknown device => OTP required
 
-    assert body["refresh_token"]
+    assert body["otp_required"] is True
 
 
 # ============================================================
@@ -277,7 +297,10 @@ def test_get_current_user(monkeypatch):
 
     monkeypatch.setattr("agile_ci_demo.deps.supabase_admin", admin)
 
-    response = client.get("/auth/me", headers={"Authorization": "Bearer valid-token"})
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer valid-token"},
+    )
 
     assert response.status_code == 200
 
@@ -306,7 +329,10 @@ def test_logout(monkeypatch):
 
     monkeypatch.setattr("agile_ci_demo.auth.supabase", fake)
 
-    response = client.post("/auth/logout", headers={"Authorization": "Bearer valid-token"})
+    response = client.post(
+        "/auth/logout",
+        headers={"Authorization": "Bearer valid-token"},
+    )
 
     assert response.status_code == 200
 
@@ -324,7 +350,12 @@ def test_forgot_password(monkeypatch):
 
     monkeypatch.setattr("agile_ci_demo.auth.supabase", fake)
 
-    response = client.post("/auth/forgot-password", json={"email": "student@example.com"})
+    monkeypatch.setattr("agile_ci_demo.auth.supabase_admin", FakeSupabaseAdmin())
+
+    response = client.post(
+        "/auth/forgot-password",
+        json={"email": "student@example.com"},
+    )
 
     assert response.status_code == 200
 
@@ -339,7 +370,10 @@ def test_reset_password(monkeypatch):
 
     response = client.post(
         "/auth/reset-password",
-        json={"access_token": "valid-token", "new_password": "newpassword123"},
+        json={
+            "access_token": "valid-token",
+            "new_password": "newpassword123",
+        },
     )
 
     assert response.status_code == 200
