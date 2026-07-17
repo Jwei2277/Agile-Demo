@@ -222,8 +222,6 @@ def test_rooms_without_supabase():
 
     app.dependency_overrides = {}
 
-    response = client.get(
-        "/rooms"
-    )
+    response = client.get("/rooms")
 
     assert response.status_code in [200, 501]
