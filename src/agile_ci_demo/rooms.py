@@ -5,7 +5,6 @@ from fastapi import APIRouter, HTTPException, Query
 from agile_ci_demo.models import RoomOut
 from agile_ci_demo.services.supabase_service import supabase_admin
 
-
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 
 
@@ -60,10 +59,7 @@ def list_rooms(
     ),
     room_type: str | None = Query(
         default=None,
-        description=(
-            "'Single Room' | 'Master Room' | "
-            "'Balcony Room' | 'Middle Room'"
-        ),
+        description=("'Single Room' | 'Master Room' | " "'Balcony Room' | 'Middle Room'"),
     ),
     block: str | None = Query(
         default=None,
@@ -77,11 +73,7 @@ def list_rooms(
             detail="Server misconfigured: missing service role key",
         )
 
-    query = (
-        supabase_admin.table("rooms")
-        .select("*, hostel_blocks(name)")
-        .eq("is_active", True)
-    )
+    query = supabase_admin.table("rooms").select("*, hostel_blocks(name)").eq("is_active", True)
 
     if gender:
         query = query.eq("gender_policy", gender)
@@ -97,25 +89,14 @@ def list_rooms(
     )
 
     if block:
-        rooms = [
-            room
-            for room in rooms
-            if (room.get("hostel_blocks") or {}).get("name") == block
-        ]
+        rooms = [room for room in rooms if (room.get("hostel_blocks") or {}).get("name") == block]
 
     booked_room_ids = _booked_room_ids()
 
-    output = [
-        _room_to_out(room, booked_room_ids)
-        for room in rooms
-    ]
+    output = [_room_to_out(room, booked_room_ids) for room in rooms]
 
     if only_available:
-        output = [
-            room
-            for room in output
-            if room.is_available
-        ]
+        output = [room for room in output if room.is_available]
 
     return output
 
@@ -151,4 +132,3 @@ def get_room(room_id: int):
         room,
         _booked_room_ids(),
     )
-    

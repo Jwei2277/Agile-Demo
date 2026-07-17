@@ -222,9 +222,7 @@ def _decide_transfer_request(transfer_request_id: int, new_status: str, admin: C
     booking_id: int = int(transfer_request["booking_id"])
     requested_room_id: int = int(transfer_request["requested_room_id"])
 
-    booking_resp = (
-        db.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
-    )
+    booking_resp = db.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
     if not _rows(booking_resp.data):
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -310,13 +308,7 @@ def pending_maintenance(_: CurrentUser = Depends(require_admin)):
 def complete_maintenance(request_id: int, _: CurrentUser = Depends(require_admin)):
     db = _db()
 
-    resp = (
-        db.table("maintenance_requests")
-        .select("id")
-        .eq("id", request_id)
-        .limit(1)
-        .execute()
-    )
+    resp = db.table("maintenance_requests").select("id").eq("id", request_id).limit(1).execute()
     if not _rows(resp.data):
         raise HTTPException(status_code=404, detail="Request not found")
 
@@ -356,10 +348,7 @@ def _room_admin_out(row: Row, booked_room_ids: set[int]) -> RoomAdminOut:
 def _booked_room_ids() -> set[int]:
     db = _db()
     bookings_resp = (
-        db.table("bookings")
-        .select("room_id")
-        .in_("status", ["pending", "approved"])
-        .execute()
+        db.table("bookings").select("room_id").in_("status", ["pending", "approved"]).execute()
     )
     return {int(b["room_id"]) for b in _rows(bookings_resp.data)}
 
@@ -367,9 +356,7 @@ def _booked_room_ids() -> set[int]:
 @router.get("/rooms", response_model=list[RoomAdminOut])
 def list_rooms_admin(_: CurrentUser = Depends(require_admin)):
     db = _db()
-    rooms_resp = (
-        db.table("rooms").select("*, hostel_blocks(name)").order("block_id").execute()
-    )
+    rooms_resp = db.table("rooms").select("*, hostel_blocks(name)").order("block_id").execute()
     booked_room_ids = _booked_room_ids()
     return [_room_admin_out(r, booked_room_ids) for r in _rows(rooms_resp.data)]
 
@@ -406,10 +393,6 @@ def update_room(room_id: int, data: RoomUpdate, _: CurrentUser = Depends(require
     db.table("rooms").update(updates).eq("id", room_id).execute()
 
     room_resp = (
-        db.table("rooms")
-        .select("*, hostel_blocks(name)")
-        .eq("id", room_id)
-        .limit(1)
-        .execute()
+        db.table("rooms").select("*, hostel_blocks(name)").eq("id", room_id).limit(1).execute()
     )
     return _room_admin_out(_rows(room_resp.data)[0], _booked_room_ids())

@@ -16,7 +16,6 @@ from agile_ci_demo.models import (
 from agile_ci_demo.rooms import _booked_room_ids, _room_to_out
 from agile_ci_demo.services.supabase_service import supabase_admin
 
-
 router = APIRouter(
     prefix="/bookings",
     tags=["bookings"],
@@ -64,8 +63,7 @@ def _room_out_for(
     supabase = _get_supabase()
 
     room_resp = (
-        supabase
-        .table("rooms")
+        supabase.table("rooms")
         .select("*, hostel_blocks(name)")
         .eq(
             "id",
@@ -75,9 +73,7 @@ def _room_out_for(
         .execute()
     )
 
-    rooms = _get_rows(
-        room_resp.data
-    )
+    rooms = _get_rows(room_resp.data)
 
     if not rooms:
         raise HTTPException(
@@ -105,52 +101,30 @@ def _booking_out(
 
     pending_transfer_room = None
 
-    pending_transfer_room_id = row.get(
-        "pending_transfer_room_id"
-    )
+    pending_transfer_room_id = row.get("pending_transfer_room_id")
 
     if pending_transfer_room_id is not None:
         try:
-            pending_transfer_room = _room_out_for(
-                int(pending_transfer_room_id)
-            )
+            pending_transfer_room = _room_out_for(int(pending_transfer_room_id))
         except HTTPException:
             pending_transfer_room = None
-
 
     return BookingOut(
         id=int(row["id"]),
         status=str(row["status"]),
         semester=str(row["semester"]),
         requested_at=row["requested_at"],
-        decided_at=row.get(
-            "decided_at"
-        ),
+        decided_at=row.get("decided_at"),
         occupant_count=occupant_count,
-
-        extra_occupant_name=row.get(
-            "extra_occupant_name"
-        ),
-
-        extra_occupant_email=row.get(
-            "extra_occupant_email"
-        ),
-
-        extra_occupant_student_id=row.get(
-            "extra_occupant_student_id"
-        ),
-
-        extra_occupant_gender=row.get(
-            "extra_occupant_gender"
-        ),
-
+        extra_occupant_name=row.get("extra_occupant_name"),
+        extra_occupant_email=row.get("extra_occupant_email"),
+        extra_occupant_student_id=row.get("extra_occupant_student_id"),
+        extra_occupant_gender=row.get("extra_occupant_gender"),
         total_fee=total_fee_for(
             room.fee_monthly,
             occupant_count,
         ),
-
         room=room,
-
         pending_transfer_room=pending_transfer_room,
     )
 
@@ -162,50 +136,31 @@ def _check_capacity_and_gender(
     extra_occupant_gender: str | None,
 ) -> None:
 
-
     if occupant_count > room.capacity:
         raise HTTPException(
             status_code=400,
-            detail=(
-                f"{room.room_type} only accommodates "
-                f"up to {room.capacity} occupant(s)."
-            ),
+            detail=(f"{room.room_type} only accommodates " f"up to {room.capacity} occupant(s)."),
         )
-
 
     if room.gender_policy in (
         "Female only",
         "Male only",
     ):
 
-        required_gender = (
-            "Female"
-            if room.gender_policy == "Female only"
-            else "Male"
-        )
-
+        required_gender = "Female" if room.gender_policy == "Female only" else "Male"
 
         if user.gender != required_gender:
             raise HTTPException(
                 status_code=403,
-                detail=(
-                    f"This room is restricted to "
-                    f"{required_gender.lower()} students."
-                ),
+                detail=(f"This room is restricted to " f"{required_gender.lower()} students."),
             )
 
-
-        if (
-            occupant_count == 2
-            and extra_occupant_gender != required_gender
-        ):
+        if occupant_count == 2 and extra_occupant_gender != required_gender:
             raise HTTPException(
                 status_code=403,
-                detail=(
-                    f"This room is restricted to "
-                    f"{required_gender.lower()} occupants."
-                ),
+                detail=(f"This room is restricted to " f"{required_gender.lower()} occupants."),
             )
+
 
 @router.post(
     "",
@@ -219,10 +174,8 @@ def create_booking(
 
     supabase = _get_supabase()
 
-
     existing_resp = (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .select("id")
         .eq(
             "student_id",
@@ -238,25 +191,19 @@ def create_booking(
         .execute()
     )
 
-
     if _get_rows(existing_resp.data):
         raise HTTPException(
             status_code=409,
             detail="You already have an active or pending booking",
         )
 
-
-    room = _room_out_for(
-        data.room_id
-    )
-
+    room = _room_out_for(data.room_id)
 
     if not room.is_available:
         raise HTTPException(
             status_code=409,
             detail="This room is already booked",
         )
-
 
     _check_capacity_and_gender(
         room,
@@ -280,20 +227,9 @@ def create_booking(
         },
     )
 
-    insert_resp = (
-        supabase
-        .table("bookings")
-        .insert(
-            payload
-        )
-        .execute()
-    )
+    insert_resp = supabase.table("bookings").insert(payload).execute()
 
-
-    rows = _get_rows(
-        insert_resp.data
-    )
-
+    rows = _get_rows(insert_resp.data)
 
     if not rows:
         raise HTTPException(
@@ -301,12 +237,10 @@ def create_booking(
             detail="Could not create booking",
         )
 
-
     return _booking_out(
         rows[0],
         room,
     )
-
 
 
 @router.get(
@@ -319,10 +253,8 @@ def get_my_booking(
 
     supabase = _get_supabase()
 
-
     resp = (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .select("*")
         .eq(
             "student_id",
@@ -343,31 +275,19 @@ def get_my_booking(
         .execute()
     )
 
-
-    rows = _get_rows(
-        resp.data
-    )
-
+    rows = _get_rows(resp.data)
 
     if not rows:
         return None
 
-
     booking = rows[0]
 
-
-    room = _room_out_for(
-        int(
-            booking["room_id"]
-        )
-    )
-
+    room = _room_out_for(int(booking["room_id"]))
 
     return _booking_out(
         booking,
         room,
     )
-
 
 
 @router.patch(
@@ -382,10 +302,8 @@ def update_booking(
 
     supabase = _get_supabase()
 
-
     resp = (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .select("*")
         .eq(
             "id",
@@ -395,11 +313,7 @@ def update_booking(
         .execute()
     )
 
-
-    rows = _get_rows(
-        resp.data
-    )
-
+    rows = _get_rows(resp.data)
 
     if not rows:
         raise HTTPException(
@@ -407,16 +321,13 @@ def update_booking(
             detail="Booking not found",
         )
 
-
     booking = rows[0]
-
 
     if booking["student_id"] != user.id:
         raise HTTPException(
             status_code=403,
             detail="Not your booking",
         )
-
 
     if booking["status"] not in (
         "pending",
@@ -427,35 +338,17 @@ def update_booking(
             detail="Only pending or approved bookings can be edited",
         )
 
+    new_room_id = data.room_id if data.room_id else int(booking["room_id"])
 
-    new_room_id = (
-        data.room_id
-        if data.room_id
-        else int(
-            booking["room_id"]
-        )
-    )
+    changing_room = new_room_id != int(booking["room_id"])
 
-
-    changing_room = (
-        new_room_id
-        != int(
-            booking["room_id"]
-        )
-    )
-
-
-    room = _room_out_for(
-        new_room_id
-    )
-
+    room = _room_out_for(new_room_id)
 
     if changing_room and not room.is_available:
         raise HTTPException(
             status_code=409,
             detail="That room is already booked",
         )
-
 
     _check_capacity_and_gender(
         room,
@@ -464,48 +357,20 @@ def update_booking(
         data.extra_occupant_gender,
     )
 
-
-    is_double = (
-        data.occupant_count == 2
-    )
-
+    is_double = data.occupant_count == 2
 
     update_payload: BookingRow = {
         "room_id": new_room_id,
         "occupant_count": data.occupant_count,
-
-        "extra_occupant_name": (
-            data.extra_occupant_name
-            if is_double
-            else None
-        ),
-
-        "extra_occupant_email": (
-            data.extra_occupant_email
-            if is_double
-            else None
-        ),
-
-        "extra_occupant_student_id": (
-            data.extra_occupant_student_id
-            if is_double
-            else None
-        ),
-
-        "extra_occupant_gender": (
-            data.extra_occupant_gender
-            if is_double
-            else None
-        ),
+        "extra_occupant_name": (data.extra_occupant_name if is_double else None),
+        "extra_occupant_email": (data.extra_occupant_email if is_double else None),
+        "extra_occupant_student_id": (data.extra_occupant_student_id if is_double else None),
+        "extra_occupant_gender": (data.extra_occupant_gender if is_double else None),
     }
 
-
     update_resp = (
-        supabase
-        .table("bookings")
-        .update(
-            update_payload
-        )
+        supabase.table("bookings")
+        .update(update_payload)
         .eq(
             "id",
             booking_id,
@@ -513,11 +378,7 @@ def update_booking(
         .execute()
     )
 
-
-    updated_rows = _get_rows(
-        update_resp.data
-    )
-
+    updated_rows = _get_rows(update_resp.data)
 
     if not updated_rows:
         raise HTTPException(
@@ -525,11 +386,11 @@ def update_booking(
             detail="Could not update booking",
         )
 
-
     return _booking_out(
         updated_rows[0],
         room,
     )
+
 
 @router.post(
     "/{booking_id}/transfer-request",
@@ -543,10 +404,8 @@ def request_room_transfer(
 
     supabase = _get_supabase()
 
-
     booking_resp = (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .select("*")
         .eq(
             "id",
@@ -556,11 +415,7 @@ def request_room_transfer(
         .execute()
     )
 
-
-    booking_rows = _get_rows(
-        booking_resp.data
-    )
-
+    booking_rows = _get_rows(booking_resp.data)
 
     if not booking_rows:
         raise HTTPException(
@@ -568,9 +423,7 @@ def request_room_transfer(
             detail="Booking not found",
         )
 
-
     booking = booking_rows[0]
-
 
     if booking["student_id"] != user.id:
         raise HTTPException(
@@ -578,16 +431,11 @@ def request_room_transfer(
             detail="Not your booking",
         )
 
-
     if booking["status"] != "approved":
         raise HTTPException(
             status_code=409,
-            detail=(
-                "Transfer requests are only "
-                "available for approved bookings"
-            ),
+            detail=("Transfer requests are only " "available for approved bookings"),
         )
-
 
     if int(booking["room_id"]) == data.room_id:
         raise HTTPException(
@@ -595,18 +443,13 @@ def request_room_transfer(
             detail="Choose a different room for transfer",
         )
 
-
-    room = _room_out_for(
-        data.room_id
-    )
-
+    room = _room_out_for(data.room_id)
 
     if not room.is_available:
         raise HTTPException(
             status_code=409,
             detail="That room is already booked",
         )
-
 
     _check_capacity_and_gender(
         room,
@@ -619,20 +462,11 @@ def request_room_transfer(
         ),
         cast(
             str | None,
-            booking.get(
-                "extra_occupant_gender"
-            ),
+            booking.get("extra_occupant_gender"),
         ),
     )
 
-
-    requested_at = (
-        datetime.now(
-            timezone.utc
-        )
-        .isoformat()
-    )
-
+    requested_at = datetime.now(timezone.utc).isoformat()
 
     payload = cast(
         Any,
@@ -646,37 +480,18 @@ def request_room_transfer(
         },
     )
 
-
     global _next_transfer_request_id
-
 
     try:
 
-        insert_resp = (
-            supabase
-            .table(
-                "room_transfer_requests"
-            )
-            .insert(
-                payload
-            )
-            .execute()
-        )
+        insert_resp = supabase.table("room_transfer_requests").insert(payload).execute()
 
-
-        rows = _get_rows(
-            insert_resp.data
-        )
-
+        rows = _get_rows(insert_resp.data)
 
         if not rows:
-            raise RuntimeError(
-                "No data returned"
-            )
-
+            raise RuntimeError("No data returned")
 
         row = rows[0]
-
 
     except Exception:
 
@@ -685,21 +500,14 @@ def request_room_transfer(
             **payload,
         }
 
-
-        _transfer_request_store[
-            _next_transfer_request_id
-        ] = row
-
+        _transfer_request_store[_next_transfer_request_id] = row
 
         _next_transfer_request_id += 1
-
-
 
     try:
 
         (
-            supabase
-            .table("bookings")
+            supabase.table("bookings")
             .update(
                 {
                     "status": "pending",
@@ -717,32 +525,14 @@ def request_room_transfer(
     except Exception:
         pass
 
-
-
     return TransferRoomRequestOut(
-        id=int(
-            row["id"]
-        ),
-
-        booking_id=int(
-            row["booking_id"]
-        ),
-
-        requested_room_id=int(
-            row["requested_room_id"]
-        ),
-
-        reason=str(
-            row["reason"]
-        ),
-
-        status=str(
-            row["status"]
-        ),
-
+        id=int(row["id"]),
+        booking_id=int(row["booking_id"]),
+        requested_room_id=int(row["requested_room_id"]),
+        reason=str(row["reason"]),
+        status=str(row["status"]),
         requested_at=row["requested_at"],
     )
-
 
 
 @router.delete(
@@ -756,10 +546,8 @@ def cancel_booking(
 
     supabase = _get_supabase()
 
-
     resp = (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .select("*")
         .eq(
             "id",
@@ -769,11 +557,7 @@ def cancel_booking(
         .execute()
     )
 
-
-    rows = _get_rows(
-        resp.data
-    )
-
+    rows = _get_rows(resp.data)
 
     if not rows:
         raise HTTPException(
@@ -781,16 +565,13 @@ def cancel_booking(
             detail="Booking not found",
         )
 
-
     booking = rows[0]
-
 
     if booking["student_id"] != user.id:
         raise HTTPException(
             status_code=403,
             detail="Not your booking",
         )
-
 
     if booking["status"] not in (
         "pending",
@@ -801,19 +582,12 @@ def cancel_booking(
             detail="Booking is already closed",
         )
 
-
     (
-        supabase
-        .table("bookings")
+        supabase.table("bookings")
         .update(
             {
                 "status": "cancelled",
-                "decided_at": (
-                    datetime.now(
-                        timezone.utc
-                    )
-                    .isoformat()
-                ),
+                "decided_at": (datetime.now(timezone.utc).isoformat()),
             }
         )
         .eq(
@@ -822,4 +596,3 @@ def cancel_booking(
         )
         .execute()
     )
-

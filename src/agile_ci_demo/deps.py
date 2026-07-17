@@ -66,13 +66,7 @@ def get_current_user(
             detail="Service role client is not configured",
         )
 
-    response = (
-        supabase_admin.table("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .limit(1)
-        .execute()
-    )
+    response = supabase_admin.table("profiles").select("*").eq("id", user.id).limit(1).execute()
 
     if not response.data:
         raise HTTPException(

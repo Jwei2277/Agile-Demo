@@ -154,6 +154,7 @@ def logout(authorization: str | None = Header(default=None)):
 
     return {"message": "Logged out"}
 
+
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPassword):
     if supabase is None:
@@ -169,9 +170,8 @@ def forgot_password(data: ForgotPassword):
     except AuthApiError:
         pass
 
-    return {
-        "message": "If that email is registered, a reset link has been sent."
-    }
+    return {"message": "If that email is registered, a reset link has been sent."}
+
 
 @router.post("/reset-password")
 def reset_password(data: ResetPassword):
@@ -188,9 +188,7 @@ def reset_password(data: ResetPassword):
             data.access_token,
         )
 
-        supabase.auth.update_user(
-            {"password": data.new_password}
-        )
+        supabase.auth.update_user({"password": data.new_password})
 
     except AuthApiError as e:
         raise HTTPException(
@@ -198,6 +196,4 @@ def reset_password(data: ResetPassword):
             detail=e.message,
         ) from e
 
-    return {
-        "message": "Password updated. You can now log in with your new password."
-    }
+    return {"message": "Password updated. You can now log in with your new password."}
