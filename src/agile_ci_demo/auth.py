@@ -14,7 +14,7 @@ from agile_ci_demo.services.supabase_service import (
 from agile_ci_demo.config import APP_BASE_URL
 from supabase import AuthApiError
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 TRUSTED_DEVICE_DAYS = 30
 

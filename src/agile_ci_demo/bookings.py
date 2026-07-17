@@ -17,11 +17,7 @@ from agile_ci_demo.rooms import _booked_room_ids, _room_to_out
 from agile_ci_demo.services.supabase_service import supabase_admin
 from agile_ci_demo.waitlist import notify_next_waitlisted
 
-router = APIRouter(
-    prefix="/bookings",
-    tags=["bookings"],
-)
-
+router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 BookingRow = dict[str, Any]
 

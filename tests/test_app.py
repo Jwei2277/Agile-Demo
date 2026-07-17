@@ -49,35 +49,16 @@ def test_invalid_endpoint_returns_404():
 
 def _get_routes():
     """
-    Collect all registered routes from FastAPI app
+    Get registered API paths from OpenAPI schema
     """
 
-    routes = []
+    response = client.get("/openapi.json")
 
-    for route in app.routes:
+    assert response.status_code == 200
 
-        # Normal routes
-        if hasattr(route, "path"):
-            routes.append(route.path)
+    data = response.json()
 
-        # Included router objects
-        if hasattr(route, "routes"):
-
-            for sub_route in route.routes:
-
-                if hasattr(sub_route, "path"):
-                    routes.append(sub_route.path)
-
-        # Router prefix support
-        if hasattr(route, "router"):
-
-            router = route.router
-
-            if hasattr(router, "prefix"):
-
-                routes.append(router.prefix)
-
-    return routes
+    return list(data.get("paths", {}).keys())
 
 
 def test_auth_router_registered():
@@ -87,7 +68,7 @@ def test_auth_router_registered():
 
     routes = _get_routes()
 
-    assert any("/auth" in route for route in routes)
+    assert any(route.startswith("/auth") for route in routes)
 
 
 def test_room_router_registered():
@@ -97,7 +78,7 @@ def test_room_router_registered():
 
     routes = _get_routes()
 
-    assert any("/rooms" in route for route in routes)
+    assert any(route.startswith("/rooms") for route in routes)
 
 
 def test_booking_router_registered():
@@ -107,7 +88,7 @@ def test_booking_router_registered():
 
     routes = _get_routes()
 
-    assert any("/bookings" in route for route in routes)
+    assert any(route.startswith("/bookings") for route in routes)
 
 
 def test_admin_router_registered():
@@ -117,7 +98,7 @@ def test_admin_router_registered():
 
     routes = _get_routes()
 
-    assert any("/admin" in route for route in routes)
+    assert any(route.startswith("/admin") for route in routes)
 
 
 # ==================================================
