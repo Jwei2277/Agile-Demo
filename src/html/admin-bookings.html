@@ -596,10 +596,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   async function decideBooking(id, action) {
     try {
       const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) { alert('Could not update booking.'); return; }
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.detail || `Could not ${action} the booking (status ${res.status}).`);
+        return;
+      }
       loadBookings();
     } catch (err) {
-      alert('Network error — please try again.');
+      alert('Network error — please check your connection and try again.');
     }
   }
 

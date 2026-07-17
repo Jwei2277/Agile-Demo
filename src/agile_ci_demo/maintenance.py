@@ -29,7 +29,10 @@ def create_request(data: MaintenanceCreate, user: CurrentUser = Depends(get_curr
         .execute()
     )
     if not insert_resp.data:
-        raise HTTPException(status_code=400, detail="Could not create request")
+        raise HTTPException(
+            status_code=400,
+            detail="The maintenance request was rejected by the database — please try again.",
+        )
 
     row = insert_resp.data[0]
     return MaintenanceOut(

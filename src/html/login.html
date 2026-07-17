@@ -373,47 +373,75 @@ body {
     <!-- Form panel -->
     <main class="form-panel">
       <div class="form-card">
-        <div class="form-head">
-          <h2>Sign in</h2>
-          <p>Enter your credentials to access your account.</p>
+        <div id="loginStep">
+          <div class="form-head">
+            <h2>Sign in</h2>
+            <p>Enter your credentials to access your account.</p>
+          </div>
+
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="identifier">Student ID or university email</label>
+              <input type="text" id="identifier" name="identifier" placeholder="e.g. SD210345 or name@university.edu" autocomplete="username" required>
+              <span class="field-error" id="identifierError">Enter your student ID or university email.</span>
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="password-wrap">
+                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+                  <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
+                  </svg>
+                </button>
+              </div>
+              <span class="field-error" id="passwordError">Enter your password.</span>
+            </div>
+
+            <div class="field-row">
+              <label class="remember">
+                <input type="checkbox" id="rememberMe" name="rememberMe">
+                <span class="checkmark"></span>
+                Remember me
+              </label>
+              <a href="forgot-password.html" class="link-muted">Forgot password?</a>
+            </div>
+
+            <div class="form-alert" id="loginAlert" role="alert"></div>
+
+            <button type="submit" class="btn-primary">Sign in</button>
+          </form>
+
+          <p class="switch-line">Don't have an account? <a href="register.html">Create one</a></p>
         </div>
 
-        <form id="loginForm" novalidate>
-          <div class="field">
-            <label for="identifier">Student ID or university email</label>
-            <input type="text" id="identifier" name="identifier" placeholder="e.g. SD210345 or name@university.edu" autocomplete="username" required>
-            <span class="field-error" id="identifierError">Enter your student ID or university email.</span>
+        <!-- OTP step: students only (admins skip this), unless this device
+             was already "remembered" from a previous login. -->
+        <div id="otpStep" hidden>
+          <div class="form-head">
+            <h2>Verify it's you</h2>
+            <p>We sent a verification code to <strong id="otpEmailDisplay"></strong>. Enter it below to finish signing in.</p>
           </div>
 
-          <div class="field">
-            <label for="password">Password</label>
-            <div class="password-wrap">
-              <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-              <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
-                <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
-                </svg>
-              </button>
+          <form id="otpForm" novalidate>
+            <div class="field">
+              <label for="otpCode">Verification code</label>
+              <input type="text" id="otpCode" name="otpCode" placeholder="Enter the code from your email" inputmode="numeric" pattern="\d{6,10}" maxlength="10" autocomplete="one-time-code" required>
+              <span class="field-error" id="otpError">Enter the code from your email.</span>
             </div>
-            <span class="field-error" id="passwordError">Enter your password.</span>
-          </div>
 
-          <div class="field-row">
-            <label class="remember">
-              <input type="checkbox" id="rememberMe" name="rememberMe">
-              <span class="checkmark"></span>
-              Remember me
-            </label>
-            <a href="forgot-password.html" class="link-muted">Forgot password?</a>
-          </div>
+            <div class="form-alert" id="otpAlert" role="alert"></div>
 
-          <div class="form-alert" id="loginAlert" role="alert"></div>
+            <button type="submit" class="btn-primary">Verify and sign in</button>
+          </form>
 
-          <button type="submit" class="btn-primary">Sign in</button>
-        </form>
-
-        <p class="switch-line">Don't have an account? <a href="register.html">Create one</a></p>
+          <p class="switch-line">
+            <a href="#" id="resendOtpLink">Resend code</a> ·
+            <a href="#" id="backToLoginLink">Back to sign in</a>
+          </p>
+        </div>
       </div>
     </main>
 
@@ -437,6 +465,51 @@ body {
   // Front-end validation + real submit to the backend
   const form = document.getElementById('loginForm');
   const alertBox = document.getElementById('loginAlert');
+
+  const loginStep = document.getElementById('loginStep');
+  const otpStep = document.getElementById('otpStep');
+  const otpForm = document.getElementById('otpForm');
+  const otpAlert = document.getElementById('otpAlert');
+  const otpCodeInput = document.getElementById('otpCode');
+  const otpEmailDisplay = document.getElementById('otpEmailDisplay');
+
+  let pendingEmail = null;
+  let pendingRememberMe = false;
+
+  function getTrustedDeviceToken() {
+    return window.localStorage.getItem('trusted_device_token');
+  }
+
+  async function completeLogin(body, rememberMe) {
+    // Store the session. sessionStorage clears when the tab closes;
+    // localStorage persists, so only use it when "Remember me" is checked.
+    const storage = rememberMe ? window.localStorage : window.sessionStorage;
+    storage.setItem('access_token', body.access_token);
+    storage.setItem('refresh_token', body.refresh_token);
+    storage.setItem('user', JSON.stringify(body.user));
+
+    // The trusted-device token (if issued) always goes in localStorage,
+    // regardless of the session storage choice above — its whole purpose
+    // is to be found again on a future visit to skip OTP on this device.
+    if (body.trusted_device_token) {
+      window.localStorage.setItem('trusted_device_token', body.trusted_device_token);
+    }
+
+    let destination = 'student-home.html';
+    try {
+      const meRes = await fetch('/auth/me', {
+        headers: { 'Authorization': `Bearer ${body.access_token}` }
+      });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        if (me.role === 'admin') destination = 'admin-dashboard.html';
+      }
+    } catch (err) {
+      // Fall back to the student home page if the role lookup fails.
+    }
+
+    window.location.href = destination;
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -477,7 +550,9 @@ body {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: identifier.value.trim(),
-          password: password.value
+          password: password.value,
+          remember_me: rememberMe.checked,
+          trusted_device_token: getTrustedDeviceToken()
         })
       });
 
@@ -489,36 +564,93 @@ body {
         return;
       }
 
-      // Store the session. sessionStorage clears when the tab closes;
-      // localStorage persists, so only use it when "Remember me" is checked.
-      const storage = rememberMe.checked ? window.localStorage : window.sessionStorage;
-      storage.setItem('access_token', body.access_token);
-      storage.setItem('refresh_token', body.refresh_token);
-      storage.setItem('user', JSON.stringify(body.user));
+      if (body.otp_required) {
+        pendingEmail = body.email;
+        pendingRememberMe = rememberMe.checked;
+        otpEmailDisplay.textContent = body.email;
+        otpAlert.className = 'form-alert';
+        otpCodeInput.value = '';
+        loginStep.hidden = true;
+        otpStep.hidden = false;
+        otpCodeInput.focus();
+        return;
+      }
 
       alertBox.textContent = 'Signed in successfully. Redirecting to your dashboard…';
       alertBox.classList.add('show', 'success');
-
-      let destination = 'student-home.html';
-      try {
-        const meRes = await fetch('/auth/me', {
-          headers: { 'Authorization': `Bearer ${body.access_token}` }
-        });
-        if (meRes.ok) {
-          const me = await meRes.json();
-          if (me.role === 'admin') destination = 'admin-dashboard.html';
-        }
-      } catch (err) {
-        // Fall back to the student home page if the role lookup fails.
-      }
-
-      setTimeout(() => { window.location.href = destination; }, 1000);
+      setTimeout(() => completeLogin(body, rememberMe.checked), 800);
     } catch (err) {
       alertBox.textContent = 'Network error — please check your connection and try again.';
       alertBox.classList.add('show', 'error');
     } finally {
       submitBtn.disabled = false;
     }
+  });
+
+  otpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = otpCodeInput.value.trim();
+    otpAlert.className = 'form-alert';
+    document.getElementById('otpError').classList.remove('show');
+    otpCodeInput.classList.remove('invalid');
+
+    if (!/^\d{6,10}$/.test(code)) {
+      otpCodeInput.classList.add('invalid');
+      document.getElementById('otpError').classList.add('show');
+      return;
+    }
+
+    const submitBtn = otpForm.querySelector('.btn-primary');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch('/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingEmail, otp: code, remember_me: pendingRememberMe })
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        otpAlert.textContent = body.detail || 'Invalid or expired code.';
+        otpAlert.classList.add('show', 'error');
+        return;
+      }
+
+      otpAlert.textContent = 'Verified. Redirecting…';
+      otpAlert.classList.add('show', 'success');
+      setTimeout(() => completeLogin(body, pendingRememberMe), 600);
+    } catch (err) {
+      otpAlert.textContent = 'Network error — please check your connection and try again.';
+      otpAlert.classList.add('show', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('resendOtpLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!pendingEmail) return;
+    otpAlert.className = 'form-alert';
+    try {
+      await fetch('/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingEmail })
+      });
+      otpAlert.textContent = 'A new code has been sent.';
+      otpAlert.classList.add('show', 'success');
+    } catch (err) {
+      otpAlert.textContent = 'Could not resend the code — please try again.';
+      otpAlert.classList.add('show', 'error');
+    }
+  });
+
+  document.getElementById('backToLoginLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    otpStep.hidden = true;
+    loginStep.hidden = false;
+    pendingEmail = null;
   });
 
   // Build the illuminated window grid (signature visual): two wings, some rooms lit

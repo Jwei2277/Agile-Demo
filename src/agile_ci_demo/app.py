@@ -11,6 +11,7 @@ from agile_ci_demo.rooms import router as rooms_router
 from agile_ci_demo.bookings import router as bookings_router
 from agile_ci_demo.maintenance import router as maintenance_router
 from agile_ci_demo.admin import router as admin_router
+from agile_ci_demo.profile import router as profile_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
@@ -19,6 +20,7 @@ app.include_router(rooms_router)
 app.include_router(bookings_router)
 app.include_router(maintenance_router)
 app.include_router(admin_router)
+app.include_router(profile_router)
 # =========================
 # Allow frontend connection
 # =========================
@@ -86,6 +88,11 @@ def my_booking_page():
 @app.get("/student-home.html")
 def student_home_page():
     return FileResponse(HTML_DIR / "student-home.html")
+
+
+@app.get("/student-profile.html")
+def student_profile_page():
+    return FileResponse(HTML_DIR / "student-profile.html")
 
 
 @app.get("/admin-dashboard.html")

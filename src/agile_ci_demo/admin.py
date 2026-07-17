@@ -135,7 +135,10 @@ def _decide_booking(booking_id: int, new_status: str, admin: CurrentUser) -> Non
     if not resp.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     if resp.data[0]["status"] != "pending":
-        raise HTTPException(status_code=409, detail="Booking already decided")
+        raise HTTPException(
+            status_code=409,
+            detail=f"This booking is already '{resp.data[0]['status']}' — it can't be decided again.",
+        )
 
     supabase_admin.table("bookings").update(
         {
@@ -303,7 +306,10 @@ def create_room(data: RoomCreate, _: CurrentUser = Depends(require_admin)):
 
     insert_resp = supabase_admin.table("rooms").insert(data.model_dump()).execute()
     if not insert_resp.data:
-        raise HTTPException(status_code=400, detail="Could not create room")
+        raise HTTPException(
+            status_code=400,
+            detail="The room was rejected by the database — check the block ID exists and the room number isn't already used in that block.",
+        )
 
     room_resp = (
         supabase_admin.table("rooms")

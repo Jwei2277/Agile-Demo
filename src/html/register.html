@@ -364,6 +364,7 @@ body {
     <!-- Form panel -->
     <main class="form-panel">
       <div class="form-card">
+        <div id="registerStep">
         <div class="form-head">
           <h2>Create your account</h2>
           <p>Use your official student ID and university email to register.</p>
@@ -445,6 +446,33 @@ body {
         </form>
 
         <p class="switch-line">Already have an account? <a href="login.html">Sign in</a></p>
+        </div>
+
+        <!-- Email verification step: proves the registrant actually owns
+             the email address before their account can be used. -->
+        <div id="verifyStep" hidden>
+          <div class="form-head">
+            <h2>Verify your email</h2>
+            <p>We sent a verification code to <strong id="verifyEmailDisplay"></strong>. Enter it below to activate your account.</p>
+          </div>
+
+          <form id="verifyForm" novalidate>
+            <div class="field">
+              <label for="verifyCode">Verification code</label>
+              <input type="text" id="verifyCode" name="verifyCode" placeholder="Enter the code from your email" inputmode="numeric" pattern="\d{6,10}" maxlength="10" autocomplete="one-time-code" required>
+              <span class="field-error" id="verifyError">Enter the code from your email.</span>
+            </div>
+
+            <div class="form-alert" id="verifyAlert" role="alert"></div>
+
+            <button type="submit" class="btn-primary">Verify and continue</button>
+          </form>
+
+          <p class="switch-line">
+            <a href="#" id="resendVerifyLink">Resend code</a> ·
+            <a href="#" id="backToRegisterLink">Back to registration</a>
+          </p>
+        </div>
       </div>
     </main>
 
@@ -570,18 +598,104 @@ body {
         return;
       }
 
-      alertBox.textContent = body.message || 'Account created. Check your university email to verify your address.';
-      alertBox.classList.add('show', 'success');
+      alertBox.textContent = '';
+      alertBox.classList.remove('show', 'success', 'error');
       form.reset();
       meterBars.forEach(bar => bar.className = '');
       strengthLabel.textContent = 'Password strength';
-      setTimeout(() => { window.location.href = 'login.html'; }, 1800);
+
+      pendingVerifyEmail = emailInput.value.trim() || body.email;
+      document.getElementById('verifyEmailDisplay').textContent = pendingVerifyEmail;
+      verifyAlert.className = 'form-alert';
+      verifyCodeInput.value = '';
+      registerStep.hidden = true;
+      verifyStep.hidden = false;
+      verifyCodeInput.focus();
     } catch (err) {
       alertBox.textContent = 'Network error — please check your connection and try again.';
       alertBox.classList.add('show', 'error');
     } finally {
       submitBtn.disabled = false;
     }
+  });
+
+  const registerStep = document.getElementById('registerStep');
+  const verifyStep = document.getElementById('verifyStep');
+  const verifyForm = document.getElementById('verifyForm');
+  const verifyAlert = document.getElementById('verifyAlert');
+  const verifyCodeInput = document.getElementById('verifyCode');
+
+  let pendingVerifyEmail = null;
+
+  verifyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = verifyCodeInput.value.trim();
+    verifyAlert.className = 'form-alert';
+    document.getElementById('verifyError').classList.remove('show');
+    verifyCodeInput.classList.remove('invalid');
+
+    if (!/^\d{6,10}$/.test(code)) {
+      verifyCodeInput.classList.add('invalid');
+      document.getElementById('verifyError').classList.add('show');
+      return;
+    }
+
+    const submitBtn = verifyForm.querySelector('.btn-primary');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch('/auth/verify-signup-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingVerifyEmail, otp: code })
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        verifyAlert.textContent = body.detail || 'Invalid or expired code.';
+        verifyAlert.classList.add('show', 'error');
+        return;
+      }
+
+      // Verifying the code also logs the new account straight in.
+      window.sessionStorage.setItem('access_token', body.access_token);
+      window.sessionStorage.setItem('refresh_token', body.refresh_token);
+      window.sessionStorage.setItem('user', JSON.stringify(body.user));
+
+      verifyAlert.textContent = 'Email verified! Redirecting…';
+      verifyAlert.classList.add('show', 'success');
+      setTimeout(() => { window.location.href = 'student-home.html'; }, 800);
+    } catch (err) {
+      verifyAlert.textContent = 'Network error — please check your connection and try again.';
+      verifyAlert.classList.add('show', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('resendVerifyLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!pendingVerifyEmail) return;
+    verifyAlert.className = 'form-alert';
+    try {
+      await fetch('/auth/resend-signup-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingVerifyEmail })
+      });
+      verifyAlert.textContent = 'A new code has been sent.';
+      verifyAlert.classList.add('show', 'success');
+    } catch (err) {
+      verifyAlert.textContent = 'Could not resend the code — please try again.';
+      verifyAlert.classList.add('show', 'error');
+    }
+  });
+
+  document.getElementById('backToRegisterLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    verifyStep.hidden = true;
+    registerStep.hidden = false;
+    pendingVerifyEmail = null;
   });
 
   // Build the illuminated window grid (signature visual)

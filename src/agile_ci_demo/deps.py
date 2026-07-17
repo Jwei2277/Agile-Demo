@@ -45,7 +45,15 @@ def get_current_user(authorization: str | None = Header(default=None)) -> Curren
         supabase_admin.table("profiles").select("*").eq("id", user.id).limit(1).execute()
     )
     if not profile_lookup.data:
-        raise HTTPException(status_code=404, detail="Profile not found for this account")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Your account exists but has no profile yet — this usually means the "
+                "email verification step (the OTP sent at registration) was never "
+                "completed. Please finish registering, or contact an admin if you "
+                "believe this is a mistake."
+            ),
+        )
 
     profile = profile_lookup.data[0]
 

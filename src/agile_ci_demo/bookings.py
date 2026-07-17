@@ -109,7 +109,10 @@ def create_booking(data: BookingCreate, user: CurrentUser = Depends(get_current_
         .execute()
     )
     if not insert_resp.data:
-        raise HTTPException(status_code=400, detail="Could not create booking")
+        raise HTTPException(
+            status_code=400,
+            detail="The booking was rejected by the database — the room or your account may no longer be valid.",
+        )
 
     return _booking_out(insert_resp.data[0], room)
 
@@ -153,7 +156,10 @@ def cancel_booking(booking_id: int, user: CurrentUser = Depends(get_current_user
     if booking["student_id"] != user.id:
         raise HTTPException(status_code=403, detail="Not your booking")
     if booking["status"] not in ("pending", "approved"):
-        raise HTTPException(status_code=409, detail="Booking is already closed")
+        raise HTTPException(
+            status_code=409,
+            detail=f"This booking is already '{booking['status']}' and can't be cancelled.",
+        )
 
     supabase_admin.table("bookings").update(
         {"status": "cancelled", "decided_at": datetime.now(timezone.utc).isoformat()}

@@ -661,10 +661,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         headers: authHeadersJSON(),
         body: JSON.stringify({ fee_monthly: Number(newFee) }),
       });
-      if (!res.ok) { alert('Could not update fee.'); return; }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.detail || `Could not update the fee (status ${res.status}).`);
+        return;
+      }
       loadRooms();
     } catch (err) {
-      alert('Network error — please try again.');
+      alert('Network error — please check your connection and try again.');
     }
   }
 
@@ -675,10 +679,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         headers: authHeadersJSON(),
         body: JSON.stringify({ is_active: !currentlyActive }),
       });
-      if (!res.ok) { alert('Could not update room.'); return; }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.detail || `Could not update the room (status ${res.status}).`);
+        return;
+      }
       loadRooms();
     } catch (err) {
-      alert('Network error — please try again.');
+      alert('Network error — please check your connection and try again.');
     }
   }
 
