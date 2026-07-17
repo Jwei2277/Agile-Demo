@@ -66,15 +66,21 @@ def get_current_user(
             detail="Service role client is not configured",
         )
 
-    response = supabase_admin.table("profiles").select("*").eq("id", user.id).limit(1).execute()
-
-    if not response.data:
+    profile_lookup = (
+        supabase_admin.table("profiles").select("*").eq("id", user.id).limit(1).execute()
+    )
+    if not profile_lookup.data:
         raise HTTPException(
             status_code=404,
-            detail="Profile not found",
+            detail=(
+                "Your account exists but has no profile yet — this usually means the "
+                "email verification step (the OTP sent at registration) was never "
+                "completed. Please finish registering, or contact an admin if you "
+                "believe this is a mistake."
+            ),
         )
 
-    profile = cast(dict[str, Any], response.data[0])
+    profile = cast(dict[str, Any], profile_lookup.data[0])
 
     return CurrentUser(
         id=str(profile["id"]),

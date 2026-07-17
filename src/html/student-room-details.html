@@ -212,6 +212,16 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
   border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
 }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.form-field input, .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.form-field input:focus-visible, .form-field select:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
 .modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
 .modal-error.show { display: block; }
 </style>
@@ -241,6 +251,15 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
       <h3 id="modalTitle">Book this room</h3>
       <p class="modal-sub" id="modalSub">Choose how many people will stay in this room.</p>
       <div class="modal-error" id="modalError" role="alert"></div>
+      <div class="form-field">
+        <label for="moveInDate">Move-in date</label>
+        <input type="date" id="moveInDate" required>
+      </div>
+      <div class="form-field">
+        <label for="moveOutDate">Move-out date</label>
+        <input type="date" id="moveOutDate" required>
+        <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
+      </div>
       <div class="occupant-options" id="occupantOptions">
         <label class="occupant-option selected" data-count="1">
           <input type="radio" name="occupantCount" value="1" checked>
@@ -341,11 +360,29 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
   const extraGenderInput = document.getElementById('extraGender');
   const modalConfirmBtn = document.getElementById('modalConfirmBtn');
   const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const moveInDateInput = document.getElementById('moveInDate');
+  const moveOutDateInput = document.getElementById('moveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  moveInDateInput.addEventListener('change', () => {
+    if (!moveInDateInput.value) return;
+    moveOutDateInput.min = isoDatePlusDays(moveInDateInput.value, 30);
+    if (moveOutDateInput.value && moveOutDateInput.value < moveOutDateInput.min) {
+      moveOutDateInput.value = moveOutDateInput.min;
+    }
+  });
 
   let pendingRoomId = null;
+  let pendingMode = 'book';
 
-  function openBookingModal(room) {
+  function openBookingModal(room, mode) {
     pendingRoomId = room.id;
+    pendingMode = mode || 'book';
     currentRoom = room;
     modalError.classList.remove('show');
     modalError.textContent = '';
@@ -354,15 +391,26 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
     extraStudentIdInput.value = '';
     extraGenderInput.value = '';
 
+    const today = new Date().toISOString().slice(0, 10);
+    moveInDateInput.min = today;
+    moveInDateInput.value = today;
+    moveOutDateInput.min = isoDatePlusDays(today, 30);
+    moveOutDateInput.value = isoDatePlusDays(today, 120);
+
     const genderNote = room.gender_policy && room.gender_policy !== 'Mixed block' ? ` This room is ${room.gender_policy.toLowerCase()}.` : '';
+    const actionVerb = pendingMode === 'waitlist' ? 'Join the waitlist for' : 'Book';
+    modalConfirmBtn.textContent = pendingMode === 'waitlist' ? 'Join waitlist' : 'Confirm booking';
+    const waitlistNote = pendingMode === 'waitlist'
+      ? ' This room is currently taken — choose the move-in date you\'d want if it opens up.'
+      : '';
     if (room.capacity <= 1) {
-      modalTitle.textContent = `Book ${room.room_type}`;
-      modalSub.textContent = `This room is for 1 occupant.${genderNote}`;
+      modalTitle.textContent = `${actionVerb} ${room.room_type}`;
+      modalSub.textContent = `This room is for 1 occupant.${genderNote}${waitlistNote}`;
       occupantOptions.style.display = 'none';
       extraOccupantFields.classList.remove('show');
     } else {
-      modalTitle.textContent = `Book ${room.room_type}`;
-      modalSub.textContent = `This room can fit up to ${room.capacity} people.${genderNote}`;
+      modalTitle.textContent = `${actionVerb} ${room.room_type}`;
+      modalSub.textContent = `This room can fit up to ${room.capacity} people.${genderNote}${waitlistNote}`;
       occupantOptions.style.display = 'flex';
       occupantOptions.querySelector('input[value="1"]').checked = true;
       occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.toggle('selected', el.dataset.count === '1'));
@@ -392,6 +440,21 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
 
   modalConfirmBtn.addEventListener('click', async () => {
     if (!pendingRoomId) return;
+
+    const moveIn = moveInDateInput.value;
+    const moveOut = moveOutDateInput.value;
+    if (!moveIn || !moveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const daysBooked = (new Date(moveOut) - new Date(moveIn)) / (1000 * 60 * 60 * 24);
+    if (daysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
     const selectedCount = occupantOptions.style.display === 'none'
       ? 1
       : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
@@ -441,22 +504,42 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
 
     modalConfirmBtn.disabled = true;
     try {
-      const res = await fetch('/bookings', {
+      let effectiveMode = pendingMode;
+      if (effectiveMode === 'waitlist') {
+        try {
+          const checkRes = await fetch(`/rooms/${pendingRoomId}`);
+          if (checkRes.ok) {
+            const roomNow = await checkRes.json();
+            if (roomNow.is_available) effectiveMode = 'book';
+          }
+        } catch (err) {
+          // Fall back to the originally chosen mode.
+        }
+      }
+
+      const payload = {
+        occupant_count: selectedCount,
+        extra_occupant_name: extraOccupantName,
+        extra_occupant_email: extraOccupantEmail,
+        extra_occupant_student_id: extraOccupantStudentId,
+        extra_occupant_gender: extraOccupantGender,
+        move_in_date: moveIn,
+        move_out_date: moveOut,
+      };
+      const url = effectiveMode === 'waitlist' ? `/waitlist/${pendingRoomId}` : '/bookings';
+      if (effectiveMode !== 'waitlist') {
+        payload.room_id = pendingRoomId;
+        payload.semester = 'Semester 1, 2026/27';
+      }
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          room_id: pendingRoomId,
-          semester: 'Semester 1, 2026/27',
-          occupant_count: selectedCount,
-          extra_occupant_name: extraOccupantName,
-          extra_occupant_email: extraOccupantEmail,
-          extra_occupant_student_id: extraOccupantStudentId,
-          extra_occupant_gender: extraOccupantGender,
-        })
+        body: JSON.stringify(payload)
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        modalError.textContent = body.detail || 'Could not submit booking.';
+        modalError.textContent = body.detail || (effectiveMode === 'waitlist' ? 'Could not join the waitlist.' : 'Could not submit booking.');
         modalError.classList.add('show');
         return;
       }
@@ -499,6 +582,22 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
         ? 'This room is ready for a student booking.'
         : 'This room is currently occupied and cannot be booked right now.';
 
+      if (room.is_available) {
+        bookFromDetailsBtn.textContent = 'Book this room';
+        bookFromDetailsBtn.onclick = () => {
+          const token = getToken();
+          if (!token) { window.location.href = 'login.html'; return; }
+          openBookingModal(currentRoom, 'book');
+        };
+      } else {
+        bookFromDetailsBtn.textContent = 'Join waitlist';
+        bookFromDetailsBtn.onclick = () => {
+          const token = getToken();
+          if (!token) { window.location.href = 'login.html'; return; }
+          openBookingModal(currentRoom, 'waitlist');
+        };
+      }
+
       const rows = [
         ['Block', room.block_name],
         ['Level', `Level ${room.level}`],
@@ -531,18 +630,9 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
       roomFee.textContent = 'RM —';
       roomStatus.textContent = 'The request failed. Please try again.';
       amenitiesList.innerHTML = '';
+      bookFromDetailsBtn.disabled = true;
     }
   }
-
-  bookFromDetailsBtn.addEventListener('click', () => {
-    if (!currentRoom) return;
-    const token = getToken();
-    if (!token) {
-      window.location.href = 'login.html';
-      return;
-    }
-    openBookingModal(currentRoom);
-  });
 
   loadRoomDetails();
 </script>

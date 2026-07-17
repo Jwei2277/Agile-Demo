@@ -222,7 +222,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .empty-state p { margin: 0; font-size: 13.5px; color: var(--slate-600); max-width: 380px; }
 .empty-state .empty-actions { display: flex; gap: 10px; margin-top: 10px; }
 
-/* ===================== Booking modal (shared with Browse rooms — reused here for Edit booking) ===================== */
+.two-col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .two-col { grid-template-columns: 1fr; } }
+.side-card { padding: 20px 20px 22px; }
+.side-card h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; }
+.side-card p.hint { margin: 0 0 16px; font-size: 12.5px; color: var(--slate-600); }
+.mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.mini-stat-row:last-child { border-bottom: none; }
+.mini-stat-row strong { font-family: var(--font-display); font-size: 15px; }
+
+/* ===================== Modal + toast (replaces native confirm/prompt/alert) ===================== */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(7,26,51,0.58);
   display: flex; align-items: center; justify-content: center;
@@ -255,13 +264,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   gap: 10px;
   margin-bottom: 8px;
 }
-.modal-card .modal-icon {
+.modal-icon {
   width: 42px; height: 42px; border-radius: 14px;
   background: linear-gradient(135deg, rgba(79, 134, 247, 0.16), rgba(127, 176, 255, 0.28));
   color: var(--blue-600);
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+.modal-icon.warn { background: var(--warning-bg); color: var(--warning-fg); }
+.modal-icon.info { background: var(--sky-100); color: var(--blue-600); }
+.modal-icon svg { width: 21px; height: 21px; }
 .occupant-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
 .occupant-option {
   display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
@@ -280,9 +292,24 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
   border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
 }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
 .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .form-field label {
   font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--slate-600);
+}
+.form-field input {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
 }
 .form-field textarea {
   width: 100%; padding: 11px 12px; font-size: 13.5px; font-family: var(--font-body);
@@ -306,6 +333,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 }
 #roomFieldWrap select:disabled { opacity: 0.7; }
 #roomSelectHint { font-size: 12px; color: var(--slate-600); }
+
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -326,7 +367,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></div>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none;"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></a>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
@@ -341,6 +382,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           <span class="pill" id="statusPill"></span>
           <div class="status-meta-row">
             <span>Semester: <strong id="statusSemester">—</strong></span>
+            <span>Stay: <strong id="statusStayDates">—</strong></span>
             <span>Requested: <strong id="statusRequested">—</strong></span>
             <span>Fee: <strong id="statusFee">—</strong></span>
             <span>Occupants: <strong id="statusOccupants">—</strong></span>
@@ -371,11 +413,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           <strong>Booking history</strong>
           <span class="desc">Coming soon.</span>
         </button>
-        <button class="quick-action card" disabled>
+        <a class="quick-action card" href="student-profile.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.9-4 3.7-6 7.5-6s6.6 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Update profile</strong>
-          <span class="desc">Coming soon.</span>
-        </button>
+          <span class="desc">Change your name, gender, or password.</span>
+        </a>
       </div>
     </section>
 
@@ -385,7 +427,30 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <p>You haven't applied for a room. Browse available rooms and submit an application to get started.</p>
       <div class="empty-actions"><a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a></div>
     </section>
+
+    <section id="waitlistSection" hidden style="margin-top:24px;">
+      <div class="section-head" style="margin:0 0 12px;">
+        <div>
+          <h2 style="font-family:var(--font-display); font-size:16px; margin:0;">My waitlist</h2>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--slate-600);">You'll be booked automatically, in order, as soon as a room opens up.</p>
+        </div>
+      </div>
+      <div id="waitlistList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </section>
   </main>
+</div>
+
+<!-- Cancel booking confirmation modal -->
+<div class="modal-overlay" id="cancelModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon warn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+    <h3>Cancel this booking?</h3>
+    <p class="modal-sub">This will withdraw your application. You'll need to submit a new one if you change your mind.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="cancelModalKeepBtn">Keep booking</button>
+      <button class="btn-primary btn-sm" id="cancelModalConfirmBtn" style="background: var(--error-fg);">Yes, cancel it</button>
+    </div>
+  </div>
 </div>
 
 <!-- Edit booking modal — same layout as "Book now" on the Browse rooms page,
@@ -409,6 +474,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <label for="roomSelect">Room</label>
       <select id="roomSelect"><option value="">Loading rooms…</option></select>
       <p class="modal-sub" id="roomSelectHint" style="margin:6px 0 0;"></p>
+    </div>
+
+    <div class="form-field">
+      <label for="editMoveInDate">Move-in date</label>
+      <input type="date" id="editMoveInDate" required>
+    </div>
+    <div class="form-field">
+      <label for="editMoveOutDate">Move-out date</label>
+      <input type="date" id="editMoveOutDate" required>
+      <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
     </div>
 
     <div class="occupant-options" id="occupantOptions">
@@ -458,6 +533,47 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   </div>
 </div>
 
+<!-- Report an issue modal -->
+<div class="modal-overlay" id="reportModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon info"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+    <h3>Report an issue</h3>
+    <p class="modal-sub">Let facilities know what's wrong — we'll pass it straight to the maintenance queue.</p>
+
+    <div class="modal-error" id="reportModalError" role="alert"></div>
+
+    <form id="reportForm">
+      <div class="modal-form-field">
+        <label for="reportTitle">What's the issue?</label>
+        <input type="text" id="reportTitle" placeholder="e.g. Leaking tap in bathroom" required>
+      </div>
+      <div class="modal-form-field">
+        <label for="reportCategory">Category</label>
+        <select id="reportCategory">
+          <option value="General">General</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="modal-form-field">
+        <label for="reportPriority">Priority</label>
+        <select id="reportPriority">
+          <option value="Normal">Normal</option>
+          <option value="Low">Low</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary btn-sm" id="reportModalCancelBtn">Cancel</button>
+        <button type="submit" class="btn-primary btn-sm">Submit report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Request room transfer modal -->
 <div class="modal-overlay" id="transferModal" hidden>
   <div class="modal-card">
     <div class="modal-head">
@@ -488,6 +604,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   </div>
 </div>
 
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
 <script>
   const bookedSection = document.getElementById('studentBooked');
   const emptySection = document.getElementById('studentNotBookedEmpty');
@@ -500,6 +618,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 
+  let currentUserGender = null;
+
   async function loadProfileChip() {
     const token = getToken();
     if (!token) return;
@@ -509,6 +629,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       const me = await res.json();
       document.getElementById('avatarName').textContent = me.full_name || me.email;
       document.getElementById('avatarInitials').textContent = initials(me.full_name);
+      currentUserGender = me.gender || null;
     } catch (err) {
       // Non-fatal — the rest of the page still works without the name shown.
     }
@@ -571,6 +692,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     pill.className = `pill ${statusInfo.cls}`;
     pill.textContent = statusInfo.text;
     document.getElementById('statusSemester').textContent = booking.semester;
+    document.getElementById('statusStayDates').textContent =
+      `${new Date(booking.move_in_date).toLocaleDateString()} – ${new Date(booking.move_out_date).toLocaleDateString()}`;
     document.getElementById('statusRequested').textContent = new Date(booking.requested_at).toLocaleDateString();
     document.getElementById('statusFee').textContent = `RM ${booking.total_fee.toFixed(0)} / month`;
     const occupantsEl = document.getElementById('statusOccupants');
@@ -589,9 +712,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       statusNote.hidden = true;
     }
 
-    const editable = booking.status === 'pending' || booking.status === 'approved';
+    const editable = booking.status === 'pending';
     const transferEligible = booking.status === 'approved';
-    editBookingBtn.disabled = !editable;
+    editBookingBtn.hidden = !editable;
     transferRoomBtn.disabled = !transferEligible;
     statusEditHint.hidden = editable || transferEligible;
   }
@@ -633,26 +756,68 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     }
   }
 
-  document.getElementById('cancelBookingBtn').addEventListener('click', async () => {
+  // ---------------------------------------------------------------
+  // Toast helper (replaces alert() for simple success/error notices)
+  // ---------------------------------------------------------------
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  // ---------------------------------------------------------------
+  // Cancel booking modal
+  // ---------------------------------------------------------------
+  const cancelModal = document.getElementById('cancelModal');
+  document.getElementById('cancelBookingBtn').addEventListener('click', () => {
+    if (!window.__currentBookingId) return;
+    cancelModal.hidden = false;
+  });
+  document.getElementById('cancelModalKeepBtn').addEventListener('click', () => {
+    cancelModal.hidden = true;
+  });
+  cancelModal.addEventListener('click', (e) => {
+    if (e.target === cancelModal) cancelModal.hidden = true;
+  });
+  document.getElementById('cancelModalConfirmBtn').addEventListener('click', async () => {
     const token = getToken();
     if (!token || !window.__currentBookingId) return;
-    if (!confirm('Cancel your booking application?')) return;
 
+    const btn = document.getElementById('cancelModalConfirmBtn');
+    btn.disabled = true;
     try {
       const res = await fetch(`/bookings/${window.__currentBookingId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!res.ok && res.status !== 204) {
-        alert('Could not cancel booking.');
+        const body = await res.json().catch(() => ({}));
+        showToast(body.detail || `Could not cancel your booking (status ${res.status}).`, true);
         return;
       }
+      cancelModal.hidden = true;
+      showToast('Your booking has been cancelled.', false);
       loadBooking();
     } catch (err) {
-      alert('Network error — please try again.');
+      showToast('Network error — please check your connection and try again.', true);
+    } finally {
+      btn.disabled = false;
     }
   });
 
+  // ---------------------------------------------------------------
+  // Report an issue modal
+  // ---------------------------------------------------------------
+  const reportModal = document.getElementById('reportModal');
+  const reportForm = document.getElementById('reportForm');
+  const reportModalError = document.getElementById('reportModalError');
+
+  // ---------------------------------------------------------------
+  // Request room transfer modal
+  // ---------------------------------------------------------------
   const transferModal = document.getElementById('transferModal');
   const transferRoomSelect = document.getElementById('transferRoomSelect');
   const transferReasonInput = document.getElementById('transferReason');
@@ -685,6 +850,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
     selectable = selectable.filter(r => r.id !== currentRoom.id);
 
+    // Filter out rooms that can't actually take this booking's group:
+    // capacity must fit the occupant count, and for gender-restricted
+    // rooms every occupant (the booker + the 2nd occupant, if any) must
+    // match. A mixed-gender pair can only move to a Mixed block room.
+    selectable = selectable.filter(r => {
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
+
     if (selectable.length) {
       transferRoomSelect.innerHTML = selectable.map(r => {
         const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · RM${r.fee_monthly.toFixed(0)}/mo`;
@@ -693,7 +872,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       transferRoomSelect.disabled = false;
       transferModalConfirmBtn.disabled = false;
     } else {
-      transferRoomSelect.innerHTML = '<option value="">No alternate rooms available right now</option>';
+      transferRoomSelect.innerHTML = '<option value="">No eligible rooms available right now</option>';
       transferRoomSelect.disabled = true;
       transferModalConfirmBtn.disabled = true;
     }
@@ -754,28 +933,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       const selectedRoomOption = transferRoomSelect.selectedOptions[0];
       const requestedRoomLabel = selectedRoomOption?.dataset.roomLabel || selectedRoomOption?.textContent || 'the selected room';
       pendingTransferMessage = `Transfer request submitted to ${requestedRoomLabel}. Waiting for admin review.`;
-      currentBooking = {
-        ...currentBooking,
-        status: 'pending',
-        room: {
-          ...currentBooking.room,
-          id: Number(roomId),
-          block_name: selectedRoomOption?.dataset.blockName || currentBooking.room.block_name,
-          room_number: selectedRoomOption?.dataset.roomNumber || currentBooking.room.room_number,
-          room_type: selectedRoomOption?.dataset.roomType || currentBooking.room.room_type,
-          fee_monthly: Number(selectedRoomOption?.dataset.feeMonthly || currentBooking.room.fee_monthly),
-          gender_policy: selectedRoomOption?.dataset.genderPolicy || currentBooking.room.gender_policy,
-          is_available: false,
-        },
-        pending_transfer_room: {
-          room_label: requestedRoomLabel,
-          block_name: selectedRoomOption?.dataset.blockName || '',
-          room_number: selectedRoomOption?.dataset.roomNumber || '',
-        },
-      };
-      renderBookingSummary(currentBooking);
       closeTransferModal();
-      alert('Your room transfer request has been submitted.');
+      showToast('Your room transfer request has been submitted.', false);
       loadBooking();
     } catch (err) {
       transferModalError.textContent = 'Network error — please try again.';
@@ -788,19 +947,56 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   document.getElementById('reportIssueBtn').addEventListener('click', async () => {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
-    const title = prompt('Briefly describe the issue:');
-    if (!title) return;
+    reportForm.reset();
+    reportModalError.classList.remove('show');
+    reportModal.hidden = false;
+    document.getElementById('reportTitle').focus();
+  });
+  document.getElementById('reportModalCancelBtn').addEventListener('click', () => {
+    reportModal.hidden = true;
+  });
+  reportModal.addEventListener('click', (e) => {
+    if (e.target === reportModal) reportModal.hidden = true;
+  });
 
+  reportForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const title = document.getElementById('reportTitle').value.trim();
+    reportModalError.classList.remove('show');
+    if (!title) {
+      reportModalError.textContent = 'Describe the issue before submitting.';
+      reportModalError.classList.add('show');
+      return;
+    }
+
+    const submitBtn = reportForm.querySelector('.btn-primary');
+    submitBtn.disabled = true;
     try {
       const res = await fetch('/maintenance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title, category: 'General', priority: 'Normal' }),
+        body: JSON.stringify({
+          title,
+          category: document.getElementById('reportCategory').value,
+          priority: document.getElementById('reportPriority').value,
+        }),
       });
-      if (!res.ok) { alert('Could not submit report.'); return; }
-      alert('Thanks — your report has been submitted.');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        reportModalError.textContent = body.detail || `Could not submit your report (status ${res.status}).`;
+        reportModalError.classList.add('show');
+        return;
+      }
+      reportModal.hidden = true;
+      showToast('Thanks — your report has been submitted.', false);
     } catch (err) {
-      alert('Network error — please try again.');
+      reportModalError.textContent = 'Network error — please check your connection and try again.';
+      reportModalError.classList.add('show');
+    } finally {
+      submitBtn.disabled = false;
     }
   });
 
@@ -815,6 +1011,22 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   const modalError = document.getElementById('modalError');
   const roomSelect = document.getElementById('roomSelect');
   const roomSelectHint = document.getElementById('roomSelectHint');
+  const editMoveInDateInput = document.getElementById('editMoveInDate');
+  const editMoveOutDateInput = document.getElementById('editMoveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  editMoveInDateInput.addEventListener('change', () => {
+    if (!editMoveInDateInput.value) return;
+    editMoveOutDateInput.min = isoDatePlusDays(editMoveInDateInput.value, 30);
+    if (editMoveOutDateInput.value && editMoveOutDateInput.value < editMoveOutDateInput.min) {
+      editMoveOutDateInput.value = editMoveOutDateInput.min;
+    }
+  });
   const occupantOptions = document.getElementById('occupantOptions');
   const extraOccupantFields = document.getElementById('extraOccupantFields');
   const extraNameInput = document.getElementById('extraName');
@@ -828,11 +1040,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     modalError.classList.remove('show');
     modalError.textContent = '';
     modalTitle.textContent = 'Edit booking';
-    modalSub.textContent = 'Change your room or occupant details below.';
+    modalSub.textContent = 'Change your room, dates, or occupant details below.';
     roomSelect.innerHTML = '<option value="">Loading rooms…</option>';
     roomSelect.disabled = true;
     modalConfirmBtn.disabled = true;
     bookingModal.hidden = false;
+
+    const today = new Date().toISOString().slice(0, 10);
+    editMoveInDateInput.min = today;
+    editMoveInDateInput.value = booking.move_in_date;
+    editMoveOutDateInput.min = isoDatePlusDays(booking.move_in_date, 30);
+    editMoveOutDateInput.value = booking.move_out_date;
 
     let rooms = [];
     try {
@@ -844,6 +1062,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
     // Only rooms that are free (or the room already on this booking) are
     // selectable — everything else is someone else's active booking.
+    // Also filter out rooms that couldn't actually take this booking's
+    // current occupant count/genders (mirrors the transfer-request filter).
     const currentRoom = booking.room;
     let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
     if (!selectable.some(r => r.id === currentRoom.id)) {
@@ -851,6 +1071,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       // (it's "booked" by this very booking), so add it back in manually.
       selectable = [{ ...currentRoom, is_available: true }, ...selectable];
     }
+    selectable = selectable.filter(r => {
+      if (r.id === currentRoom.id) return true; // always allow keeping the current room
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
     selectable.sort((a, b) => (a.id === currentRoom.id ? -1 : b.id === currentRoom.id ? 1 : 0));
 
     roomSelect.innerHTML = selectable.map(r => {
@@ -941,6 +1171,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   modalConfirmBtn.addEventListener('click', async () => {
     if (!currentBooking) return;
 
+    const editMoveIn = editMoveInDateInput.value;
+    const editMoveOut = editMoveOutDateInput.value;
+    if (!editMoveIn || !editMoveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const editDaysBooked = (new Date(editMoveOut) - new Date(editMoveIn)) / (1000 * 60 * 60 * 24);
+    if (editDaysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
     const selectedCount = occupantOptions.style.display === 'none'
       ? 1
       : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
@@ -1002,6 +1246,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           room_id: Number(roomSelect.value),
+          move_in_date: editMoveIn,
+          move_out_date: editMoveOut,
           occupant_count: selectedCount,
           extra_occupant_name: extraOccupantName,
           extra_occupant_email: extraOccupantEmail,
@@ -1025,7 +1271,64 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     }
   });
 
+  // ---------------------------------------------------------------
+  // My waitlist
+  // ---------------------------------------------------------------
+  async function loadWaitlist() {
+    const token = getToken();
+    if (!token) return;
+    const section = document.getElementById('waitlistSection');
+    const list = document.getElementById('waitlistList');
+    try {
+      const res = await fetch('/waitlist/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) { section.hidden = true; return; }
+      const entries = await res.json();
+      if (!entries.length) { section.hidden = true; return; }
+
+      section.hidden = false;
+      list.innerHTML = entries.map((e) => {
+        const isNotified = e.status === 'notified';
+        const statusText = isNotified ? 'Now available — book it before someone else does!' : `Queue position #${e.queue_position}`;
+        return `
+          <div class="card" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-family:var(--font-display); font-size:14px;">${e.room_label}</strong>
+              <p style="margin:2px 0 0; font-size:12.5px; color:${isNotified ? 'var(--success-fg)' : 'var(--slate-600)'};">${statusText}</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              ${isNotified ? `<a class="btn-primary btn-sm" style="text-decoration:none;" href="student-room-details.html?room_id=${e.room_id}">Book now</a>` : ''}
+              <button class="btn-secondary btn-sm" data-leave-waitlist="${e.id}">Leave waitlist</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-leave-waitlist]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            const dres = await fetch(`/waitlist/${btn.dataset.leaveWaitlist}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!dres.ok && dres.status !== 204) {
+              alert('Could not leave the waitlist.');
+              btn.disabled = false;
+              return;
+            }
+            loadWaitlist();
+          } catch (err) {
+            alert('Network error — please try again.');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      section.hidden = true;
+    }
+  }
+
   loadBooking();
+  loadWaitlist();
 </script>
 </body>
 </html>

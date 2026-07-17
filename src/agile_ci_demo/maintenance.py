@@ -34,11 +34,10 @@ def create_request(
         )
         .execute()
     )
-
     if not response.data:
         raise HTTPException(
             status_code=400,
-            detail="Could not create request",
+            detail="The maintenance request was rejected by the database — please try again.",
         )
 
     row = cast(dict[str, Any], response.data[0])

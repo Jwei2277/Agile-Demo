@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Bookings</title>
+<title>HostelEase — My Profile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -459,25 +459,24 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 </head>
 <body>
 
-<div id="adminApp" class="app">
+<div id="studentApp" class="app">
   <header class="topnav">
     <div class="topnav-inner">
       <div class="brand-mark">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>HostelEase</span>
       </div>
-      <span class="eyebrow-chip">Admin Console</span>
+      <span class="eyebrow-chip">Student Portal</span>
       <nav class="nav-links">
-        <a href="admin-dashboard.html">Dashboard</a>
-        <a href="admin-bookings.html" class="current">Bookings</a>
-        <a href="admin-rooms.html">Rooms</a>
-        <a href="admin-maintenance.html">Maintenance</a>
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html">Browse rooms</a>
+        <a href="student-my-booking.html">My booking</a>
         <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none; border:1px solid rgba(255,255,255,0.3);"><div class="avatar-circle" id="avatarInitials">ST</div><span class="avatar-name" id="avatarName">Student</span></a>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
@@ -486,22 +485,70 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   <main>
     <div class="section-head" style="margin-top:0;">
       <div>
-        <h2>Bookings</h2>
-        <p id="bookingCountSub">Loading…</p>
-      </div>
-      <div class="status-filter">
-        <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
-        <select id="statusFilter">
-          <option value="pending" selected>Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="all">All</option>
-        </select>
+        <h2>My profile</h2>
+        <p>Update your details. Your student ID and email can't be changed here.</p>
       </div>
     </div>
-    <div class="request-list" id="bookingList">
-      <p style="color:var(--slate-600);">Loading bookings…</p>
+
+    <div class="card" style="padding:22px 24px; max-width:520px;">
+      <form id="profileForm">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-field">
+            <label for="pFullName">Full name</label>
+            <input type="text" id="pFullName" required>
+          </div>
+          <div class="form-field">
+            <label for="pStudentId">Student ID</label>
+            <input type="text" id="pStudentId" disabled>
+          </div>
+          <div class="form-field">
+            <label for="pEmail">Email</label>
+            <input type="text" id="pEmail" disabled>
+          </div>
+          <div class="form-field">
+            <label for="pGender">Gender</label>
+            <select id="pGender" required>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+            </select>
+            <span style="font-size:11.5px; color:var(--slate-600);">Used to check eligibility for female-only / male-only rooms.</span>
+          </div>
+        </div>
+        <div class="form-alert" id="profileAlert" role="alert" style="display:none; margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary btn-sm">Save changes</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section-head">
+      <div>
+        <h2>Change password</h2>
+        <p>Choose a new password for your account.</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding:22px 24px; max-width:520px;">
+      <form id="passwordForm">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-field">
+            <label for="pOldPassword">Current password</label>
+            <input type="password" id="pOldPassword" placeholder="Enter your current password" required>
+          </div>
+          <div class="form-field">
+            <label for="pNewPassword">New password</label>
+            <input type="password" id="pNewPassword" placeholder="At least 8 characters" required minlength="8">
+          </div>
+          <div class="form-field">
+            <label for="pConfirmPassword">Confirm new password</label>
+            <input type="password" id="pConfirmPassword" placeholder="Re-enter new password" required minlength="8">
+          </div>
+        </div>
+        <div class="form-alert" id="passwordAlert" role="alert" style="display:none; margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary btn-sm">Update password</button>
+        </div>
+      </form>
     </div>
   </main>
 </div>
@@ -530,130 +577,109 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     window.location.href = 'login.html';
   });
 
-  function authHeaders() {
-    return { 'Authorization': `Bearer ${getToken()}` };
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 
-  function statusPillHTML(status) {
-    const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[status] || 'pill-warning';
-    const label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' }[status] || status;
-    return `<span class="pill ${statusPillClass}">${label}</span>`;
+  function showAlert(el, message, isError) {
+    el.textContent = message;
+    el.style.display = 'block';
+    el.style.background = isError ? 'var(--error-bg)' : 'var(--success-bg)';
+    el.style.color = isError ? 'var(--error-fg)' : 'var(--success-fg)';
   }
 
-  function bookingRowHTML(b) {
-    const requestedAgo = new Date(b.requested_at).toLocaleDateString();
-    const actions = b.status === 'pending'
-      ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`
-      : statusPillHTML(b.status);
-    return `
-      <div class="request-row card" data-booking-id="${b.id}">
-        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
-        <div class="request-main">
-          <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
-          <p class="request-sub">Requested ${b.room_label} · ${b.semester} · ${new Date(b.move_in_date).toLocaleDateString()}–${new Date(b.move_out_date).toLocaleDateString()}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
-        </div>
-        <span class="request-time">${requestedAgo}</span>
-        <div class="request-actions">${actions}</div>
-      </div>`;
-  }
-
-  function transferRequestRowHTML(t) {
-    const requestedAgo = new Date(t.requested_at).toLocaleDateString();
-    const actions = t.status === 'pending'
-      ? `<button class="btn-secondary btn-sm" data-action="reject-transfer" data-id="${t.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve-transfer" data-id="${t.id}">Approve</button>`
-      : statusPillHTML(t.status);
-    return `
-      <div class="request-row card" data-transfer-id="${t.id}">
-        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="request-main">
-          <div class="request-top"><span class="request-title">Transfer request — ${t.student_name}</span><span class="chip chip-navy">Transfer</span></div>
-          <p class="request-sub">Requested to move from ${t.room_label} to ${t.requested_room_label}${t.reason ? ` · Reason: ${t.reason}` : ''}</p>
-        </div>
-        <span class="request-time">${requestedAgo}</span>
-        <div class="request-actions">${actions}</div>
-      </div>`;
-  }
-
-  async function loadBookings() {
+  async function loadProfile() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
-    const status = document.getElementById('statusFilter').value;
-    const list = document.getElementById('bookingList');
-    list.innerHTML = '<p style="color:var(--slate-600);">Loading bookings…</p>';
-
     try {
-      const [bookingsRes, transfersRes] = await Promise.all([
-        fetch(`/admin/bookings?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
-        fetch(`/admin/transfer-requests?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
-      ]);
-      if (bookingsRes.status === 403 || transfersRes.status === 403) {
-        alert('Admin access required.');
-        window.location.href = 'login.html';
-        return;
-      }
-      const bookings = await bookingsRes.json();
-      const transfers = await transfersRes.json();
-      const items = [
-        ...bookings.map((item) => ({ ...item, kind: 'booking' })),
-        ...transfers.map((item) => ({ ...item, kind: 'transfer' })),
-      ].sort((a, b) => new Date(b.requested_at) - new Date(a.requested_at));
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('failed');
+      const me = await res.json();
 
-      document.getElementById('bookingCountSub').textContent =
-        `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
-
-      if (!items.length) {
-        list.innerHTML = `
-          <div class="empty-state card">
-            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <h3>Nothing here</h3>
-            <p>No bookings or transfer requests match this filter.</p>
-          </div>`;
-        return;
-      }
-
-      list.innerHTML = items.map((item) => item.kind === 'transfer' ? transferRequestRowHTML(item) : bookingRowHTML(item)).join('');
-      list.querySelectorAll('[data-action="approve"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'approve')));
-      list.querySelectorAll('[data-action="reject"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'reject')));
-      list.querySelectorAll('[data-action="approve-transfer"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'approve')));
-      list.querySelectorAll('[data-action="reject-transfer"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'reject')));
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+      document.getElementById('pFullName').value = me.full_name || '';
+      document.getElementById('pStudentId').value = me.student_id || '—';
+      document.getElementById('pEmail').value = me.email || '';
+      if (me.gender) document.getElementById('pGender').value = me.gender;
     } catch (err) {
-      list.innerHTML = '<p style="color:var(--error-fg);">Could not load bookings. Please try again.</p>';
+      showAlert(document.getElementById('profileAlert'), 'Could not load your profile.', true);
     }
   }
 
-  async function decideBooking(id, action) {
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = getToken();
+    const alertBox = document.getElementById('profileAlert');
+    alertBox.style.display = 'none';
+
+    const payload = {
+      full_name: document.getElementById('pFullName').value.trim(),
+      gender: document.getElementById('pGender').value,
+    };
+
     try {
-      const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) {
-        const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not ${action} the booking (status ${res.status}).`);
+      const res = await fetch('/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showAlert(alertBox, body.detail || 'Could not save changes.', true);
         return;
       }
-      loadBookings();
+      showAlert(alertBox, 'Profile updated.', false);
+      document.getElementById('avatarName').textContent = body.full_name || body.email;
+      document.getElementById('avatarInitials').textContent = initials(body.full_name);
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      showAlert(alertBox, 'Network error — please try again.', true);
     }
-  }
+  });
 
-  async function decideTransferRequest(id, action) {
+  document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = getToken();
+    const alertBox = document.getElementById('passwordAlert');
+    alertBox.style.display = 'none';
+
+    const oldPassword = document.getElementById('pOldPassword').value;
+    const newPassword = document.getElementById('pNewPassword').value;
+    const confirmPassword = document.getElementById('pConfirmPassword').value;
+
+    if (!oldPassword) {
+      showAlert(alertBox, 'Enter your current password.', true);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showAlert(alertBox, 'Passwords do not match.', true);
+      return;
+    }
+    if (newPassword.length < 8) {
+      showAlert(alertBox, 'Password must be at least 8 characters.', true);
+      return;
+    }
+
     try {
-      const res = await fetch(`/admin/transfer-requests/${id}/${action}`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) { alert('Could not update transfer request.'); return; }
-      loadBookings();
+      const res = await fetch('/profile/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showAlert(alertBox, body.detail || 'Could not update password.', true);
+        return;
+      }
+      showAlert(alertBox, 'Password updated.', false);
+      document.getElementById('passwordForm').reset();
     } catch (err) {
-      alert('Network error — please try again.');
+      showAlert(alertBox, 'Network error — please try again.', true);
     }
-  }
+  });
 
-  document.getElementById('statusFilter').addEventListener('change', loadBookings);
-  loadBookings();
+  loadProfile();
 </script>
 </body>
 </html>

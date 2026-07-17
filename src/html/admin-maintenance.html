@@ -593,10 +593,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   async function completeMaintenance(id) {
     try {
       const res = await fetch(`/admin/maintenance/${id}/complete`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) { alert('Could not update request.'); return; }
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.detail || `Could not resolve this request (status ${res.status}).`);
+        return;
+      }
       loadMaintenance();
     } catch (err) {
-      alert('Network error — please try again.');
+      alert('Network error — please check your connection and try again.');
     }
   }
 
