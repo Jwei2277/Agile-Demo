@@ -644,7 +644,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           </div>
           <div class="room-fee">RM ${room.fee_monthly.toFixed(0)}${feeNote}</div>
           <div class="room-footer">
-            <button class="btn-secondary btn-sm" disabled>View details</button>
+            <button class="btn-secondary btn-sm" type="button" data-detail-room-id="${room.id}" style="text-decoration:none; display:inline-flex; justify-content:center; align-items:center;">View details</button>
             <button class="btn-primary btn-sm" ${room.is_available ? '' : 'disabled'} data-room-id="${room.id}" data-capacity="${room.capacity}" data-room-type="${room.room_type}" data-gender-policy="${room.gender_policy}">Book now</button>
           </div>
         </div>
@@ -670,6 +670,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
       roomGrid.querySelectorAll('[data-room-id]').forEach((btn) => {
         btn.addEventListener('click', () => bookRoom(Number(btn.dataset.roomId), Number(btn.dataset.capacity), btn.dataset.roomType, btn.dataset.genderPolicy));
+      });
+
+      roomGrid.querySelectorAll('[data-detail-room-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          window.location.href = `/student-room-details.html?room_id=${btn.dataset.detailRoomId}`;
+        });
       });
     } catch (err) {
       roomGrid.innerHTML = '<p style="color:var(--error-fg);">Could not load rooms. Please try again.</p>';

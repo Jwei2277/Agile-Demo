@@ -299,17 +299,20 @@ def me(user: CurrentUser = Depends(get_current_user)):
 
 @router.post("/logout")
 def logout(authorization: str | None = Header(default=None)):
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
+
     token = _extract_bearer_token(authorization)
+
     try:
-        # Attach this request's token to the client, then revoke it —
-        # this invalidates the refresh token server-side so the old
-        # access token can't be refreshed into a new session later.
+        # Attach this request's token to the client, then revoke it.
         supabase.auth.set_session(token, token)
         supabase.auth.sign_out()
     except Exception:
-        # Already expired/invalid/malformed — nothing to revoke server-side.
-        # The frontend clears its local storage regardless, so this is
-        # still an effective logout from the user's point of view.
+        # Ignore invalid/expired tokens.
         pass
 
     return {"message": "Logged out"}
@@ -345,13 +348,25 @@ def forgot_password(data: ForgotPassword):
 
 @router.post("/reset-password")
 def reset_password(data: ResetPassword):
-    # The reset link Supabase emails the user lands on the frontend with
-    # an access_token in the URL fragment; the frontend passes it here
-    # along with the new password to complete the reset.
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
+
     try:
-        supabase.auth.set_session(data.access_token, data.access_token)
+        # Complete password reset using the access token.
+        supabase.auth.set_session(
+            data.access_token,
+            data.access_token,
+        )
+
         supabase.auth.update_user({"password": data.new_password})
+
     except AuthApiError as e:
-        raise HTTPException(status_code=400, detail=e.message) from e
+        raise HTTPException(
+            status_code=400,
+            detail=e.message,
+        ) from e
 
     return {"message": "Password updated. You can now log in with your new password."}

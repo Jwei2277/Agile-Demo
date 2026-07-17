@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelEase — Admin Transfers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-950: #071a33;
+  --navy-900: #0b2545;
+  --navy-800: #123566;
+  --blue-600: #2f6fed;
+  --blue-500: #4f86f7;
+  --sky-400: #7fb0ff;
+  --sky-100: #eaf2ff;
+  --white: #ffffff;
+  --slate-600: #5b6b82;
+  --slate-400: #8fa0b8;
+  --border: #dce6f5;
+  --success-bg: #e8f7ef;
+  --success-fg: #1f8a55;
+  --error-bg: #fdeceb;
+  --error-fg: #c8352d;
+  --warning-bg: #fff4e0;
+  --warning-fg: #b3760b;
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font-family: var(--font-body); color: var(--navy-900); background: var(--sky-100); }
+img, svg { display: block; }
+button { font-family: inherit; }
+a { color: inherit; }
+.topnav { background: var(--navy-900); color: var(--white); }
+.topnav-inner { max-width: 1180px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; gap: 24px; }
+.brand-mark { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+.brand-mark svg { color: var(--sky-400); flex-shrink: 0; }
+.eyebrow-chip { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sky-400); border: 1px solid rgba(127,176,255,0.35); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.nav-links { display: flex; gap: 22px; margin-left: 8px; font-size: 14px; font-weight: 500; color: #c7d9f5; flex: 1; }
+.nav-links a { text-decoration: none; }
+.nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a:hover { color: var(--white); }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.avatar-chip { display: flex; align-items: center; gap: 9px; padding: 5px 12px 5px 6px; border-radius: 999px; background: rgba(255,255,255,0.06); cursor: pointer; }
+.avatar-circle { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--sky-400), var(--blue-600)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 11px; color: var(--navy-950); }
+.avatar-name { font-size: 13.5px; font-weight: 600; }
+.btn-secondary { padding: 10px 17px; font-size: 14px; font-weight: 600; color: var(--navy-900); background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+.btn-secondary:hover { background: var(--sky-100); }
+.btn-primary { padding: 11px 18px; font-size: 14px; font-weight: 600; color: var(--white); background: var(--blue-600); border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+.btn-primary:hover { background: #285fd6; }
+.btn-sm { padding: 7px 12px; font-size: 12.5px; border-radius: 7px; }
+main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 72px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 18px; flex-wrap: wrap; }
+.section-head h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0; }
+.section-head p { margin: 4px 0 0; font-size: 13.5px; color: var(--slate-600); }
+.request-list { display: flex; flex-direction: column; gap: 12px; }
+.request-row { padding: 16px 18px; display: grid; grid-template-columns: auto 1fr auto auto; gap: 14px; align-items: center; }
+.request-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--sky-100); color: var(--blue-600); display: flex; align-items: center; justify-content: center; }
+.request-title { font-weight: 700; }
+.request-sub { margin: 4px 0 0; color: var(--slate-600); font-size: 13.5px; }
+.request-time { font-size: 13px; color: var(--slate-600); white-space: nowrap; }
+.request-actions { display: flex; gap: 8px; }
+.pill { display: inline-flex; align-items: center; justify-content: center; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pill-warning { background: var(--warning-bg); color: var(--warning-fg); }
+.pill-success { background: var(--success-bg); color: var(--success-fg); }
+.pill-error { background: var(--error-bg); color: var(--error-fg); }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.chip-blue { background: var(--sky-100); color: var(--blue-600); }
+.chip-navy { background: rgba(11,37,69,0.06); color: var(--navy-900); }
+.empty-state { padding: 36px 24px; text-align: center; color: var(--slate-600); }
+@media (max-width: 860px) { .nav-links { display: none; } .request-row { grid-template-columns: 1fr; } .request-time { justify-self: start; } .request-actions { justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="topnav-inner">
+    <div class="brand-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 8v8" stroke="currentColor" stroke-width="1.8"/><path d="M9 10.5h6" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>HostelEase</span>
+      <span class="eyebrow-chip">Admin</span>
+    </div>
+    <nav class="nav-links">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="admin-bookings.html">Bookings</a>
+      <a href="admin-transfers.html" class="current">Transfers</a>
+      <a href="admin-rooms.html">Rooms</a>
+      <a href="admin-maintenance.html">Maintenance</a>
+    </nav>
+    <div class="nav-right">
+      <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">A</div><span class="avatar-name" id="avatarName">Admin</span></div>
+      <button class="btn-secondary btn-sm" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="section-head">
+    <div>
+      <h2>Room transfer requests</h2>
+      <p>Approve or reject student transfer requests. Pending requests stay pending until a decision is made.</p>
+    </div>
+  </div>
+  <div class="request-list" id="transferList">
+    <p style="color:var(--slate-600);">Loading transfers…</p>
+  </div>
+</main>
+<script>
+  function getToken() { return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token'); }
+  function authHeaders() { return { 'Authorization': `Bearer ${getToken()}` }; }
+  function statusPillHTML(status) { const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error' }[status] || 'pill-warning'; const label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' }[status] || status; return `<span class="pill ${statusPillClass}">${label}</span>`; }
+
+  function transferRowHTML(t) {
+    const requestedAgo = new Date(t.requested_at).toLocaleDateString();
+    const actions = t.status === 'pending'
+      ? `<button class="btn-secondary btn-sm" data-action="reject-transfer" data-id="${t.id}">Reject</button><button class="btn-primary btn-sm" data-action="approve-transfer" data-id="${t.id}">Approve</button>`
+      : statusPillHTML(t.status);
+    return `
+      <div class="request-row card">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div class="request-title">${t.student_name} • Transfer request</div>
+          <p class="request-sub">Requested to move from ${t.room_label} to ${t.requested_room_label}${t.reason ? ` · Reason: ${t.reason}` : ''}</p>
+        </div>
+        <span class="request-time">${requestedAgo}</span>
+        <div class="request-actions">${actions}</div>
+      </div>`;
+  }
+
+  async function loadTransfers() {
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+    const list = document.getElementById('transferList');
+    try {
+      const res = await fetch('/admin/transfer-requests?status=all', { headers: authHeaders() });
+      if (res.status === 403) { alert('Admin access required.'); window.location.href = 'login.html'; return; }
+      const transfers = await res.json();
+      if (!transfers.length) {
+        list.innerHTML = '<div class="empty-state card">No transfer requests yet.</div>';
+        return;
+      }
+      list.innerHTML = transfers.map(transferRowHTML).join('');
+      list.querySelectorAll('[data-action="approve-transfer"]').forEach((btn) => btn.addEventListener('click', () => decideTransfer(btn.dataset.id, 'approve')));
+      list.querySelectorAll('[data-action="reject-transfer"]').forEach((btn) => btn.addEventListener('click', () => decideTransfer(btn.dataset.id, 'reject')));
+    } catch (err) {
+      list.innerHTML = '<div class="empty-state card">Could not load transfer requests.</div>';
+    }
+  }
+
+  async function decideTransfer(id, action) {
+    try {
+      const res = await fetch(`/admin/transfer-requests/${id}/${action}`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok && res.status !== 204) { alert('Could not update transfer request.'); return; }
+      loadTransfers();
+    } catch (err) { alert('Network error — please try again.'); }
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try { if (token) await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); } catch (err) {}
+    window.localStorage.removeItem('access_token'); window.localStorage.removeItem('refresh_token'); window.localStorage.removeItem('user'); window.sessionStorage.removeItem('access_token'); window.sessionStorage.removeItem('refresh_token'); window.sessionStorage.removeItem('user'); window.location.href = 'login.html';
+  });
+
+  loadTransfers();
+</script>
+</body>
+</html>
