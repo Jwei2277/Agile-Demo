@@ -1,8 +1,22 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from agile_ci_demo.app import app
 
 client = TestClient(app)
+
+
+# ==========================
+# Cleanup
+# ==========================
+
+
+@pytest.fixture(autouse=True)
+def clear_overrides():
+
+    yield
+
+    app.dependency_overrides.clear()
 
 
 # ==========================
@@ -11,6 +25,7 @@ client = TestClient(app)
 
 
 class FakeResponse:
+
     def __init__(self, data):
         self.data = data
 
@@ -24,21 +39,25 @@ class FakeQuery:
         return self
 
     def eq(self, column, value):
+
         self.data = [item for item in self.data if item.get(column) == value]
 
         return self
 
     def in_(self, column, values):
+
         self.data = [item for item in self.data if item.get(column) in values]
 
         return self
 
     def limit(self, number):
+
         self.data = self.data[:number]
 
         return self
 
     def execute(self):
+
         return FakeResponse(self.data)
 
 
@@ -73,7 +92,12 @@ class FakeSupabase:
                     "photo_url": None,
                 },
             ],
-            "bookings": [{"room_id": 2, "status": "approved"}],
+            "bookings": [
+                {
+                    "room_id": 2,
+                    "status": "approved",
+                }
+            ],
         }
 
     def table(self, name):
@@ -87,13 +111,13 @@ class FakeSupabase:
 
 
 def test_get_all_rooms(monkeypatch):
-    """
-    Get all available rooms
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms")
 
@@ -107,13 +131,13 @@ def test_get_all_rooms(monkeypatch):
 
 
 def test_get_room_by_id(monkeypatch):
-    """
-    Get room details using valid room ID
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms/1")
 
@@ -127,13 +151,13 @@ def test_get_room_by_id(monkeypatch):
 
 
 def test_get_room_invalid_id(monkeypatch):
-    """
-    Get room with invalid room ID
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms/999")
 
@@ -141,13 +165,13 @@ def test_get_room_invalid_id(monkeypatch):
 
 
 def test_filter_room_by_type(monkeypatch):
-    """
-    Filter rooms by room type
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms?room_type=Single Room")
 
@@ -161,13 +185,13 @@ def test_filter_room_by_type(monkeypatch):
 
 
 def test_filter_room_by_gender(monkeypatch):
-    """
-    Filter rooms by gender policy
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms?gender=Female only")
 
@@ -179,13 +203,13 @@ def test_filter_room_by_gender(monkeypatch):
 
 
 def test_filter_room_by_block(monkeypatch):
-    """
-    Filter rooms by hostel block
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms?block=Block A")
 
@@ -199,13 +223,13 @@ def test_filter_room_by_block(monkeypatch):
 
 
 def test_only_available_rooms(monkeypatch):
-    """
-    Return only rooms without active bookings
-    """
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr("agile_ci_demo.rooms.supabase_admin", fake)
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
 
     response = client.get("/rooms?only_available=true")
 
@@ -218,10 +242,18 @@ def test_only_available_rooms(monkeypatch):
     assert data[0]["id"] == 1
 
 
-def test_rooms_without_supabase():
+def test_rooms_without_supabase(monkeypatch):
 
-    app.dependency_overrides = {}
+    class BrokenSupabase:
 
-    response = client.get("/rooms")
+        def table(self, name):
 
-    assert response.status_code in [200, 501]
+            raise Exception("Supabase unavailable")
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        BrokenSupabase(),
+    )
+
+    with pytest.raises(Exception, match="Supabase unavailable"):
+        client.get("/rooms")

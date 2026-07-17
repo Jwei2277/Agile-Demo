@@ -28,6 +28,7 @@ def override_student():
 
 
 class FakeResponse:
+
     def __init__(self, data):
         self.data = data
 
@@ -35,11 +36,13 @@ class FakeResponse:
 class FakeQuery:
 
     def __init__(self, table_data):
+
         self.data = table_data
         self.operation = None
         self.insert_data = None
 
     def select(self, *args):
+
         return self
 
     def eq(self, column, value):
@@ -111,6 +114,7 @@ class FakeQuery:
         if self.operation == "update":
 
             for item in self.data:
+
                 item.update(self.insert_data)
 
             return FakeResponse(self.data)
@@ -133,7 +137,7 @@ class FakeSupabase:
                     "gender_policy": "Female only",
                     "fee_monthly": 100,
                     "is_active": True,
-                },
+                }
             ],
             "bookings": [],
         }
@@ -144,25 +148,45 @@ class FakeSupabase:
 
 
 # ==========================
-# Tests
+# Helper
 # ==========================
 
-# BookingCreate requires move_in_date / move_out_date (bookings.py calls
-# .isoformat() on both when building the insert payload), so every POST
-# /bookings payload below needs them or FastAPI rejects it with a 422
-# before the handler even runs.
+
+def patch_supabase(monkeypatch, fake):
+
+    monkeypatch.setattr(
+        "agile_ci_demo.bookings.supabase_admin",
+        fake,
+    )
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
+
+
+# ==========================
+# Test Data
+# ==========================
+
+
 BOOKING_DATES = {
     "move_in_date": "2025-09-01",
     "move_out_date": "2026-01-01",
 }
 
 
+# ==========================
+# Tests
+# ==========================
+
+
 def test_create_booking(monkeypatch):
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings.supabase_admin",
+    patch_supabase(
+        monkeypatch,
         fake,
     )
 
@@ -198,16 +222,13 @@ def test_get_my_booking(monkeypatch):
             "status": "approved",
             "occupant_count": 1,
             "requested_at": datetime.now(timezone.utc),
-            # _booking_out() reads these as row["move_in_date"] /
-            # row["move_out_date"] (hard indexing, not .get), so they must
-            # be present on the fake row.
             "move_in_date": "2025-09-01",
             "move_out_date": "2026-01-01",
         }
     )
 
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings.supabase_admin",
+    patch_supabase(
+        monkeypatch,
         fake,
     )
 
@@ -235,8 +256,8 @@ def test_create_double_booking_should_fail(monkeypatch):
         }
     )
 
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings.supabase_admin",
+    patch_supabase(
+        monkeypatch,
         fake,
     )
 
@@ -274,8 +295,8 @@ def test_cancel_booking(monkeypatch):
         }
     )
 
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings.supabase_admin",
+    patch_supabase(
+        monkeypatch,
         fake,
     )
 
@@ -290,8 +311,8 @@ def test_invalid_room_booking(monkeypatch):
 
     fake = FakeSupabase()
 
-    monkeypatch.setattr(
-        "agile_ci_demo.bookings.supabase_admin",
+    patch_supabase(
+        monkeypatch,
         fake,
     )
 
