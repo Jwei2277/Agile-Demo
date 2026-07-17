@@ -12,6 +12,7 @@ from agile_ci_demo.bookings import router as bookings_router
 from agile_ci_demo.maintenance import router as maintenance_router
 from agile_ci_demo.admin import router as admin_router
 from agile_ci_demo.profile import router as profile_router
+from agile_ci_demo.waitlist import router as waitlist_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
@@ -21,6 +22,7 @@ app.include_router(bookings_router)
 app.include_router(maintenance_router)
 app.include_router(admin_router)
 app.include_router(profile_router)
+app.include_router(waitlist_router)
 # =========================
 # Allow frontend connection
 # =========================

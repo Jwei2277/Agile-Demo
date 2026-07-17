@@ -549,11 +549,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <thead>
           <tr>
             <th>Block</th><th>Room</th><th>Type</th><th>Max occupants</th><th>Status</th>
-            <th>Gender</th><th>Fee / month</th><th>Active</th><th>Actions</th>
+            <th>Gender</th><th>Fee / month</th><th>Waitlist</th><th>Active</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="roomTableBody">
-          <tr><td colspan="9" style="color:var(--slate-600);">Loading rooms…</td></tr>
+          <tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>
         </tbody>
       </table>
     </div>
@@ -605,6 +605,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <td><span class="pill ${bookedBadgeClass}">${bookedBadgeText}</span></td>
         <td>${r.gender_policy}</td>
         <td>RM ${r.fee_monthly.toFixed(0)}${r.capacity > 1 ? ' <small>(+RM50 for 2nd)</small>' : ''}</td>
+        <td>${r.waitlist_count > 0 ? `<span class="pill pill-warning">${r.waitlist_count} waiting</span>` : '—'}</td>
         <td><span class="pill ${activeBadgeClass}">${activeBadgeText}</span></td>
         <td class="actions-cell">
           <button class="btn-secondary btn-sm" data-action="edit-fee" data-id="${r.id}">Edit fee</button>
@@ -624,7 +625,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     if (!token) { window.location.href = 'login.html'; return; }
 
     const tbody = document.getElementById('roomTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--slate-600);">Loading rooms…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>';
 
     try {
       const res = await fetch('/admin/rooms', { headers: authHeaders() });
@@ -638,7 +639,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       document.getElementById('roomCountSub').textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} total`;
 
       if (!rooms.length) {
-        tbody.innerHTML = '<tr><td colspan="9" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
         return;
       }
 
@@ -648,7 +649,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       tbody.querySelectorAll('[data-action="toggle-active"]').forEach((btn) =>
         btn.addEventListener('click', () => toggleActive(btn.dataset.id, btn.dataset.active === 'true')));
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="9" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
     }
   }
 

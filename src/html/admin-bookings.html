@@ -551,7 +551,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
         <div class="request-main">
           <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
-          <p class="request-sub">Requested ${b.room_label} · ${b.semester}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
+          <p class="request-sub">Requested ${b.room_label} · ${b.semester} · ${new Date(b.move_in_date).toLocaleDateString()}–${new Date(b.move_out_date).toLocaleDateString()}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
         </div>
         <span class="request-time">${requestedAgo}</span>
         <div class="request-actions">${actions}</div>

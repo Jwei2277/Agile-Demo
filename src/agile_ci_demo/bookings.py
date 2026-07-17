@@ -15,6 +15,7 @@ from agile_ci_demo.models import (
 )
 from agile_ci_demo.rooms import _booked_room_ids, _room_to_out
 from agile_ci_demo.services.supabase_service import supabase_admin
+from agile_ci_demo.waitlist import notify_next_waitlisted
 
 router = APIRouter(
     prefix="/bookings",
@@ -109,6 +110,8 @@ def _booking_out(
         id=int(row["id"]),
         status=str(row["status"]),
         semester=str(row["semester"]),
+        move_in_date=row["move_in_date"],
+        move_out_date=row["move_out_date"],
         requested_at=row["requested_at"],
         decided_at=row.get("decided_at"),
         occupant_count=occupant_count,
@@ -214,6 +217,8 @@ def create_booking(
             "student_id": user.id,
             "room_id": data.room_id,
             "semester": data.semester,
+            "move_in_date": data.move_in_date.isoformat(),
+            "move_out_date": data.move_out_date.isoformat(),
             "status": "pending",
             "occupant_count": data.occupant_count,
             "extra_occupant_name": data.extra_occupant_name,
@@ -325,13 +330,13 @@ def update_booking(
             detail="Not your booking",
         )
 
-    if booking["status"] not in (
-        "pending",
-        "approved",
-    ):
+    if booking["status"] != "pending":
         raise HTTPException(
             status_code=409,
-            detail="Only pending or approved bookings can be edited",
+            detail=(
+                "Only pending bookings can be edited. Once a booking is approved, "
+                "use 'Request room transfer' instead to change rooms."
+            ),
         )
 
     new_room_id = data.room_id if data.room_id else int(booking["room_id"])
@@ -363,6 +368,10 @@ def update_booking(
         "extra_occupant_student_id": (data.extra_occupant_student_id if is_double else None),
         "extra_occupant_gender": (data.extra_occupant_gender if is_double else None),
     }
+
+    if data.move_in_date and data.move_out_date:
+        update_payload["move_in_date"] = data.move_in_date.isoformat()
+        update_payload["move_out_date"] = data.move_out_date.isoformat()
 
     update_resp = (
         supabase.table("bookings")
@@ -490,9 +499,9 @@ def request_room_transfer(
     # admin._decide_transfer_request). Changing room_id here would free up
     # the current room and occupy the requested one before anyone signed
     # off on it, and a rejected request would have no way to undo it.
-    supabase.table("bookings").update(
-        {"pending_transfer_room_id": data.room_id}
-    ).eq("id", booking_id).execute()
+    supabase.table("bookings").update({"pending_transfer_room_id": data.room_id}).eq(
+        "id", booking_id
+    ).execute()
 
     return TransferRoomRequestOut(
         id=int(row["id"]),
@@ -565,3 +574,10 @@ def cancel_booking(
         )
         .execute()
     )
+
+    try:
+        notify_next_waitlisted(int(booking["room_id"]))
+    except Exception:
+        # Waitlist notification is a nice-to-have — don't fail the
+        # cancellation itself if this has a problem.
+        pass

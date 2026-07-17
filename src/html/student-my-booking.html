@@ -306,6 +306,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .form-field label {
   font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--slate-600);
 }
+.form-field input {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
 .form-field textarea {
   width: 100%; padding: 11px 12px; font-size: 13.5px; font-family: var(--font-body);
   color: var(--navy-900); background: linear-gradient(180deg, #f8fbff 0%, var(--sky-100) 100%);
@@ -377,6 +382,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           <span class="pill" id="statusPill"></span>
           <div class="status-meta-row">
             <span>Semester: <strong id="statusSemester">—</strong></span>
+            <span>Stay: <strong id="statusStayDates">—</strong></span>
             <span>Requested: <strong id="statusRequested">—</strong></span>
             <span>Fee: <strong id="statusFee">—</strong></span>
             <span>Occupants: <strong id="statusOccupants">—</strong></span>
@@ -407,11 +413,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           <strong>Booking history</strong>
           <span class="desc">Coming soon.</span>
         </button>
-        <button class="quick-action card" disabled>
+        <a class="quick-action card" href="student-profile.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.9-4 3.7-6 7.5-6s6.6 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Update profile</strong>
-          <span class="desc">Coming soon.</span>
-        </button>
+          <span class="desc">Change your name, gender, or password.</span>
+        </a>
       </div>
     </section>
 
@@ -420,6 +426,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <h3>No active booking yet</h3>
       <p>You haven't applied for a room. Browse available rooms and submit an application to get started.</p>
       <div class="empty-actions"><a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a></div>
+    </section>
+
+    <section id="waitlistSection" hidden style="margin-top:24px;">
+      <div class="section-head" style="margin:0 0 12px;">
+        <div>
+          <h2 style="font-family:var(--font-display); font-size:16px; margin:0;">My waitlist</h2>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--slate-600);">You'll be booked automatically, in order, as soon as a room opens up.</p>
+        </div>
+      </div>
+      <div id="waitlistList" style="display:flex; flex-direction:column; gap:10px;"></div>
     </section>
   </main>
 </div>
@@ -458,6 +474,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <label for="roomSelect">Room</label>
       <select id="roomSelect"><option value="">Loading rooms…</option></select>
       <p class="modal-sub" id="roomSelectHint" style="margin:6px 0 0;"></p>
+    </div>
+
+    <div class="form-field">
+      <label for="editMoveInDate">Move-in date</label>
+      <input type="date" id="editMoveInDate" required>
+    </div>
+    <div class="form-field">
+      <label for="editMoveOutDate">Move-out date</label>
+      <input type="date" id="editMoveOutDate" required>
+      <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
     </div>
 
     <div class="occupant-options" id="occupantOptions">
@@ -592,6 +618,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 
+  let currentUserGender = null;
+
   async function loadProfileChip() {
     const token = getToken();
     if (!token) return;
@@ -601,6 +629,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       const me = await res.json();
       document.getElementById('avatarName').textContent = me.full_name || me.email;
       document.getElementById('avatarInitials').textContent = initials(me.full_name);
+      currentUserGender = me.gender || null;
     } catch (err) {
       // Non-fatal — the rest of the page still works without the name shown.
     }
@@ -663,6 +692,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     pill.className = `pill ${statusInfo.cls}`;
     pill.textContent = statusInfo.text;
     document.getElementById('statusSemester').textContent = booking.semester;
+    document.getElementById('statusStayDates').textContent =
+      `${new Date(booking.move_in_date).toLocaleDateString()} – ${new Date(booking.move_out_date).toLocaleDateString()}`;
     document.getElementById('statusRequested').textContent = new Date(booking.requested_at).toLocaleDateString();
     document.getElementById('statusFee').textContent = `RM ${booking.total_fee.toFixed(0)} / month`;
     const occupantsEl = document.getElementById('statusOccupants');
@@ -681,9 +712,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       statusNote.hidden = true;
     }
 
-    const editable = booking.status === 'pending' || booking.status === 'approved';
+    const editable = booking.status === 'pending';
     const transferEligible = booking.status === 'approved';
-    editBookingBtn.disabled = !editable;
+    editBookingBtn.hidden = !editable;
     transferRoomBtn.disabled = !transferEligible;
     statusEditHint.hidden = editable || transferEligible;
   }
@@ -819,6 +850,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
     selectable = selectable.filter(r => r.id !== currentRoom.id);
 
+    // Filter out rooms that can't actually take this booking's group:
+    // capacity must fit the occupant count, and for gender-restricted
+    // rooms every occupant (the booker + the 2nd occupant, if any) must
+    // match. A mixed-gender pair can only move to a Mixed block room.
+    selectable = selectable.filter(r => {
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
+
     if (selectable.length) {
       transferRoomSelect.innerHTML = selectable.map(r => {
         const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · RM${r.fee_monthly.toFixed(0)}/mo`;
@@ -827,7 +872,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       transferRoomSelect.disabled = false;
       transferModalConfirmBtn.disabled = false;
     } else {
-      transferRoomSelect.innerHTML = '<option value="">No alternate rooms available right now</option>';
+      transferRoomSelect.innerHTML = '<option value="">No eligible rooms available right now</option>';
       transferRoomSelect.disabled = true;
       transferModalConfirmBtn.disabled = true;
     }
@@ -966,6 +1011,22 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   const modalError = document.getElementById('modalError');
   const roomSelect = document.getElementById('roomSelect');
   const roomSelectHint = document.getElementById('roomSelectHint');
+  const editMoveInDateInput = document.getElementById('editMoveInDate');
+  const editMoveOutDateInput = document.getElementById('editMoveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  editMoveInDateInput.addEventListener('change', () => {
+    if (!editMoveInDateInput.value) return;
+    editMoveOutDateInput.min = isoDatePlusDays(editMoveInDateInput.value, 30);
+    if (editMoveOutDateInput.value && editMoveOutDateInput.value < editMoveOutDateInput.min) {
+      editMoveOutDateInput.value = editMoveOutDateInput.min;
+    }
+  });
   const occupantOptions = document.getElementById('occupantOptions');
   const extraOccupantFields = document.getElementById('extraOccupantFields');
   const extraNameInput = document.getElementById('extraName');
@@ -979,11 +1040,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     modalError.classList.remove('show');
     modalError.textContent = '';
     modalTitle.textContent = 'Edit booking';
-    modalSub.textContent = 'Change your room or occupant details below.';
+    modalSub.textContent = 'Change your room, dates, or occupant details below.';
     roomSelect.innerHTML = '<option value="">Loading rooms…</option>';
     roomSelect.disabled = true;
     modalConfirmBtn.disabled = true;
     bookingModal.hidden = false;
+
+    const today = new Date().toISOString().slice(0, 10);
+    editMoveInDateInput.min = today;
+    editMoveInDateInput.value = booking.move_in_date;
+    editMoveOutDateInput.min = isoDatePlusDays(booking.move_in_date, 30);
+    editMoveOutDateInput.value = booking.move_out_date;
 
     let rooms = [];
     try {
@@ -995,6 +1062,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
     // Only rooms that are free (or the room already on this booking) are
     // selectable — everything else is someone else's active booking.
+    // Also filter out rooms that couldn't actually take this booking's
+    // current occupant count/genders (mirrors the transfer-request filter).
     const currentRoom = booking.room;
     let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
     if (!selectable.some(r => r.id === currentRoom.id)) {
@@ -1002,6 +1071,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       // (it's "booked" by this very booking), so add it back in manually.
       selectable = [{ ...currentRoom, is_available: true }, ...selectable];
     }
+    selectable = selectable.filter(r => {
+      if (r.id === currentRoom.id) return true; // always allow keeping the current room
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
     selectable.sort((a, b) => (a.id === currentRoom.id ? -1 : b.id === currentRoom.id ? 1 : 0));
 
     roomSelect.innerHTML = selectable.map(r => {
@@ -1092,6 +1171,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   modalConfirmBtn.addEventListener('click', async () => {
     if (!currentBooking) return;
 
+    const editMoveIn = editMoveInDateInput.value;
+    const editMoveOut = editMoveOutDateInput.value;
+    if (!editMoveIn || !editMoveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const editDaysBooked = (new Date(editMoveOut) - new Date(editMoveIn)) / (1000 * 60 * 60 * 24);
+    if (editDaysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
     const selectedCount = occupantOptions.style.display === 'none'
       ? 1
       : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
@@ -1153,6 +1246,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           room_id: Number(roomSelect.value),
+          move_in_date: editMoveIn,
+          move_out_date: editMoveOut,
           occupant_count: selectedCount,
           extra_occupant_name: extraOccupantName,
           extra_occupant_email: extraOccupantEmail,
@@ -1176,7 +1271,64 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     }
   });
 
+  // ---------------------------------------------------------------
+  // My waitlist
+  // ---------------------------------------------------------------
+  async function loadWaitlist() {
+    const token = getToken();
+    if (!token) return;
+    const section = document.getElementById('waitlistSection');
+    const list = document.getElementById('waitlistList');
+    try {
+      const res = await fetch('/waitlist/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) { section.hidden = true; return; }
+      const entries = await res.json();
+      if (!entries.length) { section.hidden = true; return; }
+
+      section.hidden = false;
+      list.innerHTML = entries.map((e) => {
+        const isNotified = e.status === 'notified';
+        const statusText = isNotified ? 'Now available — book it before someone else does!' : `Queue position #${e.queue_position}`;
+        return `
+          <div class="card" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-family:var(--font-display); font-size:14px;">${e.room_label}</strong>
+              <p style="margin:2px 0 0; font-size:12.5px; color:${isNotified ? 'var(--success-fg)' : 'var(--slate-600)'};">${statusText}</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              ${isNotified ? `<a class="btn-primary btn-sm" style="text-decoration:none;" href="student-room-details.html?room_id=${e.room_id}">Book now</a>` : ''}
+              <button class="btn-secondary btn-sm" data-leave-waitlist="${e.id}">Leave waitlist</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-leave-waitlist]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            const dres = await fetch(`/waitlist/${btn.dataset.leaveWaitlist}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!dres.ok && dres.status !== 204) {
+              alert('Could not leave the waitlist.');
+              btn.disabled = false;
+              return;
+            }
+            loadWaitlist();
+          } catch (err) {
+            alert('Network error — please try again.');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      section.hidden = true;
+    }
+  }
+
   loadBooking();
+  loadWaitlist();
 </script>
 </body>
 </html>
