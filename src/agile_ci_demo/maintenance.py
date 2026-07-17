@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from agile_ci_demo.deps import CurrentUser, get_current_user
@@ -8,13 +10,17 @@ router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
 
 @router.post("", status_code=201, response_model=MaintenanceOut)
-def create_request(data: MaintenanceCreate, user: CurrentUser = Depends(get_current_user)):
+def create_request(
+    data: MaintenanceCreate,
+    user: CurrentUser = Depends(get_current_user),
+):
     if supabase_admin is None:
         raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
+            status_code=501,
+            detail="Server misconfigured: missing service role key",
         )
 
-    insert_resp = (
+    response = (
         supabase_admin.table("maintenance_requests")
         .insert(
             {
@@ -28,44 +34,55 @@ def create_request(data: MaintenanceCreate, user: CurrentUser = Depends(get_curr
         )
         .execute()
     )
-    if not insert_resp.data:
-        raise HTTPException(status_code=400, detail="Could not create request")
 
-    row = insert_resp.data[0]
+    if not response.data:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not create request",
+        )
+
+    row = cast(dict[str, Any], response.data[0])
+
     return MaintenanceOut(
-        id=row["id"],
-        title=row["title"],
-        category=row["category"],
-        priority=row["priority"],
-        status=row["status"],
+        id=cast(int, row["id"]),
+        title=str(row["title"]),
+        category=str(row["category"]),
+        priority=str(row["priority"]),
+        status=str(row["status"]),
         created_at=row["created_at"],
         student_name=user.full_name,
     )
 
 
 @router.get("/me", response_model=list[MaintenanceOut])
-def my_requests(user: CurrentUser = Depends(get_current_user)):
+def my_requests(
+    user: CurrentUser = Depends(get_current_user),
+):
     if supabase_admin is None:
         raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
+            status_code=501,
+            detail="Server misconfigured: missing service role key",
         )
 
-    resp = (
+    response = (
         supabase_admin.table("maintenance_requests")
         .select("*")
         .eq("student_id", user.id)
         .order("created_at", desc=True)
         .execute()
     )
+
+    rows = cast(list[dict[str, Any]], response.data or [])
+
     return [
         MaintenanceOut(
-            id=r["id"],
-            title=r["title"],
-            category=r["category"],
-            priority=r["priority"],
-            status=r["status"],
-            created_at=r["created_at"],
+            id=cast(int, row["id"]),
+            title=str(row["title"]),
+            category=str(row["category"]),
+            priority=str(row["priority"]),
+            status=str(row["status"]),
+            created_at=row["created_at"],
             student_name=user.full_name,
         )
-        for r in (resp.data or [])
+        for row in rows
     ]
