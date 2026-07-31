@@ -9,6 +9,7 @@ dependencies = [
   "supabase",
   "python-dotenv",
   "pydantic[email]"
+  "python-multipart",
 ]
 
 [build-system]
