@@ -6,47 +6,44 @@ from agile_ci_demo.app import app
 client = TestClient(app)
 
 
-# ==========================
-# Cleanup
-# ==========================
-
-
-@pytest.fixture(autouse=True)
-def clear_overrides():
-
-    yield
-
-    app.dependency_overrides.clear()
-
-
-# ==========================
-# Fake Supabase
-# ==========================
+# ============================================================
+# Fake Response
+# ============================================================
 
 
 class FakeResponse:
 
     def __init__(self, data):
+
         self.data = data
+
+
+# ============================================================
+# Fake Query
+# ============================================================
 
 
 class FakeQuery:
 
-    def __init__(self, table_data):
-        self.data = table_data
+    def __init__(self, table):
+
+        self.table = table
+
+        self.data = table
 
     def select(self, *args):
+
         return self
 
     def eq(self, column, value):
 
-        self.data = [item for item in self.data if item.get(column) == value]
+        self.data = [row for row in self.data if row.get(column) == value]
 
         return self
 
     def in_(self, column, values):
 
-        self.data = [item for item in self.data if item.get(column) in values]
+        self.data = [row for row in self.data if row.get(column) in values]
 
         return self
 
@@ -61,6 +58,11 @@ class FakeQuery:
         return FakeResponse(self.data)
 
 
+# ============================================================
+# Fake Supabase
+# ============================================================
+
+
 class FakeSupabase:
 
     def __init__(self):
@@ -73,28 +75,32 @@ class FakeSupabase:
                     "room_number": "101",
                     "room_type": "Single Room",
                     "capacity": 1,
-                    "gender_policy": "Female only",
-                    "fee_monthly": 100,
-                    "is_active": True,
-                    "hostel_blocks": {"name": "Block A"},
+                    "gender_policy": "Male only",
+                    "fee_monthly": 120,
                     "photo_url": None,
+                    "is_active": True,
+                    "hostel_blocks": {
+                        "name": "Block A",
+                    },
                 },
                 {
                     "id": 2,
                     "level": 2,
-                    "room_number": "202",
+                    "room_number": "201",
                     "room_type": "Master Room",
                     "capacity": 2,
-                    "gender_policy": "Mixed block",
+                    "gender_policy": "Female only",
                     "fee_monthly": 200,
-                    "is_active": True,
-                    "hostel_blocks": {"name": "Block B"},
                     "photo_url": None,
+                    "is_active": True,
+                    "hostel_blocks": {
+                        "name": "Block B",
+                    },
                 },
             ],
             "bookings": [
                 {
-                    "room_id": 2,
+                    "room_id": 1,
                     "status": "approved",
                 }
             ],
@@ -105,12 +111,26 @@ class FakeSupabase:
         return FakeQuery(self.tables.get(name, []))
 
 
-# ==========================
-# Tests
-# ==========================
+# ============================================================
+# Cleanup
+# ============================================================
 
 
-def test_get_all_rooms(monkeypatch):
+@pytest.fixture(autouse=True)
+def cleanup():
+
+    yield
+
+
+# ============================================================
+# List Rooms Tests
+# ============================================================
+
+
+def test_list_rooms(monkeypatch):
+    """
+    List all active rooms.
+    """
 
     fake = FakeSupabase()
 
@@ -129,28 +149,13 @@ def test_get_all_rooms(monkeypatch):
 
     assert data[0]["room_number"] == "101"
 
-
-def test_get_room_by_id(monkeypatch):
-
-    fake = FakeSupabase()
-
-    monkeypatch.setattr(
-        "agile_ci_demo.rooms.supabase_admin",
-        fake,
-    )
-
-    response = client.get("/rooms/1")
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["id"] == 1
-
-    assert data["room_type"] == "Single Room"
+    print("test_list_rooms PASSED")
 
 
-def test_get_room_invalid_id(monkeypatch):
+def test_list_rooms_gender(monkeypatch):
+    """
+    Filter rooms by gender.
+    """
 
     fake = FakeSupabase()
 
@@ -159,21 +164,7 @@ def test_get_room_invalid_id(monkeypatch):
         fake,
     )
 
-    response = client.get("/rooms/999")
-
-    assert response.status_code == 404
-
-
-def test_filter_room_by_type(monkeypatch):
-
-    fake = FakeSupabase()
-
-    monkeypatch.setattr(
-        "agile_ci_demo.rooms.supabase_admin",
-        fake,
-    )
-
-    response = client.get("/rooms?room_type=Single Room")
+    response = client.get("/rooms?gender=Male%20only")
 
     assert response.status_code == 200
 
@@ -181,10 +172,15 @@ def test_filter_room_by_type(monkeypatch):
 
     assert len(data) == 1
 
-    assert data[0]["room_type"] == "Single Room"
+    assert data[0]["gender_policy"] == "Male only"
+
+    print("test_list_rooms_gender PASSED")
 
 
-def test_filter_room_by_gender(monkeypatch):
+def test_list_rooms_room_type(monkeypatch):
+    """
+    Filter by room type.
+    """
 
     fake = FakeSupabase()
 
@@ -193,7 +189,7 @@ def test_filter_room_by_gender(monkeypatch):
         fake,
     )
 
-    response = client.get("/rooms?gender=Female only")
+    response = client.get("/rooms?room_type=Master%20Room")
 
     assert response.status_code == 200
 
@@ -201,8 +197,15 @@ def test_filter_room_by_gender(monkeypatch):
 
     assert len(data) == 1
 
+    assert data[0]["room_type"] == "Master Room"
 
-def test_filter_room_by_block(monkeypatch):
+    print("test_list_rooms_room_type PASSED")
+
+
+def test_list_rooms_block(monkeypatch):
+    """
+    Filter by hostel block.
+    """
 
     fake = FakeSupabase()
 
@@ -211,7 +214,7 @@ def test_filter_room_by_block(monkeypatch):
         fake,
     )
 
-    response = client.get("/rooms?block=Block A")
+    response = client.get("/rooms?block=Block%20A")
 
     assert response.status_code == 200
 
@@ -221,8 +224,13 @@ def test_filter_room_by_block(monkeypatch):
 
     assert data[0]["block_name"] == "Block A"
 
+    print("test_list_rooms_block PASSED")
 
-def test_only_available_rooms(monkeypatch):
+
+def test_list_rooms_available_only(monkeypatch):
+    """
+    Show only available rooms.
+    """
 
     fake = FakeSupabase()
 
@@ -239,21 +247,229 @@ def test_only_available_rooms(monkeypatch):
 
     assert len(data) == 1
 
-    assert data[0]["id"] == 1
+    assert data[0]["room_number"] == "201"
+
+    assert data[0]["is_available"] is True
+
+    print("test_list_rooms_available_only PASSED")
 
 
-def test_rooms_without_supabase(monkeypatch):
+def test_list_rooms_none(monkeypatch):
+    """
+    No rooms available.
+    """
 
-    class BrokenSupabase:
+    fake = FakeSupabase()
 
-        def table(self, name):
-
-            raise Exception("Supabase unavailable")
+    fake.tables["rooms"] = []
 
     monkeypatch.setattr(
         "agile_ci_demo.rooms.supabase_admin",
-        BrokenSupabase(),
+        fake,
     )
 
-    with pytest.raises(Exception, match="Supabase unavailable"):
-        client.get("/rooms")
+    response = client.get("/rooms")
+
+    assert response.status_code == 200
+
+    assert response.json() == []
+
+    print("test_list_rooms_none PASSED")
+
+
+def test_list_rooms_service_role_missing(monkeypatch):
+    """
+    Missing service role client.
+    """
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        None,
+    )
+
+    response = client.get("/rooms")
+
+    assert response.status_code == 501
+
+    print("test_list_rooms_service_role_missing PASSED")
+
+
+# ============================================================
+# Get Room Tests
+# ============================================================
+
+
+def test_get_room(monkeypatch):
+    """
+    Get room details.
+    """
+
+    fake = FakeSupabase()
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
+
+    response = client.get("/rooms/1")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == 1
+    assert data["room_number"] == "101"
+
+    print("test_get_room PASSED")
+
+
+def test_get_room_not_found(monkeypatch):
+    """
+    Room does not exist.
+    """
+
+    fake = FakeSupabase()
+
+    fake.tables["rooms"] = []
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
+
+    response = client.get("/rooms/99")
+
+    assert response.status_code == 404
+
+    print("test_get_room_not_found PASSED")
+
+
+def test_get_room_service_role_missing(monkeypatch):
+    """
+    Missing service role client.
+    """
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        None,
+    )
+
+    response = client.get("/rooms/1")
+
+    assert response.status_code == 501
+
+    print("test_get_room_service_role_missing PASSED")
+
+
+# ============================================================
+# _room_to_out()
+# ============================================================
+
+
+def test_room_to_out():
+    """
+    Convert database row to RoomOut.
+    """
+
+    from agile_ci_demo.rooms import _room_to_out
+
+    row = {
+        "id": 1,
+        "level": 1,
+        "room_number": "101",
+        "room_type": "Single Room",
+        "capacity": 1,
+        "gender_policy": "Male only",
+        "fee_monthly": 120,
+        "photo_url": None,
+        "hostel_blocks": {
+            "name": "Block A",
+        },
+    }
+
+    room = _room_to_out(
+        row,
+        set(),
+    )
+
+    assert room.room_number == "101"
+    assert room.block_name == "Block A"
+    assert room.is_available is True
+
+    print("test_room_to_out PASSED")
+
+
+def test_room_to_out_booked():
+    """
+    Booked room should not be available.
+    """
+
+    from agile_ci_demo.rooms import _room_to_out
+
+    row = {
+        "id": 1,
+        "level": 1,
+        "room_number": "101",
+        "room_type": "Single Room",
+        "capacity": 1,
+        "gender_policy": "Male only",
+        "fee_monthly": 120,
+        "photo_url": None,
+        "hostel_blocks": {
+            "name": "Block A",
+        },
+    }
+
+    room = _room_to_out(
+        row,
+        {1},
+    )
+
+    assert room.is_available is False
+
+    print("test_room_to_out_booked PASSED")
+
+
+# ============================================================
+# _booked_room_ids()
+# ============================================================
+
+
+def test_booked_room_ids(monkeypatch):
+    """
+    Return booked room IDs.
+    """
+
+    from agile_ci_demo.rooms import _booked_room_ids
+
+    fake = FakeSupabase()
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        fake,
+    )
+
+    booked = _booked_room_ids()
+
+    assert booked == {1}
+
+    print("test_booked_room_ids PASSED")
+
+
+def test_booked_room_ids_none(monkeypatch):
+    """
+    Supabase unavailable.
+    """
+
+    from agile_ci_demo.rooms import _booked_room_ids
+
+    monkeypatch.setattr(
+        "agile_ci_demo.rooms.supabase_admin",
+        None,
+    )
+
+    booked = _booked_room_ids()
+
+    assert booked == set()
+
+    print("test_booked_room_ids_none PASSED")

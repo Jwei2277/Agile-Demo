@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from agile_ci_demo.app import app
 
@@ -6,125 +7,438 @@ client = TestClient(app)
 
 
 # ==================================================
-# Application Startup Tests
+# Fixture
 # ==================================================
 
 
-def test_application_loaded():
-    """
-    Verify FastAPI application loads successfully
-    """
+@pytest.fixture(autouse=True)
+def cleanup():
+    reset_db()
+    yield
+    reset_db()
 
-    assert app is not None
+
+# ==================================================
+# Health Check
+# ==================================================
 
 
-def test_health_endpoint():
-    """
-    Verify API health check
-    """
+def test_health():
 
     response = client.get("/health")
 
     assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 
-    data = response.json()
-
-    assert data["status"] == "ok"
+    print("test_health PASSED")
 
 
-def test_invalid_endpoint_returns_404():
-    """
-    Verify invalid API route returns 404
-    """
+# ==================================================
+# Login Pages
+# ==================================================
 
-    response = client.get("/unknown-route")
+
+def test_root_page():
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+
+    print("test_root_page PASSED")
+
+
+def test_login_page():
+
+    response = client.get("/login.html")
+
+    assert response.status_code == 200
+
+    print("test_login_page PASSED")
+
+
+def test_register_page():
+
+    response = client.get("/register.html")
+
+    assert response.status_code == 200
+
+    print("test_register_page PASSED")
+
+
+def test_forgot_password_page():
+
+    response = client.get("/forgot-password.html")
+
+    assert response.status_code == 200
+
+    print("test_forgot_password_page PASSED")
+
+
+def test_reset_password_page():
+
+    response = client.get("/reset-password.html")
+
+    assert response.status_code == 200
+
+    print("test_reset_password_page PASSED")
+
+
+# ==================================================
+# Student Pages
+# ==================================================
+
+
+def test_student_home_page():
+
+    response = client.get("/student-home.html")
+
+    assert response.status_code == 200
+
+    print("test_student_home_page PASSED")
+
+
+def test_student_profile_page():
+
+    response = client.get("/student-profile.html")
+
+    assert response.status_code == 200
+
+    print("test_student_profile_page PASSED")
+
+
+def test_student_browse_hostels_page():
+
+    response = client.get("/student-browse-hostels.html")
+
+    assert response.status_code == 200
+
+    print("test_student_browse_hostels_page PASSED")
+
+
+def test_student_room_details_page():
+
+    response = client.get("/student-room-details.html")
+
+    assert response.status_code == 200
+
+    print("test_student_room_details_page PASSED")
+
+
+def test_student_booking_page():
+
+    response = client.get("/student-my-booking.html")
+
+    assert response.status_code == 200
+
+    print("test_student_booking_page PASSED")
+
+
+def test_student_maintenance_page():
+
+    response = client.get("/student-maintenance.html")
+
+    assert response.status_code == 200
+
+    print("test_student_maintenance_page PASSED")
+
+
+def test_student_visitors_page():
+
+    response = client.get("/student-visitors.html")
+
+    assert response.status_code == 200
+
+    print("test_student_visitors_page PASSED")
+
+
+# ==================================================
+# Admin Pages
+# ==================================================
+
+
+def test_admin_dashboard_page():
+
+    response = client.get("/admin-dashboard.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_dashboard_page PASSED")
+
+
+def test_admin_bookings_page():
+
+    response = client.get("/admin-bookings.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_bookings_page PASSED")
+
+
+def test_admin_maintenance_page():
+
+    response = client.get("/admin-maintenance.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_maintenance_page PASSED")
+
+
+def test_admin_visitors_page():
+
+    response = client.get("/admin-visitors.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_visitors_page PASSED")
+
+
+def test_admin_transfers_page():
+
+    response = client.get("/admin-transfers.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_transfers_page PASSED")
+
+
+def test_admin_rooms_page():
+
+    response = client.get("/admin-rooms.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_rooms_page PASSED")
+
+
+def test_admin_dashboard_pending_page():
+
+    response = client.get("/admin-dashboard-pending.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_dashboard_pending_page PASSED")
+
+
+def test_admin_dashboard_clear_page():
+
+    response = client.get("/admin-dashboard-clear.html")
+
+    assert response.status_code == 200
+
+    print("test_admin_dashboard_clear_page PASSED")
+
+
+# ==================================================
+# Invalid Route
+# ==================================================
+
+
+def test_invalid_page():
+
+    response = client.get("/page-not-found.html")
 
     assert response.status_code == 404
 
+    print("test_invalid_page PASSED")
+
 
 # ==================================================
-# Router Registration Tests
+# Create Item
 # ==================================================
 
 
-def _get_routes():
-    """
-    Get registered API paths from OpenAPI schema
-    """
+def test_create_item():
 
-    response = client.get("/openapi.json")
+    payload = {
+        "id": 1,
+        "title": "Complete Assignment",
+        "done": False,
+    }
+
+    response = client.post(
+        "/items",
+        json=payload,
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["id"] == 1
+    assert data["title"] == "Complete Assignment"
+    assert data["done"] is False
+
+    print("test_create_item PASSED")
+
+
+def test_create_duplicate_item():
+
+    payload = {
+        "id": 1,
+        "title": "Task",
+        "done": False,
+    }
+
+    client.post("/items", json=payload)
+
+    response = client.post("/items", json=payload)
+
+    assert response.status_code == 409
+
+    assert response.json()["detail"] == "Item with that ID already exists"
+
+    print("test_create_duplicate_item PASSED")
+
+
+# ==================================================
+# Get Item
+# ==================================================
+
+
+def test_get_item():
+
+    payload = {
+        "id": 1,
+        "title": "Testing",
+        "done": False,
+    }
+
+    client.post("/items", json=payload)
+
+    response = client.get("/items/1")
 
     assert response.status_code == 200
 
     data = response.json()
 
-    return list(data.get("paths", {}).keys())
+    assert data["id"] == 1
+    assert data["title"] == "Testing"
+    assert data["done"] is False
+
+    print("test_get_item PASSED")
 
 
-def test_auth_router_registered():
-    """
-    Verify authentication router exists
-    """
+def test_get_item_not_found():
 
-    routes = _get_routes()
+    response = client.get("/items/999")
 
-    assert any(route.startswith("/auth") for route in routes)
+    assert response.status_code == 404
 
+    assert response.json()["detail"] == "Not found"
 
-def test_room_router_registered():
-    """
-    Verify room router exists
-    """
-
-    routes = _get_routes()
-
-    assert any(route.startswith("/rooms") for route in routes)
-
-
-def test_booking_router_registered():
-    """
-    Verify booking router exists
-    """
-
-    routes = _get_routes()
-
-    assert any(route.startswith("/bookings") for route in routes)
-
-
-def test_admin_router_registered():
-    """
-    Verify admin router exists
-    """
-
-    routes = _get_routes()
-
-    assert any(route.startswith("/admin") for route in routes)
+    print("test_get_item_not_found PASSED")
 
 
 # ==================================================
-# Documentation Tests
+# Mark Done
 # ==================================================
 
 
-def test_openapi_available():
-    """
-    Verify OpenAPI documentation is generated
-    """
+def test_mark_item_done():
 
-    response = client.get("/openapi.json")
+    payload = {
+        "id": 1,
+        "title": "Testing",
+        "done": False,
+    }
+
+    client.post("/items", json=payload)
+
+    response = client.patch("/items/1/done")
 
     assert response.status_code == 200
 
     data = response.json()
 
-    assert "paths" in data
+    assert data["done"] is True
+
+    print("test_mark_item_done PASSED")
 
 
-def test_swagger_page_available():
-    """
-    Verify Swagger documentation page works
-    """
+def test_mark_done_item_not_found():
 
-    response = client.get("/docs")
+    response = client.patch("/items/999/done")
 
-    assert response.status_code == 200
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == "Not found"
+
+    print("test_mark_done_item_not_found PASSED")
+
+
+# ==================================================
+# Validation
+# ==================================================
+
+
+def test_create_item_missing_title():
+
+    payload = {
+        "id": 1,
+        "done": False,
+    }
+
+    response = client.post(
+        "/items",
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+    print("test_create_item_missing_title PASSED")
+
+
+def test_create_item_missing_id():
+
+    payload = {
+        "title": "Assignment",
+        "done": False,
+    }
+
+    response = client.post(
+        "/items",
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+    print("test_create_item_missing_id PASSED")
+
+
+def test_create_item_invalid_id():
+
+    payload = {
+        "id": "abc",
+        "title": "Assignment",
+        "done": False,
+    }
+
+    response = client.post(
+        "/items",
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+    print("test_create_item_invalid_id PASSED")
+
+
+def test_create_item_without_done():
+
+    payload = {
+        "id": 5,
+        "title": "Default Done",
+    }
+
+    response = client.post(
+        "/items",
+        json=payload,
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["done"] is False
+
+    print("test_create_item_without_done PASSED")
