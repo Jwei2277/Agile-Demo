@@ -83,7 +83,10 @@ def dashboard_stats(_: CurrentUser = Depends(require_admin)):
     # current status, not just the active ones counted above.
     all_bookings_resp = db.table("bookings").select("status").execute()
     bookings_by_status: dict[str, int] = {
-        "pending": 0, "approved": 0, "rejected": 0, "cancelled": 0
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "cancelled": 0,
     }
     for b in _rows(all_bookings_resp.data):
         status_value = str(b.get("status", ""))
@@ -533,7 +536,11 @@ def _upload_room_photo(db, photo: UploadFile) -> str:
     if len(contents) > MAX_ROOM_PHOTO_BYTES:
         raise HTTPException(status_code=400, detail="Room photo must be under 5 MB.")
 
-    extension = (photo.filename or "").rsplit(".", 1)[-1].lower() if "." in (photo.filename or "") else "jpg"
+    extension = (
+        (photo.filename or "").rsplit(".", 1)[-1].lower()
+        if "." in (photo.filename or "")
+        else "jpg"
+    )
     path = f"{uuid.uuid4().hex}.{extension}"
 
     try:
@@ -685,9 +692,15 @@ def _visitor_admin_out(row: Row, profile: Row) -> VisitorRequestAdminOut:
 
 @router.get("/visitors", response_model=list[VisitorRequestAdminOut])
 def list_visitor_requests(
-    status: str = Query(default="all", description="'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'"),
-    visit_date: str | None = Query(default=None, description="YYYY-MM-DD — filter to a specific visit date"),
-    search: str | None = Query(default=None, description="Matches visitor name or host student name"),
+    status: str = Query(
+        default="all", description="'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'"
+    ),
+    visit_date: str | None = Query(
+        default=None, description="YYYY-MM-DD — filter to a specific visit date"
+    ),
+    search: str | None = Query(
+        default=None, description="Matches visitor name or host student name"
+    ),
     _: CurrentUser = Depends(require_admin),
 ):
     db = _db()
@@ -708,9 +721,7 @@ def list_visitor_requests(
     if search:
         needle = search.strip().lower()
         out = [
-            v
-            for v in out
-            if needle in v.visitor_name.lower() or needle in v.student_name.lower()
+            v for v in out if needle in v.visitor_name.lower() or needle in v.student_name.lower()
         ]
 
     # Cancelled requests sink to the bottom, below pending/approved/rejected.
