@@ -668,10 +668,13 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     const badgeText = room.is_available ? 'Available' : 'Booked';
     const occupancyText = room.capacity > 1 ? `Up to ${room.capacity} pax` : '1 pax';
     const feeNote = room.capacity > 1 ? `<small> / month (+RM50 for 2nd occupant)</small>` : `<small> / month</small>`;
+    const photoContent = room.photo_url
+      ? `<img src="${room.photo_url}" alt="${room.room_type} in ${room.block_name}" style="width:100%; height:100%; object-fit:cover;">`
+      : `<svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     return `
       <div class="room-card card">
         <div class="room-photo">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ${photoContent}
           <span class="avail-badge pill ${badgeClass}">${badgeText}</span>
         </div>
         <div class="room-body">

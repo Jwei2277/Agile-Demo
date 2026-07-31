@@ -18,9 +18,7 @@ MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 
 def _db():
     if supabase_admin is None:
-        raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
-        )
+        raise HTTPException(status_code=501, detail="Server misconfigured: missing service role key")
     return supabase_admin
 
 
@@ -46,9 +44,7 @@ def _room_label(db, room_id: int | None) -> str | None:
     return f"{block.get('name', '?')} · Room {room.get('room_number', '?')}"
 
 
-def _maintenance_out(
-    db, row: Row, student_name: str | None = None, student_id: str | None = None
-) -> MaintenanceOut:
+def _maintenance_out(db, row: Row, student_name: str | None = None, student_id: str | None = None) -> MaintenanceOut:
     return MaintenanceOut(
         id=int(row["id"]),
         title=str(row["title"]),
@@ -77,11 +73,7 @@ def _upload_photo(db, user_id: str, photo: UploadFile) -> str:
     if len(contents) > MAX_PHOTO_BYTES:
         raise HTTPException(status_code=400, detail="Photo must be under 5 MB.")
 
-    extension = (
-        (photo.filename or "").rsplit(".", 1)[-1].lower()
-        if "." in (photo.filename or "")
-        else "jpg"
-    )
+    extension = (photo.filename or "").rsplit(".", 1)[-1].lower() if "." in (photo.filename or "") else "jpg"
     path = f"{user_id}/{uuid.uuid4().hex}.{extension}"
 
     try:

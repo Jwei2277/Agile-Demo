@@ -14,9 +14,7 @@ Row = dict[str, Any]
 
 def _db():
     if supabase_admin is None:
-        raise HTTPException(
-            status_code=501, detail="Server misconfigured: missing service role key"
-        )
+        raise HTTPException(status_code=501, detail="Server misconfigured: missing service role key")
     return supabase_admin
 
 
@@ -41,9 +39,7 @@ def _visitor_out(row: Row) -> VisitorRequestOut:
 
 
 @router.post("", status_code=201, response_model=VisitorRequestOut)
-def create_visitor_request(
-    data: VisitorRequestCreate, user: CurrentUser = Depends(get_current_user)
-):
+def create_visitor_request(data: VisitorRequestCreate, user: CurrentUser = Depends(get_current_user)):
     db = _db()
 
     insert_resp = (

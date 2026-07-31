@@ -310,6 +310,10 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
     <p id="roomSummary">Please wait while we load the available details for this room.</p>
   </section>
 
+  <div id="roomPhotoWrap" style="display:none; margin-top:20px;">
+    <img id="roomPhotoImg" alt="Room photo" style="width:100%; max-height:360px; object-fit:cover; border-radius:var(--radius-lg); border:1px solid var(--border);">
+  </div>
+
   <div class="detail-grid">
     <section class="card detail-panel">
       <h2>Room information</h2>
@@ -573,6 +577,16 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
       roomTitle.textContent = `${room.room_type} · ${room.block_name}`;
       roomSummary.textContent = `Level ${room.level} · Room ${room.room_number} · ${room.gender_policy}`;
 
+      const roomPhotoWrap = document.getElementById('roomPhotoWrap');
+      const roomPhotoImg = document.getElementById('roomPhotoImg');
+      if (room.photo_url) {
+        roomPhotoImg.src = room.photo_url;
+        roomPhotoImg.alt = `${room.room_type} in ${room.block_name}`;
+        roomPhotoWrap.style.display = 'block';
+      } else {
+        roomPhotoWrap.style.display = 'none';
+      }
+
       const statusClass = room.is_available ? 'pill-success' : 'pill-error';
       const statusText = room.is_available ? 'Available now' : 'Booked';
       availabilityBadge.className = `pill ${statusClass}`;
@@ -631,6 +645,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 72px; }
       roomStatus.textContent = 'The request failed. Please try again.';
       amenitiesList.innerHTML = '';
       bookFromDetailsBtn.disabled = true;
+      document.getElementById('roomPhotoWrap').style.display = 'none';
     }
   }
 
