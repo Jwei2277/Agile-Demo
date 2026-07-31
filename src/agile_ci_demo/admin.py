@@ -1,7 +1,8 @@
+import uuid
 from datetime import datetime, timezone
 from typing import Any, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
 from agile_ci_demo.deps import CurrentUser, require_admin
 from agile_ci_demo.models import (
@@ -48,9 +49,14 @@ def _rows(data: Any) -> list[Row]:
 def dashboard_stats(_: CurrentUser = Depends(require_admin)):
     db = _db()
 
-    rooms_resp = db.table("rooms").select("id").eq("is_active", True).execute()
+    rooms_resp = db.table("rooms").select("id, room_type").eq("is_active", True).execute()
     rooms = _rows(rooms_resp.data)
     total_rooms = len(rooms)
+
+    rooms_by_type: dict[str, int] = {}
+    for r in rooms:
+        room_type = str(r.get("room_type", "Unknown"))
+        rooms_by_type[room_type] = rooms_by_type.get(room_type, 0) + 1
 
     active_bookings_resp = (
         db.table("bookings")
@@ -73,6 +79,16 @@ def dashboard_stats(_: CurrentUser = Depends(require_admin)):
     available_rooms = total_rooms - occupied
     occupancy_pct = round((occupied / total_rooms) * 100, 1) if total_rooms else 0.0
 
+    # Bookings-by-status chart data — count every booking regardless of
+    # current status, not just the active ones counted above.
+    all_bookings_resp = db.table("bookings").select("status").execute()
+    bookings_by_status: dict[str, int] = {
+        "pending": 0, "approved": 0, "rejected": 0, "cancelled": 0
+    }
+    for b in _rows(all_bookings_resp.data):
+        status_value = str(b.get("status", ""))
+        bookings_by_status[status_value] = bookings_by_status.get(status_value, 0) + 1
+
     return DashboardStats(
         available_rooms=available_rooms,
         occupied_rooms=occupied,
@@ -80,6 +96,8 @@ def dashboard_stats(_: CurrentUser = Depends(require_admin)):
         pending_bookings=pending_bookings,
         pending_maintenance=pending_maintenance,
         occupancy_pct=occupancy_pct,
+        bookings_by_status=bookings_by_status,
+        rooms_by_type=rooms_by_type,
     )
 
 
@@ -499,10 +517,70 @@ def list_rooms_admin(_: CurrentUser = Depends(require_admin)):
     return [_room_admin_out(r, booked_room_ids, waitlist_counts) for r in _rows(rooms_resp.data)]
 
 
+ROOM_PHOTO_BUCKET = "room-photos"
+ALLOWED_ROOM_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_ROOM_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+def _upload_room_photo(db, photo: UploadFile) -> str:
+    if photo.content_type not in ALLOWED_ROOM_PHOTO_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Room photo must be a JPEG, PNG, WEBP, or GIF image.",
+        )
+
+    contents = photo.file.read()
+    if len(contents) > MAX_ROOM_PHOTO_BYTES:
+        raise HTTPException(status_code=400, detail="Room photo must be under 5 MB.")
+
+    extension = (photo.filename or "").rsplit(".", 1)[-1].lower() if "." in (photo.filename or "") else "jpg"
+    path = f"{uuid.uuid4().hex}.{extension}"
+
+    try:
+        db.storage.from_(ROOM_PHOTO_BUCKET).upload(
+            path, contents, {"content-type": photo.content_type, "upsert": "true"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not upload room photo: {e}") from e
+
+    return db.storage.from_(ROOM_PHOTO_BUCKET).get_public_url(path)
+
+
 @router.post("/rooms", status_code=201, response_model=RoomAdminOut)
-def create_room(data: RoomCreate, _: CurrentUser = Depends(require_admin)):
+def create_room(
+    block_id: int = Form(...),
+    level: int = Form(...),
+    room_number: str = Form(...),
+    room_type: str = Form(...),
+    capacity: int = Form(...),
+    gender_policy: str = Form(...),
+    fee_monthly: float = Form(...),
+    photo: UploadFile | None = File(None),
+    _: CurrentUser = Depends(require_admin),
+):
     db = _db()
-    insert_resp = db.table("rooms").insert(data.model_dump()).execute()
+
+    try:
+        data = RoomCreate(
+            block_id=block_id,
+            level=level,
+            room_number=room_number,
+            room_type=cast(Any, room_type),
+            capacity=capacity,
+            gender_policy=gender_policy,
+            fee_monthly=fee_monthly,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    photo_url = None
+    if photo is not None and photo.filename:
+        photo_url = _upload_room_photo(db, photo)
+
+    payload = data.model_dump()
+    payload["photo_url"] = photo_url
+
+    insert_resp = db.table("rooms").insert(payload).execute()
     insert_rows = _rows(insert_resp.data)
     if not insert_rows:
         raise HTTPException(

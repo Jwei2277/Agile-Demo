@@ -292,6 +292,8 @@ class DashboardStats(BaseModel):
     pending_bookings: int
     pending_maintenance: int
     occupancy_pct: float
+    bookings_by_status: dict[str, int]
+    rooms_by_type: dict[str, int]
 
 
 class BlockOut(BaseModel):

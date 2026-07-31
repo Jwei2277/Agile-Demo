@@ -535,6 +535,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
             <label for="rFee">Monthly fee (RM)</label>
             <input type="number" id="rFee" min="1" step="1" required>
           </div>
+          <div class="form-field" style="grid-column: 1 / -1;">
+            <label for="rPhoto">Room photo (optional)</label>
+            <input type="file" id="rPhoto" accept="image/jpeg,image/png,image/webp,image/gif">
+            <span style="font-size:11.5px; color:var(--slate-600);">JPEG, PNG, WEBP, or GIF — up to 5 MB.</span>
+            <div id="rPhotoPreview" style="display:none; margin-top:8px;"><img id="rPhotoPreviewImg" alt="Selected room photo preview" style="max-width:160px; max-height:160px; border-radius:10px; border:1px solid var(--border);"></div>
+          </div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary btn-sm">Create room</button>
@@ -548,12 +554,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <table class="room-table" id="roomTable">
         <thead>
           <tr>
-            <th>Block</th><th>Room</th><th>Type</th><th>Max occupants</th><th>Status</th>
+            <th>Photo</th><th>Block</th><th>Room</th><th>Type</th><th>Max occupants</th><th>Status</th>
             <th>Gender</th><th>Fee / month</th><th>Waitlist</th><th>Active</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="roomTableBody">
-          <tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>
+          <tr><td colspan="11" style="color:var(--slate-600);">Loading rooms…</td></tr>
         </tbody>
       </table>
     </div>
@@ -596,8 +602,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     const activeBadgeText = r.is_active ? 'Active' : 'Inactive';
     const bookedBadgeClass = r.is_booked ? 'pill-error' : 'pill-success';
     const bookedBadgeText = r.is_booked ? 'Booked' : 'Available';
+    const thumb = r.photo_url
+      ? `<img src="${r.photo_url}" alt="${r.room_number}" style="width:44px; height:44px; border-radius:8px; object-fit:cover;">`
+      : `<div style="width:44px; height:44px; border-radius:8px; background:var(--sky-100);"></div>`;
     return `
       <tr class="${r.is_active ? '' : 'inactive-row'}" data-room-id="${r.id}">
+        <td>${thumb}</td>
         <td>${r.block_name}</td>
         <td>${r.room_number} (Lvl ${r.level})</td>
         <td>${r.room_type}</td>
@@ -625,7 +635,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     if (!token) { window.location.href = 'login.html'; return; }
 
     const tbody = document.getElementById('roomTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="color:var(--slate-600);">Loading rooms…</td></tr>';
 
     try {
       const res = await fetch('/admin/rooms', { headers: authHeaders() });
@@ -639,7 +649,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       document.getElementById('roomCountSub').textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} total`;
 
       if (!rooms.length) {
-        tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
         return;
       }
 
@@ -649,7 +659,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       tbody.querySelectorAll('[data-action="toggle-active"]').forEach((btn) =>
         btn.addEventListener('click', () => toggleActive(btn.dataset.id, btn.dataset.active === 'true')));
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
     }
   }
 
@@ -721,6 +731,20 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   rTypeSelect.addEventListener('change', syncCapacityToRoomType);
   syncCapacityToRoomType();
 
+  const rPhotoInput = document.getElementById('rPhoto');
+  const rPhotoPreview = document.getElementById('rPhotoPreview');
+  const rPhotoPreviewImg = document.getElementById('rPhotoPreviewImg');
+  rPhotoInput.addEventListener('change', () => {
+    const file = rPhotoInput.files[0];
+    if (!file) { rPhotoPreview.style.display = 'none'; return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      rPhotoPreviewImg.src = e.target.result;
+      rPhotoPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
   document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const alertBox = document.getElementById('addRoomAlert');
@@ -735,21 +759,21 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       return;
     }
 
-    const payload = {
-      block_id: blockId,
-      level: Number(document.getElementById('rLevel').value),
-      room_number: document.getElementById('rNumber').value.trim(),
-      room_type: document.getElementById('rType').value,
-      capacity: Number(document.getElementById('rCapacity').value),
-      gender_policy: document.getElementById('rGender').value,
-      fee_monthly: Number(document.getElementById('rFee').value),
-    };
+    const formData = new FormData();
+    formData.append('block_id', blockId);
+    formData.append('level', document.getElementById('rLevel').value);
+    formData.append('room_number', document.getElementById('rNumber').value.trim());
+    formData.append('room_type', document.getElementById('rType').value);
+    formData.append('capacity', document.getElementById('rCapacity').value);
+    formData.append('gender_policy', document.getElementById('rGender').value);
+    formData.append('fee_monthly', document.getElementById('rFee').value);
+    if (rPhotoInput.files[0]) formData.append('photo', rPhotoInput.files[0]);
 
     try {
       const res = await fetch('/admin/rooms', {
         method: 'POST',
-        headers: authHeadersJSON(),
-        body: JSON.stringify(payload),
+        headers: authHeaders(),
+        body: formData,
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -760,6 +784,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         return;
       }
       document.getElementById('addRoomForm').reset();
+      rPhotoPreview.style.display = 'none';
       addRoomCard.style.display = 'none';
       loadRooms();
     } catch (err) {

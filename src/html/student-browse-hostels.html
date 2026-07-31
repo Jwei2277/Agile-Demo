@@ -500,7 +500,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <div class="filter-bar">
         <div class="filter-field">
           <label for="fGender">Gender</label>
-          <select id="fGender"><option value="">All</option><option value="Female only">Female only</option><option value="Male only">Male only</option></select>
+          <select id="fGender"><option value="">All</option><option value="Female only">Female only</option><option value="Male only">Male only</option><option value="Mixed block">Mixed block</option></select>
         </div>
         <div class="filter-field">
           <label for="fType">Room type</label>
@@ -601,6 +601,26 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   const fType = document.getElementById('fType');
   const fBlock = document.getElementById('fBlock');
 
+  // Remember the last-used filters across navigation (e.g. View details
+  // then back), and re-apply them on load instead of resetting to "All".
+  const FILTER_STORAGE_KEY = 'browseHostelsFilters';
+  function restoreFilters() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(FILTER_STORAGE_KEY) || '{}');
+      if (saved.gender) fGender.value = saved.gender;
+      if (saved.type) fType.value = saved.type;
+      if (saved.block) fBlock.value = saved.block;
+    } catch (err) {
+      // Ignore malformed/missing saved state.
+    }
+  }
+  function saveFilters() {
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+      gender: fGender.value, type: fType.value, block: fBlock.value,
+    }));
+  }
+  restoreFilters();
+
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
   }
@@ -674,6 +694,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   }
 
   async function loadRooms() {
+    saveFilters();
     roomGrid.innerHTML = '<p style="color:var(--slate-600);">Loading available rooms…</p>';
     const params = new URLSearchParams();
     if (fGender.value) params.set('gender', fGender.value);
@@ -937,6 +958,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     fGender.value = ''; fType.value = ''; fBlock.value = '';
     loadRooms();
   });
+
+  // Filters apply immediately on change — no need to click Search.
+  fGender.addEventListener('change', loadRooms);
+  fType.addEventListener('change', loadRooms);
+  fBlock.addEventListener('change', loadRooms);
 
   loadRooms();
 
