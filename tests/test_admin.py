@@ -915,7 +915,6 @@ def test_admin_list_rooms(monkeypatch):
     print("test_admin_list_rooms PASSED")
 
 
-
 def test_admin_update_room(monkeypatch):
     """
     Admin updates room information.
