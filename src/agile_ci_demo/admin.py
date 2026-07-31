@@ -83,7 +83,10 @@ def dashboard_stats(_: CurrentUser = Depends(require_admin)):
     # current status, not just the active ones counted above.
     all_bookings_resp = db.table("bookings").select("status").execute()
     bookings_by_status: dict[str, int] = {
-        "pending": 0, "approved": 0, "rejected": 0, "cancelled": 0
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "cancelled": 0,
     }
     for b in _rows(all_bookings_resp.data):
         status_value = str(b.get("status", ""))
@@ -533,7 +536,11 @@ def _upload_room_photo(db, photo: UploadFile) -> str:
     if len(contents) > MAX_ROOM_PHOTO_BYTES:
         raise HTTPException(status_code=400, detail="Room photo must be under 5 MB.")
 
-    extension = (photo.filename or "").rsplit(".", 1)[-1].lower() if "." in (photo.filename or "") else "jpg"
+    extension = (
+        (photo.filename or "").rsplit(".", 1)[-1].lower()
+        if "." in (photo.filename or "")
+        else "jpg"
+    )
     path = f"{uuid.uuid4().hex}.{extension}"
 
     try:

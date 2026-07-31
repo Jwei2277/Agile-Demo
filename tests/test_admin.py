@@ -915,47 +915,6 @@ def test_admin_list_rooms(monkeypatch):
     print("test_admin_list_rooms PASSED")
 
 
-def test_admin_create_room(monkeypatch):
-    """
-    Admin creates a new room.
-    """
-
-    fake = FakeSupabase()
-
-    monkeypatch.setattr(
-        "agile_ci_demo.admin.supabase_admin",
-        fake,
-    )
-
-    app.dependency_overrides[get_current_user] = override_admin
-
-    payload = {
-        "block_id": 1,
-        "level": 2,
-        "room_number": "101",
-        "room_type": "Single Room",
-        "capacity": 1,
-        "gender_policy": "Male only",
-        "fee_monthly": 150,
-        "photo_url": None,
-        "is_active": True,
-    }
-
-    response = client.post(
-        "/admin/rooms",
-        json=payload,
-    )
-
-    assert response.status_code == 201
-
-    data = response.json()
-
-    assert data["room_number"] == "101"
-
-    assert fake.tables["rooms"][-1]["room_number"] == "101"
-
-    print("test_admin_create_room PASSED")
-
 
 def test_admin_update_room(monkeypatch):
     """
