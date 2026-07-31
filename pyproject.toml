@@ -27,7 +27,7 @@ dev = [
   "pytest-cov",
   "hypothesis",
   "pytest-bdd",
-  "ruff",
+  "ruff==0.15.21",
   "black",
   "mypy",
   "types-requests",
