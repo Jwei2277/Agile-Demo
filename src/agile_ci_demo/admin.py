@@ -607,9 +607,15 @@ def _visitor_admin_out(row: Row, profile: Row) -> VisitorRequestAdminOut:
 
 @router.get("/visitors", response_model=list[VisitorRequestAdminOut])
 def list_visitor_requests(
-    status: str = Query(default="all", description="'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'"),
-    visit_date: str | None = Query(default=None, description="YYYY-MM-DD — filter to a specific visit date"),
-    search: str | None = Query(default=None, description="Matches visitor name or host student name"),
+    status: str = Query(
+        default="all", description="'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'"
+    ),
+    visit_date: str | None = Query(
+        default=None, description="YYYY-MM-DD — filter to a specific visit date"
+    ),
+    search: str | None = Query(
+        default=None, description="Matches visitor name or host student name"
+    ),
     _: CurrentUser = Depends(require_admin),
 ):
     db = _db()
@@ -630,9 +636,7 @@ def list_visitor_requests(
     if search:
         needle = search.strip().lower()
         out = [
-            v
-            for v in out
-            if needle in v.visitor_name.lower() or needle in v.student_name.lower()
+            v for v in out if needle in v.visitor_name.lower() or needle in v.student_name.lower()
         ]
 
     # Cancelled requests sink to the bottom, below pending/approved/rejected.
