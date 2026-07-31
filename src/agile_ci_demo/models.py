@@ -276,7 +276,9 @@ MAINTENANCE_STATUSES = ("pending", "assigned", "in_progress", "completed", "clos
 
 
 class MaintenanceUpdate(BaseModel):
-    status: str | None = Field(default=None, pattern=r"^(pending|assigned|in_progress|completed|closed|cancelled)$")
+    status: str | None = Field(
+        default=None, pattern=r"^(pending|assigned|in_progress|completed|closed|cancelled)$"
+    )
     priority: str | None = Field(default=None, pattern=r"^(Low|Normal|High)$")
     assigned_staff: str | None = None
     remarks: str | None = None
@@ -370,7 +372,9 @@ class VisitorRequestCreate(BaseModel):
     @model_validator(mode="after")
     def _validate_name(self):
         if not re.fullmatch(r"[A-Za-z ]+", self.visitor_name.strip()):
-            raise ValueError("Visitor name can only contain letters and spaces — no numbers or symbols.")
+            raise ValueError(
+                "Visitor name can only contain letters and spaces — no numbers or symbols."
+            )
         return self
 
     @model_validator(mode="after")

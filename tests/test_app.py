@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from agile_ci_demo.app import app
+from agile_ci_demo.app import app, reset_db
 
 client = TestClient(app)
 
