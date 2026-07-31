@@ -8,7 +8,8 @@ dependencies = [
   "uvicorn>=0.30",
   "supabase",
   "python-dotenv",
-  "pydantic[email]"
+  "pydantic[email]",
+  "python-multipart",
 ]
 
 [build-system]
@@ -27,7 +28,7 @@ dev = [
   "pytest-cov",
   "hypothesis",
   "pytest-bdd",
-  "ruff",
+  "ruff==0.15.21",
   "black",
   "mypy",
   "types-requests",

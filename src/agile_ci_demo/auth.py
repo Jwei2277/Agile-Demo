@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, EmailStr, Field
@@ -13,7 +14,7 @@ from agile_ci_demo.services.supabase_service import (
 from agile_ci_demo.config import APP_BASE_URL
 from supabase import AuthApiError
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 TRUSTED_DEVICE_DAYS = 30
 
@@ -182,11 +183,17 @@ def _is_trusted_device(student_id: str, token: str | None) -> bool:
     if not resp.data:
         return False
 
-    expires_at = datetime.fromisoformat(resp.data[0]["expires_at"].replace("Z", "+00:00"))
+    row = cast(dict[str, Any], resp.data[0])
+    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
     return expires_at > datetime.now(timezone.utc)
 
 
 def _issue_trusted_device_token(student_id: str) -> str:
+    if supabase_admin is None:
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
+
     token = secrets.token_urlsafe(32)
     supabase_admin.table("trusted_devices").insert(
         {
@@ -224,7 +231,10 @@ def login(data: Login):
         .limit(1)
         .execute()
     )
-    role = profile_lookup.data[0].get("role", "student") if profile_lookup.data else "student"
+    role = "student"
+    if profile_lookup.data:
+        row = cast(dict[str, Any], profile_lookup.data[0])
+        role = row.get("role", "student")
 
     # Admins never get OTP-gated. Students skip OTP only if this device
     # already has a valid trusted-device token from a previous
@@ -299,17 +309,20 @@ def me(user: CurrentUser = Depends(get_current_user)):
 
 @router.post("/logout")
 def logout(authorization: str | None = Header(default=None)):
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
+
     token = _extract_bearer_token(authorization)
+
     try:
-        # Attach this request's token to the client, then revoke it —
-        # this invalidates the refresh token server-side so the old
-        # access token can't be refreshed into a new session later.
+        # Attach this request's token to the client, then revoke it.
         supabase.auth.set_session(token, token)
         supabase.auth.sign_out()
     except Exception:
-        # Already expired/invalid/malformed — nothing to revoke server-side.
-        # The frontend clears its local storage regardless, so this is
-        # still an effective logout from the user's point of view.
+        # Ignore invalid/expired tokens.
         pass
 
     return {"message": "Logged out"}
@@ -345,13 +358,25 @@ def forgot_password(data: ForgotPassword):
 
 @router.post("/reset-password")
 def reset_password(data: ResetPassword):
-    # The reset link Supabase emails the user lands on the frontend with
-    # an access_token in the URL fragment; the frontend passes it here
-    # along with the new password to complete the reset.
+    if supabase is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured.",
+        )
+
     try:
-        supabase.auth.set_session(data.access_token, data.access_token)
+        # Complete password reset using the access token.
+        supabase.auth.set_session(
+            data.access_token,
+            data.access_token,
+        )
+
         supabase.auth.update_user({"password": data.new_password})
+
     except AuthApiError as e:
-        raise HTTPException(status_code=400, detail=e.message) from e
+        raise HTTPException(
+            status_code=400,
+            detail=e.message,
+        ) from e
 
     return {"message": "Password updated. You can now log in with your new password."}

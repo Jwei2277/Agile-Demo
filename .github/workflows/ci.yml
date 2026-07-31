@@ -23,6 +23,20 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
+          pip install ruff==0.15.21
+
+      - name: Debug versions
+        run: |
+          pwd
+          ls -la
+          python --version
+          pip --version
+          ruff --version
+          black --version
+          echo "===== pyproject.toml ====="
+          cat pyproject.toml
+          echo "===== Ruff Settings ====="
+          ruff check . --show-settings
 
       - name: Lint
         run: |
