@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Rooms</title>
+<title>HostelEase — Admin Visitors</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -454,6 +454,50 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+/* ===================== Manage request modal ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 480px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+  max-height: 88vh; overflow-y: auto;
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 14px; }
+.modal-readonly-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.modal-readonly-row span:first-child { color: var(--slate-600); }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-approved { background: var(--success-bg); color: var(--success-fg); }
+.status-rejected { background: var(--error-bg); color: var(--error-fg); }
+.status-cancelled { background: #eef0f3; color: #5b6472; }
+.filter-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.filter-row .form-field { margin:0; min-width:160px; }
+.filter-row input, .filter-row select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;
+}
 </style>
 
 </head>
@@ -470,9 +514,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <nav class="nav-links">
         <a href="admin-dashboard.html">Dashboard</a>
         <a href="admin-bookings.html">Bookings</a>
-        <a href="admin-rooms.html" class="current">Rooms</a>
+        <a href="admin-rooms.html">Rooms</a>
         <a href="admin-maintenance.html">Maintenance</a>
-        <a href="admin-visitors.html">Visitors</a>
+        <a href="admin-visitors.html" class="current">Visitors</a>
         <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
       </nav>
       <div class="nav-right">
@@ -486,78 +530,56 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   <main>
     <div class="section-head" style="margin-top:0;">
       <div>
-        <h2>Rooms</h2>
-        <p id="roomCountSub">Loading…</p>
+        <h2>Visitor requests</h2>
+        <p id="visitorCountSub">Loading…</p>
       </div>
-      <button class="btn-primary btn-sm" id="toggleAddFormBtn">+ Add room</button>
     </div>
 
-    <div class="card" style="padding:20px 22px; display:none;" id="addRoomCard">
-      <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 4px;">Add a new room</h3>
-      <p style="margin:0; font-size:12.5px; color:var(--slate-600);">Rooms need a block set up first — run the seed SQL or add blocks via Supabase if the list below is empty.</p>
-      <form id="addRoomForm">
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="rBlock">Block</label>
-            <select id="rBlock" required></select>
-          </div>
-          <div class="form-field">
-            <label for="rLevel">Level</label>
-            <input type="number" id="rLevel" min="1" required>
-          </div>
-          <div class="form-field">
-            <label for="rNumber">Room number</label>
-            <input type="text" id="rNumber" placeholder="e.g. A-204" required>
-          </div>
-          <div class="form-field">
-            <label for="rType">Room type</label>
-            <select id="rType" required>
-              <option value="Single Room">Single Room</option>
-              <option value="Master Room">Master Room</option>
-              <option value="Balcony Room">Balcony Room</option>
-              <option value="Middle Room">Middle Room</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="rCapacity">Max occupants</label>
-            <input type="number" id="rCapacity" min="1" max="2" value="1" required>
-            <span style="font-size:11.5px; color:var(--slate-600);">Single Room must be 1. Others can be 1 or 2 (2nd occupant costs +RM50/month).</span>
-          </div>
-          <div class="form-field">
-            <label for="rGender">Gender policy</label>
-            <select id="rGender" required>
-              <option value="Mixed block">Mixed block</option>
-              <option value="Female only">Female only</option>
-              <option value="Male only">Male only</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="rFee">Monthly fee (RM)</label>
-            <input type="number" id="rFee" min="1" step="1" required>
-          </div>
+    <div class="card" style="padding:16px 18px; margin-bottom:20px;">
+      <div class="filter-row">
+        <div class="form-field">
+          <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600); display:block; margin-bottom:6px;">Status</label>
+          <select id="statusFilter">
+            <option value="pending" selected>Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="all">All (history)</option>
+          </select>
         </div>
-        <div class="form-actions">
-          <button type="submit" class="btn-primary btn-sm">Create room</button>
-          <button type="button" class="btn-secondary btn-sm" id="cancelAddRoomBtn">Cancel</button>
+        <div class="form-field">
+          <label for="visitDateFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600); display:block; margin-bottom:6px;">Visit date</label>
+          <input type="date" id="visitDateFilter">
         </div>
-        <div class="form-alert" id="addRoomAlert" role="alert" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
-      </form>
+        <div class="form-field" style="flex:1;">
+          <label for="searchFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600); display:block; margin-bottom:6px;">Search</label>
+          <input type="text" id="searchFilter" placeholder="Visitor name or host student name" style="width:100%;">
+        </div>
+        <button class="btn-secondary btn-sm" id="clearFiltersBtn">Clear filters</button>
+      </div>
     </div>
 
-    <div class="card" style="overflow-x:auto;">
-      <table class="room-table" id="roomTable">
-        <thead>
-          <tr>
-            <th>Block</th><th>Room</th><th>Type</th><th>Max occupants</th><th>Status</th>
-            <th>Gender</th><th>Fee / month</th><th>Waitlist</th><th>Active</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="roomTableBody">
-          <tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>
-        </tbody>
-      </table>
+    <div class="request-list" id="visitorList">
+      <p style="color:var(--slate-600);">Loading requests…</p>
     </div>
   </main>
+</div>
+
+<!-- Reject visitor request modal -->
+<div class="modal-overlay" id="rejectModal" hidden>
+  <div class="modal-card">
+    <h3>Reject visitor request</h3>
+    <p class="modal-sub">Let the student know why this visit wasn't approved.</p>
+    <div class="modal-error" id="rejectModalError" role="alert"></div>
+    <div class="modal-form-field">
+      <label for="rejectReason">Rejection reason</label>
+      <textarea id="rejectReason" rows="3" placeholder="e.g. Visit time conflicts with a scheduled inspection." required></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="rejectModalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="rejectModalConfirmBtn" style="background: var(--error-fg);">Reject request</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -587,190 +609,169 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   function authHeaders() {
     return { 'Authorization': `Bearer ${getToken()}` };
   }
-  function authHeadersJSON() {
-    return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
+
+  const statusPillClasses = { pending: 'status-pending', approved: 'status-approved', rejected: 'status-rejected', cancelled: 'status-cancelled' };
+  const statusLabels = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' };
+
+  function formatTime(t) {
+    const [h, m] = t.split(':');
+    const hour = Number(h);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${m} ${period}`;
   }
 
-  function roomRowHTML(r) {
-    const activeBadgeClass = r.is_active ? 'pill-success' : 'pill-error';
-    const activeBadgeText = r.is_active ? 'Active' : 'Inactive';
-    const bookedBadgeClass = r.is_booked ? 'pill-error' : 'pill-success';
-    const bookedBadgeText = r.is_booked ? 'Booked' : 'Available';
+  function visitorRowHTML(v) {
+    const statusClass = statusPillClasses[v.status] || 'status-pending';
+    const reasonLine = v.rejection_reason ? ` · Reason: ${v.rejection_reason}` : '';
+    const actions = v.status === 'pending'
+      ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${v.id}">Reject</button>
+         <button class="btn-primary btn-sm" data-action="approve" data-id="${v.id}">Approve</button>`
+      : `<span class="status-pill ${statusClass}">${statusLabels[v.status] || v.status}</span>`;
     return `
-      <tr class="${r.is_active ? '' : 'inactive-row'}" data-room-id="${r.id}">
-        <td>${r.block_name}</td>
-        <td>${r.room_number} (Lvl ${r.level})</td>
-        <td>${r.room_type}</td>
-        <td>${r.capacity}</td>
-        <td><span class="pill ${bookedBadgeClass}">${bookedBadgeText}</span></td>
-        <td>${r.gender_policy}</td>
-        <td>RM ${r.fee_monthly.toFixed(0)}${r.capacity > 1 ? ' <small>(+RM50 for 2nd)</small>' : ''}</td>
-        <td>${r.waitlist_count > 0 ? `<span class="pill pill-warning">${r.waitlist_count} waiting</span>` : '—'}</td>
-        <td><span class="pill ${activeBadgeClass}">${activeBadgeText}</span></td>
-        <td class="actions-cell">
-          <button class="btn-secondary btn-sm" data-action="edit-fee" data-id="${r.id}">Edit fee</button>
-          <button class="btn-secondary btn-sm" data-action="toggle-active" data-id="${r.id}" data-active="${r.is_active}">${r.is_active ? 'Deactivate' : 'Activate'}</button>
-        </td>
-      </tr>`;
+      <div class="request-row card" data-visitor-id="${v.id}">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 20c.6-3.4 3-5.2 5.5-5.2s4.9 1.8 5.5 5.2M17 8.5v5M14.5 11h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="request-main">
+          <div class="request-top"><span class="request-title">${v.visitor_name}</span><span class="chip chip-blue">${v.visitor_relationship}</span><span class="status-pill ${statusClass}">${statusLabels[v.status] || v.status}</span></div>
+          <p class="request-sub">Host: ${v.student_name}${v.student_id ? ' (' + v.student_id + ')' : ''} · Visiting ${new Date(v.visit_date).toLocaleDateString()} at ${formatTime(v.visit_time)}</p>
+          <p class="request-sub">${v.visitor_email} · ${v.visitor_phone}${reasonLine}</p>
+        </div>
+        <span class="request-time">${new Date(v.requested_at).toLocaleDateString()}</span>
+        <div class="request-actions">${actions}</div>
+      </div>`;
   }
 
-  async function loadBlocks() {
-    const res = await fetch('/admin/blocks', { headers: authHeaders() });
-    if (!res.ok) return [];
-    return res.json();
-  }
-
-  async function loadRooms() {
+  async function loadVisitors() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
-    const tbody = document.getElementById('roomTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>';
+    const status = document.getElementById('statusFilter').value;
+    const visitDate = document.getElementById('visitDateFilter').value;
+    const search = document.getElementById('searchFilter').value.trim();
+    const list = document.getElementById('visitorList');
+    list.innerHTML = '<p style="color:var(--slate-600);">Loading requests…</p>';
+
+    const params = new URLSearchParams();
+    params.set('status', status);
+    if (visitDate) params.set('visit_date', visitDate);
+    if (search) params.set('search', search);
 
     try {
-      const res = await fetch('/admin/rooms', { headers: authHeaders() });
+      const res = await fetch(`/admin/visitors?${params.toString()}`, { headers: authHeaders() });
       if (res.status === 403) {
         alert('Admin access required.');
         window.location.href = 'login.html';
         return;
       }
-      const rooms = await res.json();
+      const items = await res.json();
 
-      document.getElementById('roomCountSub').textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} total`;
+      document.getElementById('visitorCountSub').textContent =
+        `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
 
-      if (!rooms.length) {
-        tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Nothing here</h3>
+            <p>No visitor requests match this filter.</p>
+          </div>`;
         return;
       }
 
-      tbody.innerHTML = rooms.map(roomRowHTML).join('');
-      tbody.querySelectorAll('[data-action="edit-fee"]').forEach((btn) =>
-        btn.addEventListener('click', () => editFee(btn.dataset.id)));
-      tbody.querySelectorAll('[data-action="toggle-active"]').forEach((btn) =>
-        btn.addEventListener('click', () => toggleActive(btn.dataset.id, btn.dataset.active === 'true')));
+      list.innerHTML = items.map(visitorRowHTML).join('');
+      list.querySelectorAll('[data-action="approve"]').forEach((btn) =>
+        btn.addEventListener('click', () => approveVisitor(btn.dataset.id)));
+      list.querySelectorAll('[data-action="reject"]').forEach((btn) =>
+        btn.addEventListener('click', () => openRejectModal(btn.dataset.id)));
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load requests. Please try again.</p>';
     }
   }
 
-  async function editFee(id) {
-    const newFee = prompt('New monthly fee (RM):');
-    if (!newFee || isNaN(Number(newFee))) return;
+  async function approveVisitor(id) {
     try {
-      const res = await fetch(`/admin/rooms/${id}`, {
-        method: 'PATCH',
-        headers: authHeadersJSON(),
-        body: JSON.stringify({ fee_monthly: Number(newFee) }),
-      });
-      if (!res.ok) {
+      const res = await fetch(`/admin/visitors/${id}/approve`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the fee (status ${res.status}).`);
+        alert(body.detail || `Could not approve this request (status ${res.status}).`);
         return;
       }
-      loadRooms();
+      loadVisitors();
     } catch (err) {
       alert('Network error — please check your connection and try again.');
     }
   }
 
-  async function toggleActive(id, currentlyActive) {
-    try {
-      const res = await fetch(`/admin/rooms/${id}`, {
-        method: 'PATCH',
-        headers: authHeadersJSON(),
-        body: JSON.stringify({ is_active: !currentlyActive }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the room (status ${res.status}).`);
-        return;
-      }
-      loadRooms();
-    } catch (err) {
-      alert('Network error — please check your connection and try again.');
-    }
-  }
+  // ---------------------------------------------------------------
+  // Reject modal
+  // ---------------------------------------------------------------
+  const rejectModal = document.getElementById('rejectModal');
+  const rejectModalError = document.getElementById('rejectModalError');
+  const rejectReasonInput = document.getElementById('rejectReason');
+  let rejectTargetId = null;
 
-  const addRoomCard = document.getElementById('addRoomCard');
-  document.getElementById('toggleAddFormBtn').addEventListener('click', async () => {
-    const isHidden = addRoomCard.style.display === 'none';
-    addRoomCard.style.display = isHidden ? 'block' : 'none';
-    if (isHidden && !document.getElementById('rBlock').dataset.loaded) {
-      const blocks = await loadBlocks();
-      const select = document.getElementById('rBlock');
-      select.innerHTML = blocks.length
-        ? blocks.map(b => `<option value="${b.id}">${b.name}</option>`).join('')
-        : '<option value="">No blocks found — add one in Supabase first</option>';
-      select.dataset.loaded = 'true';
-    }
+  function openRejectModal(id) {
+    rejectTargetId = id;
+    rejectReasonInput.value = '';
+    rejectModalError.classList.remove('show');
+    rejectModal.hidden = false;
+  }
+  document.getElementById('rejectModalCancelBtn').addEventListener('click', () => {
+    rejectModal.hidden = true;
   });
-  document.getElementById('cancelAddRoomBtn').addEventListener('click', () => {
-    addRoomCard.style.display = 'none';
+  rejectModal.addEventListener('click', (e) => {
+    if (e.target === rejectModal) rejectModal.hidden = true;
   });
 
-  const rTypeSelect = document.getElementById('rType');
-  const rCapacityInput = document.getElementById('rCapacity');
-  function syncCapacityToRoomType() {
-    if (rTypeSelect.value === 'Single Room') {
-      rCapacityInput.value = '1';
-      rCapacityInput.disabled = true;
-    } else {
-      rCapacityInput.disabled = false;
-    }
-  }
-  rTypeSelect.addEventListener('change', syncCapacityToRoomType);
-  syncCapacityToRoomType();
-
-  document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const alertBox = document.getElementById('addRoomAlert');
-    alertBox.style.display = 'none';
-
-    const blockId = Number(document.getElementById('rBlock').value);
-    if (!blockId) {
-      alertBox.textContent = 'Select a block first.';
-      alertBox.style.display = 'block';
-      alertBox.style.background = 'var(--error-bg)';
-      alertBox.style.color = 'var(--error-fg)';
+  document.getElementById('rejectModalConfirmBtn').addEventListener('click', async () => {
+    if (!rejectTargetId) return;
+    const reason = rejectReasonInput.value.trim();
+    rejectModalError.classList.remove('show');
+    if (!reason) {
+      rejectModalError.textContent = 'A rejection reason is required.';
+      rejectModalError.classList.add('show');
       return;
     }
 
-    const payload = {
-      block_id: blockId,
-      level: Number(document.getElementById('rLevel').value),
-      room_number: document.getElementById('rNumber').value.trim(),
-      room_type: document.getElementById('rType').value,
-      capacity: Number(document.getElementById('rCapacity').value),
-      gender_policy: document.getElementById('rGender').value,
-      fee_monthly: Number(document.getElementById('rFee').value),
-    };
-
+    const confirmBtn = document.getElementById('rejectModalConfirmBtn');
+    confirmBtn.disabled = true;
     try {
-      const res = await fetch('/admin/rooms', {
+      const res = await fetch(`/admin/visitors/${rejectTargetId}/reject`, {
         method: 'POST',
-        headers: authHeadersJSON(),
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ reason }),
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alertBox.textContent = body.detail || 'Could not create room.';
-        alertBox.style.display = 'block';
-        alertBox.style.background = 'var(--error-bg)';
-        alertBox.style.color = 'var(--error-fg)';
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        rejectModalError.textContent = body.detail || `Could not reject this request (status ${res.status}).`;
+        rejectModalError.classList.add('show');
         return;
       }
-      document.getElementById('addRoomForm').reset();
-      addRoomCard.style.display = 'none';
-      loadRooms();
+      rejectModal.hidden = true;
+      loadVisitors();
     } catch (err) {
-      alertBox.textContent = 'Network error — please try again.';
-      alertBox.style.display = 'block';
-      alertBox.style.background = 'var(--error-bg)';
-      alertBox.style.color = 'var(--error-fg)';
+      rejectModalError.textContent = 'Network error — please check your connection and try again.';
+      rejectModalError.classList.add('show');
+    } finally {
+      confirmBtn.disabled = false;
     }
   });
 
-  loadRooms();
+  document.getElementById('statusFilter').addEventListener('change', loadVisitors);
+  document.getElementById('visitDateFilter').addEventListener('change', loadVisitors);
+  let searchDebounce;
+  document.getElementById('searchFilter').addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(loadVisitors, 350);
+  });
+  document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('visitDateFilter').value = '';
+    document.getElementById('searchFilter').value = '';
+    loadVisitors();
+  });
+
+  loadVisitors();
 </script>
 </body>
 </html>

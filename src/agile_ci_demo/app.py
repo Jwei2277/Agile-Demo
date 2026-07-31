@@ -14,6 +14,7 @@ from agile_ci_demo.maintenance import router as maintenance_router
 from agile_ci_demo.admin import router as admin_router
 from agile_ci_demo.profile import router as profile_router
 from agile_ci_demo.waitlist import router as waitlist_router
+from agile_ci_demo.visitor import router as visitor_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
@@ -48,6 +49,7 @@ app.include_router(admin_router)
 app.include_router(profile_router)
 
 app.include_router(waitlist_router)
+app.include_router(visitor_router)
 
 
 # ==================================================
@@ -130,6 +132,18 @@ def student_profile_page():
     return FileResponse(HTML_DIR / "student-profile.html")
 
 
+@app.get("/student-maintenance.html")
+def student_maintenance_page():
+
+    return FileResponse(HTML_DIR / "student-maintenance.html")
+
+
+@app.get("/student-visitors.html")
+def student_visitors_page():
+
+    return FileResponse(HTML_DIR / "student-visitors.html")
+
+
 @app.get("/admin-dashboard.html")
 def admin_dashboard_page():
 
@@ -146,6 +160,12 @@ def admin_bookings_page():
 def admin_maintenance_page():
 
     return FileResponse(HTML_DIR / "admin-maintenance.html")
+
+
+@app.get("/admin-visitors.html")
+def admin_visitors_page():
+
+    return FileResponse(HTML_DIR / "admin-visitors.html")
 
 
 @app.get("/admin-transfers.html")

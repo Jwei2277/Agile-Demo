@@ -454,6 +454,38 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+/* ===================== Manage request modal ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 480px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+  max-height: 88vh; overflow-y: auto;
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 14px; }
+.modal-readonly-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.modal-readonly-row span:first-child { color: var(--slate-600); }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
 </style>
 
 </head>
@@ -472,7 +504,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <a href="admin-bookings.html">Bookings</a>
         <a href="admin-rooms.html">Rooms</a>
         <a href="admin-maintenance.html" class="current">Maintenance</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+        <a href="admin-visitors.html">Visitors</a>
         <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
       </nav>
       <div class="nav-right">
@@ -494,9 +526,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <select id="statusFilter">
           <option value="pending" selected>Pending</option>
           <option value="assigned">Assigned</option>
+          <option value="in_progress">In progress</option>
           <option value="completed">Completed</option>
+          <option value="closed">Closed</option>
           <option value="cancelled">Cancelled</option>
-          <option value="all">All</option>
+          <option value="all">All (history)</option>
         </select>
       </div>
     </div>
@@ -504,6 +538,61 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <p style="color:var(--slate-600);">Loading requests…</p>
     </div>
   </main>
+</div>
+
+<!-- Manage maintenance request modal -->
+<div class="modal-overlay" id="manageModal" hidden>
+  <div class="modal-card">
+    <h3 id="manageModalTitle">Manage request</h3>
+    <img class="modal-photo" id="manageModalPhoto" style="display:none;" alt="Reported issue photo">
+
+    <div id="manageModalReadonly">
+      <div class="modal-readonly-row"><span>Category</span><span id="manageInfoCategory">—</span></div>
+      <div class="modal-readonly-row"><span>Room</span><span id="manageInfoRoom">—</span></div>
+      <div class="modal-readonly-row"><span>Reported by</span><span id="manageInfoStudent">—</span></div>
+      <div class="modal-readonly-row"><span>Reported on</span><span id="manageInfoDate">—</span></div>
+    </div>
+
+    <div class="modal-error" id="manageModalError" role="alert"></div>
+
+    <div class="modal-form-field">
+      <label for="manageStatus">Status</label>
+      <select id="manageStatus">
+        <option value="pending">Pending</option>
+        <option value="assigned">Assigned</option>
+        <option value="in_progress">In progress</option>
+        <option value="completed">Completed</option>
+        <option value="closed">Closed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="modal-form-field">
+      <label for="managePriority">Priority</label>
+      <select id="managePriority">
+        <option value="Low">Low</option>
+        <option value="Normal">Normal</option>
+        <option value="High">High</option>
+      </select>
+    </div>
+    <div class="modal-form-field">
+      <label for="manageAssignedStaff">Assigned staff</label>
+      <input type="text" id="manageAssignedStaff" placeholder="e.g. Ahmad (Plumbing team)">
+    </div>
+    <div class="modal-form-field" id="manageCompletionDateWrap">
+      <label for="manageCompletedAt">Completion date</label>
+      <input type="date" id="manageCompletedAt">
+      <span style="font-size:11.5px; color:var(--slate-600);">Set automatically if left blank when marking completed/closed.</span>
+    </div>
+    <div class="modal-form-field">
+      <label for="manageRemarks">Repair remarks</label>
+      <textarea id="manageRemarks" rows="3" placeholder="Notes for the student and for your own records"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="manageModalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="manageModalSaveBtn">Save changes</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -534,21 +623,31 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return { 'Authorization': `Bearer ${getToken()}` };
   }
 
+  let maintItemsById = {};
+
+  const statusPillClasses = {
+    pending: 'pill-warning', assigned: 'pill-warning', in_progress: 'pill-warning',
+    completed: 'pill-success', closed: 'pill-success', cancelled: 'pill-error',
+  };
+  const statusLabels = {
+    pending: 'Pending', assigned: 'Assigned', in_progress: 'In progress',
+    completed: 'Completed', closed: 'Closed', cancelled: 'Cancelled',
+  };
+
   function maintRowHTML(m) {
     const createdAgo = new Date(m.created_at).toLocaleDateString();
-    const statusPillClass = { pending: 'pill-warning', assigned: 'pill-warning', completed: 'pill-success', cancelled: 'pill-error' }[m.status] || 'pill-warning';
-    const actions = m.status === 'pending'
-      ? `<button class="btn-primary btn-sm" data-action="complete" data-id="${m.id}">Mark resolved</button>`
-      : `<span class="pill ${statusPillClass}">${m.status}</span>`;
+    const statusClass = statusPillClasses[m.status] || 'pill-warning';
+    const assignedLine = m.assigned_staff ? ` · Assigned to ${m.assigned_staff}` : '';
+    const photoNote = m.photo_url ? ' · 📷 Photo attached' : '';
     return `
       <div class="request-row card" data-maint-id="${m.id}">
         <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
         <div class="request-main">
-          <div class="request-top"><span class="request-title">${m.title}</span><span class="chip chip-blue">Maintenance</span><span class="pill pill-warning">${m.priority}</span></div>
-          <p class="request-sub">Reported by ${m.student_name || 'Unknown'} · Category: ${m.category}</p>
+          <div class="request-top"><span class="request-title">${m.title}</span><span class="chip chip-blue">Maintenance</span><span class="pill pill-warning">${m.priority}</span><span class="pill ${statusClass}">${statusLabels[m.status] || m.status}</span></div>
+          <p class="request-sub">Reported by ${m.student_name || 'Unknown'} · Category: ${m.category}${m.room_label ? ' · ' + m.room_label : ''}${assignedLine}${photoNote}</p>
         </div>
         <span class="request-time">${createdAgo}</span>
-        <div class="request-actions">${actions}</div>
+        <div class="request-actions"><button class="btn-primary btn-sm" data-action="manage" data-id="${m.id}">Manage</button></div>
       </div>`;
   }
 
@@ -568,6 +667,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         return;
       }
       const items = await res.json();
+      maintItemsById = Object.fromEntries(items.map((m) => [String(m.id), m]));
 
       document.getElementById('maintCountSub').textContent =
         `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
@@ -583,26 +683,93 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       }
 
       list.innerHTML = items.map(maintRowHTML).join('');
-      list.querySelectorAll('[data-action="complete"]').forEach((btn) =>
-        btn.addEventListener('click', () => completeMaintenance(btn.dataset.id)));
+      list.querySelectorAll('[data-action="manage"]').forEach((btn) =>
+        btn.addEventListener('click', () => openManageModal(maintItemsById[btn.dataset.id])));
     } catch (err) {
       list.innerHTML = '<p style="color:var(--error-fg);">Could not load requests. Please try again.</p>';
     }
   }
 
-  async function completeMaintenance(id) {
+  // ---------------------------------------------------------------
+  // Manage request modal
+  // ---------------------------------------------------------------
+  const manageModal = document.getElementById('manageModal');
+  const manageModalError = document.getElementById('manageModalError');
+  let manageTargetId = null;
+
+  function openManageModal(m) {
+    manageTargetId = m.id;
+    manageModalError.classList.remove('show');
+    manageModalError.textContent = '';
+
+    document.getElementById('manageModalTitle').textContent = m.title;
+    const photo = document.getElementById('manageModalPhoto');
+    if (m.photo_url) {
+      photo.src = m.photo_url;
+      photo.style.display = 'block';
+    } else {
+      photo.style.display = 'none';
+    }
+
+    document.getElementById('manageInfoCategory').textContent = m.category;
+    document.getElementById('manageInfoRoom').textContent = m.room_label || '—';
+    document.getElementById('manageInfoStudent').textContent = `${m.student_name || 'Unknown'}${m.student_id ? ' (' + m.student_id + ')' : ''}`;
+    document.getElementById('manageInfoDate').textContent = new Date(m.created_at).toLocaleString();
+
+    document.getElementById('manageStatus').value = m.status;
+    document.getElementById('managePriority').value = m.priority;
+    document.getElementById('manageAssignedStaff').value = m.assigned_staff || '';
+    document.getElementById('manageRemarks').value = m.remarks || '';
+    document.getElementById('manageCompletedAt').value = m.completed_at ? m.completed_at.slice(0, 10) : '';
+
+    manageModal.hidden = false;
+  }
+
+  document.getElementById('manageModalCancelBtn').addEventListener('click', () => {
+    manageModal.hidden = true;
+  });
+  manageModal.addEventListener('click', (e) => {
+    if (e.target === manageModal) manageModal.hidden = true;
+  });
+
+  document.getElementById('manageModalSaveBtn').addEventListener('click', async () => {
+    if (!manageTargetId) return;
+    manageModalError.classList.remove('show');
+
+    const payload = {
+      status: document.getElementById('manageStatus').value,
+      priority: document.getElementById('managePriority').value,
+      assigned_staff: document.getElementById('manageAssignedStaff').value.trim() || null,
+      remarks: document.getElementById('manageRemarks').value.trim() || null,
+    };
+    const completedAtValue = document.getElementById('manageCompletedAt').value;
+    if (completedAtValue) {
+      payload.completed_at = new Date(completedAtValue).toISOString();
+    }
+
+    const saveBtn = document.getElementById('manageModalSaveBtn');
+    saveBtn.disabled = true;
     try {
-      const res = await fetch(`/admin/maintenance/${id}/complete`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) {
-        const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not resolve this request (status ${res.status}).`);
+      const res = await fetch(`/admin/maintenance/${manageTargetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        manageModalError.textContent = body.detail || `Could not save changes (status ${res.status}).`;
+        manageModalError.classList.add('show');
         return;
       }
+      manageModal.hidden = true;
       loadMaintenance();
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      manageModalError.textContent = 'Network error — please check your connection and try again.';
+      manageModalError.classList.add('show');
+    } finally {
+      saveBtn.disabled = false;
     }
-  }
+  });
 
   document.getElementById('statusFilter').addEventListener('change', loadMaintenance);
   loadMaintenance();

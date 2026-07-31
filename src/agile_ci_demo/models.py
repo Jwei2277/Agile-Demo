@@ -1,4 +1,5 @@
-from datetime import date, datetime
+import re
+from datetime import date, datetime, time
 from typing import Literal
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
@@ -261,8 +262,25 @@ class MaintenanceOut(BaseModel):
     category: str
     priority: str
     status: str
-    created_at: datetime
+    photo_url: str | None = None
+    assigned_staff: str | None = None
+    remarks: str | None = None
+    room_label: str | None = None
     student_name: str | None = None
+    student_id: str | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+MAINTENANCE_STATUSES = ("pending", "assigned", "in_progress", "completed", "closed", "cancelled")
+
+
+class MaintenanceUpdate(BaseModel):
+    status: str | None = Field(default=None, pattern=r"^(pending|assigned|in_progress|completed|closed|cancelled)$")
+    priority: str | None = Field(default=None, pattern=r"^(Low|Normal|High)$")
+    assigned_staff: str | None = None
+    remarks: str | None = None
+    completed_at: datetime | None = None
 
 
 class DashboardStats(BaseModel):
@@ -326,3 +344,70 @@ class RoomUpdate(BaseModel):
         if self.room_type == "Single Room" and self.capacity is not None and self.capacity != 1:
             raise ValueError("Single Room must have capacity 1")
         return self
+
+
+VISITOR_RELATIONSHIPS = ("Parent/Guardian", "Sibling", "Relative", "Friend", "Other")
+VISIT_HOURS_START = time(8, 0)
+VISIT_HOURS_END = time(22, 0)
+
+
+class VisitorRequestCreate(BaseModel):
+    visitor_name: str = Field(min_length=1)
+    visitor_email: EmailStr
+    visitor_relationship: str = Field(min_length=1)
+    visitor_phone: str = Field(min_length=1)
+    visit_date: date
+    visit_time: time
+
+    @model_validator(mode="after")
+    def _validate_visit_time(self):
+        if not (VISIT_HOURS_START <= self.visit_time <= VISIT_HOURS_END):
+            raise ValueError("Visiting hours are 8:00 AM to 10:00 PM.")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_name(self):
+        if not re.fullmatch(r"[A-Za-z ]+", self.visitor_name.strip()):
+            raise ValueError("Visitor name can only contain letters and spaces — no numbers or symbols.")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_phone(self):
+        if not re.fullmatch(r"\d{10,11}", self.visitor_phone.strip()):
+            raise ValueError("Visitor phone number must be 10-11 digits, numbers only.")
+        return self
+
+
+class VisitorRequestOut(BaseModel):
+    id: int
+    visitor_name: str
+    visitor_email: str
+    visitor_relationship: str
+    visitor_phone: str
+    visit_date: date
+    visit_time: time
+    status: str
+    rejection_reason: str | None = None
+    requested_at: datetime
+    decided_at: datetime | None = None
+
+
+class VisitorRequestAdminOut(BaseModel):
+    id: int
+    visitor_name: str
+    visitor_email: str
+    visitor_relationship: str
+    visitor_phone: str
+    visit_date: date
+    visit_time: time
+    status: str
+    rejection_reason: str | None = None
+    requested_at: datetime
+    decided_at: datetime | None = None
+    student_name: str
+    student_id: str | None = None
+    student_email: str | None = None
+
+
+class VisitorRejectRequest(BaseModel):
+    reason: str = Field(min_length=1)

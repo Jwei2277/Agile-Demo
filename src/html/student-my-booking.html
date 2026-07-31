@@ -362,7 +362,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <a href="student-home.html">Home</a>
         <a href="student-browse-hostels.html">Browse rooms</a>
         <a href="student-my-booking.html" class="current">My booking</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Visitors</a>
+        <a href="student-visitors.html">Visitors</a>
         <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
       </nav>
       <div class="nav-right">
@@ -398,16 +398,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       </div>
 
       <div class="quick-actions">
-        <button class="quick-action card" id="reportIssueBtn">
+        <a class="quick-action card" href="student-maintenance.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
           <strong>Report an issue</strong>
-          <span class="desc">Let facilities know about a maintenance problem in your room.</span>
-        </button>
-        <button class="quick-action card" disabled>
+          <span class="desc">Submit a complaint with photos, and track its status.</span>
+        </a>
+        <a class="quick-action card" href="student-visitors.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 20c.6-3.4 3-5.2 5.5-5.2s4.9 1.8 5.5 5.2M17 8.5v5M14.5 11h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Register a visitor</strong>
-          <span class="desc">Coming soon.</span>
-        </button>
+          <span class="desc">Request approval for a guest, and track its status.</span>
+        </a>
         <button class="quick-action card" disabled>
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Booking history</strong>
@@ -530,46 +530,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <button class="btn-secondary btn-sm" id="modalCancelBtn">Cancel</button>
       <button class="btn-primary btn-sm" id="modalConfirmBtn">Save changes</button>
     </div>
-  </div>
-</div>
-
-<!-- Report an issue modal -->
-<div class="modal-overlay" id="reportModal" hidden>
-  <div class="modal-card">
-    <div class="modal-icon info"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
-    <h3>Report an issue</h3>
-    <p class="modal-sub">Let facilities know what's wrong — we'll pass it straight to the maintenance queue.</p>
-
-    <div class="modal-error" id="reportModalError" role="alert"></div>
-
-    <form id="reportForm">
-      <div class="modal-form-field">
-        <label for="reportTitle">What's the issue?</label>
-        <input type="text" id="reportTitle" placeholder="e.g. Leaking tap in bathroom" required>
-      </div>
-      <div class="modal-form-field">
-        <label for="reportCategory">Category</label>
-        <select id="reportCategory">
-          <option value="General">General</option>
-          <option value="Plumbing">Plumbing</option>
-          <option value="Electrical">Electrical</option>
-          <option value="Furniture">Furniture</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="modal-form-field">
-        <label for="reportPriority">Priority</label>
-        <select id="reportPriority">
-          <option value="Normal">Normal</option>
-          <option value="Low">Low</option>
-          <option value="High">High</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary btn-sm" id="reportModalCancelBtn">Cancel</button>
-        <button type="submit" class="btn-primary btn-sm">Submit report</button>
-      </div>
-    </form>
   </div>
 </div>
 
@@ -809,13 +769,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   });
 
   // ---------------------------------------------------------------
-  // Report an issue modal
-  // ---------------------------------------------------------------
-  const reportModal = document.getElementById('reportModal');
-  const reportForm = document.getElementById('reportForm');
-  const reportModalError = document.getElementById('reportModalError');
-
-  // ---------------------------------------------------------------
   // Request room transfer modal
   // ---------------------------------------------------------------
   const transferModal = document.getElementById('transferModal');
@@ -941,62 +894,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       transferModalError.classList.add('show');
     } finally {
       transferModalConfirmBtn.disabled = false;
-    }
-  });
-
-  document.getElementById('reportIssueBtn').addEventListener('click', async () => {
-    const token = getToken();
-    if (!token) { window.location.href = 'login.html'; return; }
-    reportForm.reset();
-    reportModalError.classList.remove('show');
-    reportModal.hidden = false;
-    document.getElementById('reportTitle').focus();
-  });
-  document.getElementById('reportModalCancelBtn').addEventListener('click', () => {
-    reportModal.hidden = true;
-  });
-  reportModal.addEventListener('click', (e) => {
-    if (e.target === reportModal) reportModal.hidden = true;
-  });
-
-  reportForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const token = getToken();
-    if (!token) { window.location.href = 'login.html'; return; }
-
-    const title = document.getElementById('reportTitle').value.trim();
-    reportModalError.classList.remove('show');
-    if (!title) {
-      reportModalError.textContent = 'Describe the issue before submitting.';
-      reportModalError.classList.add('show');
-      return;
-    }
-
-    const submitBtn = reportForm.querySelector('.btn-primary');
-    submitBtn.disabled = true;
-    try {
-      const res = await fetch('/maintenance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          title,
-          category: document.getElementById('reportCategory').value,
-          priority: document.getElementById('reportPriority').value,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        reportModalError.textContent = body.detail || `Could not submit your report (status ${res.status}).`;
-        reportModalError.classList.add('show');
-        return;
-      }
-      reportModal.hidden = true;
-      showToast('Thanks — your report has been submitted.', false);
-    } catch (err) {
-      reportModalError.textContent = 'Network error — please check your connection and try again.';
-      reportModalError.classList.add('show');
-    } finally {
-      submitBtn.disabled = false;
     }
   });
 

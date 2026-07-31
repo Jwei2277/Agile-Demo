@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Rooms</title>
+<title>HostelEase — Visitors</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -454,30 +454,97 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-assigned { background: var(--sky-100); color: var(--blue-600); }
+.status-in_progress { background: var(--sky-100); color: var(--blue-600); }
+.status-completed { background: var(--success-bg); color: var(--success-fg); }
+.status-closed { background: #eef0f3; color: #5b6472; }
+.status-cancelled { background: var(--error-bg); color: var(--error-fg); }
+.priority-pill { display:inline-flex; align-items:center; font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; }
+.priority-Low { background: #eef0f3; color: #5b6472; }
+.priority-Normal { background: var(--sky-100); color: var(--blue-600); }
+.priority-High { background: var(--error-bg); color: var(--error-fg); }
+.complaint-card { display:flex; gap:14px; padding:16px 18px; }
+.complaint-thumb { width:64px; height:64px; border-radius:10px; object-fit:cover; background:var(--sky-100); flex-shrink:0; }
+.complaint-body { flex:1; min-width:0; }
+.complaint-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.complaint-title { font-family:var(--font-display); font-size:14.5px; font-weight:600; }
+.complaint-meta { font-size:12.5px; color:var(--slate-600); margin:2px 0; }
+.complaint-remarks { font-size:12.5px; color:var(--navy-900); background:var(--sky-100); border-radius:8px; padding:8px 10px; margin-top:8px; }
+.photo-preview { display:none; margin-top:10px; }
+.photo-preview img { max-width:160px; max-height:160px; border-radius:10px; border:1px solid var(--border); }
+
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-approved { background: var(--success-bg); color: var(--success-fg); }
+.status-rejected { background: var(--error-bg); color: var(--error-fg); }
+.status-cancelled { background: #eef0f3; color: #5b6472; }
+.visitor-card { display:flex; gap:14px; padding:16px 18px; align-items:flex-start; flex-wrap:wrap; }
+.visitor-body { flex:1; min-width:220px; }
+.visitor-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.visitor-title { font-family:var(--font-display); font-size:14.5px; font-weight:600; }
+.visitor-meta { font-size:12.5px; color:var(--slate-600); margin:2px 0; }
+.visitor-reason { font-size:12.5px; color:var(--error-fg); background:var(--error-bg); border-radius:8px; padding:8px 10px; margin-top:8px; }
+.visitor-actions { display:flex; gap:8px; align-self:center; }
+/* ===================== Cancel confirmation modal + toast ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 420px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 18px; font-size: 13px; color: var(--slate-600); line-height: 1.5; }
+.modal-icon {
+  width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px; background: var(--warning-bg); color: var(--warning-fg);
+}
+.modal-icon svg { width: 21px; height: 21px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 </head>
 <body>
 
-<div id="adminApp" class="app">
+<div id="studentApp" class="app">
   <header class="topnav">
     <div class="topnav-inner">
       <div class="brand-mark">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>HostelEase</span>
       </div>
-      <span class="eyebrow-chip">Admin Console</span>
+      <span class="eyebrow-chip">Student Portal</span>
       <nav class="nav-links">
-        <a href="admin-dashboard.html">Dashboard</a>
-        <a href="admin-bookings.html">Bookings</a>
-        <a href="admin-rooms.html" class="current">Rooms</a>
-        <a href="admin-maintenance.html">Maintenance</a>
-        <a href="admin-visitors.html">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html">Browse rooms</a>
+        <a href="student-my-booking.html">My booking</a>
+        <a href="student-visitors.html" class="current">Visitors</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none;"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></a>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
@@ -486,79 +553,80 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   <main>
     <div class="section-head" style="margin-top:0;">
       <div>
-        <h2>Rooms</h2>
-        <p id="roomCountSub">Loading…</p>
+        <h2>Register a visitor</h2>
+        <p>Visiting hours are 8:00 AM – 10:00 PM.</p>
       </div>
-      <button class="btn-primary btn-sm" id="toggleAddFormBtn">+ Add room</button>
     </div>
 
-    <div class="card" style="padding:20px 22px; display:none;" id="addRoomCard">
-      <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 4px;">Add a new room</h3>
-      <p style="margin:0; font-size:12.5px; color:var(--slate-600);">Rooms need a block set up first — run the seed SQL or add blocks via Supabase if the list below is empty.</p>
-      <form id="addRoomForm">
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="rBlock">Block</label>
-            <select id="rBlock" required></select>
+    <div class="card" style="padding:22px 24px; max-width:560px;">
+      <form id="visitorForm">
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-field" style="grid-column: 1 / -1;">
+            <label for="vName">Visitor's full name</label>
+            <input type="text" id="vName" placeholder="e.g. Aisha Rahman" pattern="[A-Za-z ]+" title="Letters and spaces only — no numbers or symbols." required>
           </div>
           <div class="form-field">
-            <label for="rLevel">Level</label>
-            <input type="number" id="rLevel" min="1" required>
+            <label for="vEmail">Visitor's email</label>
+            <input type="email" id="vEmail" placeholder="visitor@example.com" required>
           </div>
           <div class="form-field">
-            <label for="rNumber">Room number</label>
-            <input type="text" id="rNumber" placeholder="e.g. A-204" required>
+            <label for="vPhone">Visitor's phone number</label>
+            <input type="tel" id="vPhone" placeholder="e.g. 0123456789" pattern="\d{10,11}" maxlength="11" inputmode="numeric" title="10-11 digits, numbers only." required>
           </div>
           <div class="form-field">
-            <label for="rType">Room type</label>
-            <select id="rType" required>
-              <option value="Single Room">Single Room</option>
-              <option value="Master Room">Master Room</option>
-              <option value="Balcony Room">Balcony Room</option>
-              <option value="Middle Room">Middle Room</option>
+            <label for="vRelationship">Relationship to you</label>
+            <select id="vRelationship" required>
+              <option value="Parent/Guardian">Parent/Guardian</option>
+              <option value="Sibling">Sibling</option>
+              <option value="Relative">Relative</option>
+              <option value="Friend">Friend</option>
+              <option value="Other">Other</option>
             </select>
           </div>
           <div class="form-field">
-            <label for="rCapacity">Max occupants</label>
-            <input type="number" id="rCapacity" min="1" max="2" value="1" required>
-            <span style="font-size:11.5px; color:var(--slate-600);">Single Room must be 1. Others can be 1 or 2 (2nd occupant costs +RM50/month).</span>
+            <label for="vDate">Visit date</label>
+            <input type="date" id="vDate" required>
           </div>
-          <div class="form-field">
-            <label for="rGender">Gender policy</label>
-            <select id="rGender" required>
-              <option value="Mixed block">Mixed block</option>
-              <option value="Female only">Female only</option>
-              <option value="Male only">Male only</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="rFee">Monthly fee (RM)</label>
-            <input type="number" id="rFee" min="1" step="1" required>
+          <div class="form-field" style="grid-column: 1 / -1;">
+            <label for="vTime">Visit time</label>
+            <input type="time" id="vTime" min="08:00" max="22:00" required>
+            <span style="font-size:11.5px; color:var(--slate-600);">Visiting hours: 8:00 AM – 10:00 PM.</span>
           </div>
         </div>
+        <div class="form-alert" id="visitorAlert" role="alert" style="display:none; margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
         <div class="form-actions">
-          <button type="submit" class="btn-primary btn-sm">Create room</button>
-          <button type="button" class="btn-secondary btn-sm" id="cancelAddRoomBtn">Cancel</button>
+          <button type="submit" class="btn-primary btn-sm" id="submitVisitorBtn">Submit request</button>
         </div>
-        <div class="form-alert" id="addRoomAlert" role="alert" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
       </form>
     </div>
 
-    <div class="card" style="overflow-x:auto;">
-      <table class="room-table" id="roomTable">
-        <thead>
-          <tr>
-            <th>Block</th><th>Room</th><th>Type</th><th>Max occupants</th><th>Status</th>
-            <th>Gender</th><th>Fee / month</th><th>Waitlist</th><th>Active</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="roomTableBody">
-          <tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>
-        </tbody>
-      </table>
+    <div class="section-head">
+      <div>
+        <h2>Your visitor requests</h2>
+        <p>Track approval status, or cancel a pending request.</p>
+      </div>
+    </div>
+
+    <div id="visitorList" style="display:flex; flex-direction:column; gap:12px;">
+      <p style="color:var(--slate-600);">Loading your visitor requests…</p>
     </div>
   </main>
 </div>
+
+<!-- Cancel visitor request confirmation modal -->
+<div class="modal-overlay" id="cancelModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+    <h3>Cancel this visitor request?</h3>
+    <p class="modal-sub" id="cancelModalSub">This will withdraw the request. You'll need to submit a new one if you change your mind.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="cancelModalKeepBtn">Keep it</button>
+      <button class="btn-primary btn-sm" id="cancelModalConfirmBtn" style="background: var(--error-fg);">Yes, cancel it</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
 <script>
   function getToken() {
@@ -584,193 +652,220 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     window.location.href = 'login.html';
   });
 
-  function authHeaders() {
-    return { 'Authorization': `Bearer ${getToken()}` };
-  }
-  function authHeadersJSON() {
-    return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 
-  function roomRowHTML(r) {
-    const activeBadgeClass = r.is_active ? 'pill-success' : 'pill-error';
-    const activeBadgeText = r.is_active ? 'Active' : 'Inactive';
-    const bookedBadgeClass = r.is_booked ? 'pill-error' : 'pill-success';
-    const bookedBadgeText = r.is_booked ? 'Booked' : 'Available';
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {
+      // Non-fatal.
+    }
+  }
+  loadProfileChip();
+
+  function showAlert(el, message, isError) {
+    el.textContent = message;
+    el.style.display = 'block';
+    el.style.background = isError ? 'var(--error-bg)' : 'var(--success-bg)';
+    el.style.color = isError ? 'var(--error-fg)' : 'var(--success-fg)';
+  }
+
+  // FastAPI sends a plain string for our own HTTPException(detail=...)
+  // errors, but a list of structured objects for raw pydantic validation
+  // failures (e.g. if a request slips past client-side checks) — handle
+  // both so the user never sees raw JSON.
+  function errorMessageFrom(body, fallback) {
+    if (!body || !body.detail) return fallback;
+    if (typeof body.detail === 'string') return body.detail;
+    if (Array.isArray(body.detail) && body.detail.length) {
+      return body.detail.map((e) => e.msg || fallback).join(' ');
+    }
+    return fallback;
+  }
+
+  const statusLabels = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' };
+
+  function formatTime(t) {
+    const [h, m] = t.split(':');
+    const hour = Number(h);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${m} ${period}`;
+  }
+
+  function visitorCardHTML(v) {
+    const statusClass = `status-${v.status}`;
+    const reasonBlock = v.rejection_reason
+      ? `<div class="visitor-reason"><strong>Rejection reason:</strong> ${v.rejection_reason}</div>`
+      : '';
+    const cancelBtn = v.status === 'pending'
+      ? `<div class="visitor-actions"><button class="btn-secondary btn-sm" data-cancel-id="${v.id}">Cancel</button></div>`
+      : '';
     return `
-      <tr class="${r.is_active ? '' : 'inactive-row'}" data-room-id="${r.id}">
-        <td>${r.block_name}</td>
-        <td>${r.room_number} (Lvl ${r.level})</td>
-        <td>${r.room_type}</td>
-        <td>${r.capacity}</td>
-        <td><span class="pill ${bookedBadgeClass}">${bookedBadgeText}</span></td>
-        <td>${r.gender_policy}</td>
-        <td>RM ${r.fee_monthly.toFixed(0)}${r.capacity > 1 ? ' <small>(+RM50 for 2nd)</small>' : ''}</td>
-        <td>${r.waitlist_count > 0 ? `<span class="pill pill-warning">${r.waitlist_count} waiting</span>` : '—'}</td>
-        <td><span class="pill ${activeBadgeClass}">${activeBadgeText}</span></td>
-        <td class="actions-cell">
-          <button class="btn-secondary btn-sm" data-action="edit-fee" data-id="${r.id}">Edit fee</button>
-          <button class="btn-secondary btn-sm" data-action="toggle-active" data-id="${r.id}" data-active="${r.is_active}">${r.is_active ? 'Deactivate' : 'Activate'}</button>
-        </td>
-      </tr>`;
+      <div class="card visitor-card">
+        <div class="visitor-body">
+          <div class="visitor-top">
+            <span class="visitor-title">${v.visitor_name}</span>
+            <span class="status-pill ${statusClass}">${statusLabels[v.status] || v.status}</span>
+          </div>
+          <p class="visitor-meta">${v.visitor_relationship} · ${new Date(v.visit_date).toLocaleDateString()} at ${formatTime(v.visit_time)}</p>
+          <p class="visitor-meta">${v.visitor_email} · ${v.visitor_phone}</p>
+          ${reasonBlock}
+        </div>
+        ${cancelBtn}
+      </div>`;
   }
 
-  async function loadBlocks() {
-    const res = await fetch('/admin/blocks', { headers: authHeaders() });
-    if (!res.ok) return [];
-    return res.json();
-  }
-
-  async function loadRooms() {
+  async function loadVisitorRequests() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
-    const tbody = document.getElementById('roomTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">Loading rooms…</td></tr>';
-
+    const list = document.getElementById('visitorList');
     try {
-      const res = await fetch('/admin/rooms', { headers: authHeaders() });
-      if (res.status === 403) {
-        alert('Admin access required.');
-        window.location.href = 'login.html';
-        return;
-      }
-      const rooms = await res.json();
+      const res = await fetch('/visitors/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('failed');
+      const requests = await res.json();
 
-      document.getElementById('roomCountSub').textContent = `${rooms.length} room${rooms.length === 1 ? '' : 's'} total`;
+      list.innerHTML = requests.length
+        ? requests.map(visitorCardHTML).join('')
+        : '<div class="card" style="padding:20px; color:var(--slate-600);">No visitor requests yet.</div>';
 
-      if (!rooms.length) {
-        tbody.innerHTML = '<tr><td colspan="10" style="color:var(--slate-600);">No rooms yet. Add one above, or run the seed SQL.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = rooms.map(roomRowHTML).join('');
-      tbody.querySelectorAll('[data-action="edit-fee"]').forEach((btn) =>
-        btn.addEventListener('click', () => editFee(btn.dataset.id)));
-      tbody.querySelectorAll('[data-action="toggle-active"]').forEach((btn) =>
-        btn.addEventListener('click', () => toggleActive(btn.dataset.id, btn.dataset.active === 'true')));
-    } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--error-fg);">Could not load rooms.</td></tr>';
-    }
-  }
-
-  async function editFee(id) {
-    const newFee = prompt('New monthly fee (RM):');
-    if (!newFee || isNaN(Number(newFee))) return;
-    try {
-      const res = await fetch(`/admin/rooms/${id}`, {
-        method: 'PATCH',
-        headers: authHeadersJSON(),
-        body: JSON.stringify({ fee_monthly: Number(newFee) }),
+      list.querySelectorAll('[data-cancel-id]').forEach((btn) => {
+        btn.addEventListener('click', () => openCancelModal(btn.dataset.cancelId, btn.closest('.visitor-card')));
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the fee (status ${res.status}).`);
-        return;
-      }
-      loadRooms();
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load your visitor requests.</p>';
     }
   }
 
-  async function toggleActive(id, currentlyActive) {
-    try {
-      const res = await fetch(`/admin/rooms/${id}`, {
-        method: 'PATCH',
-        headers: authHeadersJSON(),
-        body: JSON.stringify({ is_active: !currentlyActive }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the room (status ${res.status}).`);
-        return;
-      }
-      loadRooms();
-    } catch (err) {
-      alert('Network error — please check your connection and try again.');
-    }
+  // ---------------------------------------------------------------
+  // Toast helper
+  // ---------------------------------------------------------------
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
   }
 
-  const addRoomCard = document.getElementById('addRoomCard');
-  document.getElementById('toggleAddFormBtn').addEventListener('click', async () => {
-    const isHidden = addRoomCard.style.display === 'none';
-    addRoomCard.style.display = isHidden ? 'block' : 'none';
-    if (isHidden && !document.getElementById('rBlock').dataset.loaded) {
-      const blocks = await loadBlocks();
-      const select = document.getElementById('rBlock');
-      select.innerHTML = blocks.length
-        ? blocks.map(b => `<option value="${b.id}">${b.name}</option>`).join('')
-        : '<option value="">No blocks found — add one in Supabase first</option>';
-      select.dataset.loaded = 'true';
-    }
+  // ---------------------------------------------------------------
+  // Cancel visitor request modal
+  // ---------------------------------------------------------------
+  const cancelModal = document.getElementById('cancelModal');
+  const cancelModalSub = document.getElementById('cancelModalSub');
+  let cancelTargetId = null;
+
+  function openCancelModal(id, cardEl) {
+    cancelTargetId = id;
+    const name = cardEl?.querySelector('.visitor-title')?.textContent;
+    cancelModalSub.textContent = name
+      ? `This will withdraw the visit request for ${name}. You'll need to submit a new one if you change your mind.`
+      : "This will withdraw the request. You'll need to submit a new one if you change your mind.";
+    cancelModal.hidden = false;
+  }
+  document.getElementById('cancelModalKeepBtn').addEventListener('click', () => {
+    cancelModal.hidden = true;
+    cancelTargetId = null;
   });
-  document.getElementById('cancelAddRoomBtn').addEventListener('click', () => {
-    addRoomCard.style.display = 'none';
+  cancelModal.addEventListener('click', (e) => {
+    if (e.target === cancelModal) { cancelModal.hidden = true; cancelTargetId = null; }
   });
 
-  const rTypeSelect = document.getElementById('rType');
-  const rCapacityInput = document.getElementById('rCapacity');
-  function syncCapacityToRoomType() {
-    if (rTypeSelect.value === 'Single Room') {
-      rCapacityInput.value = '1';
-      rCapacityInput.disabled = true;
-    } else {
-      rCapacityInput.disabled = false;
+  document.getElementById('cancelModalConfirmBtn').addEventListener('click', async () => {
+    if (!cancelTargetId) return;
+    const token = getToken();
+    const confirmBtn = document.getElementById('cancelModalConfirmBtn');
+    confirmBtn.disabled = true;
+    try {
+      const res = await fetch(`/visitors/${cancelTargetId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        showToast(errorMessageFrom(body, `Could not cancel this request (status ${res.status}).`), true);
+        return;
+      }
+      cancelModal.hidden = true;
+      showToast('Visitor request cancelled.', false);
+      loadVisitorRequests();
+    } catch (err) {
+      showToast('Network error — please try again.', true);
+    } finally {
+      confirmBtn.disabled = false;
+      cancelTargetId = null;
     }
-  }
-  rTypeSelect.addEventListener('change', syncCapacityToRoomType);
-  syncCapacityToRoomType();
+  });
 
-  document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
+  const vDateInput = document.getElementById('vDate');
+  vDateInput.min = new Date().toISOString().slice(0, 10);
+
+  document.getElementById('visitorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const alertBox = document.getElementById('addRoomAlert');
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const alertBox = document.getElementById('visitorAlert');
     alertBox.style.display = 'none';
 
-    const blockId = Number(document.getElementById('rBlock').value);
-    if (!blockId) {
-      alertBox.textContent = 'Select a block first.';
-      alertBox.style.display = 'block';
-      alertBox.style.background = 'var(--error-bg)';
-      alertBox.style.color = 'var(--error-fg)';
+    const visitorName = document.getElementById('vName').value.trim();
+    const visitorPhone = document.getElementById('vPhone').value.trim();
+
+    if (!/^[A-Za-z ]+$/.test(visitorName)) {
+      showAlert(alertBox, 'Visitor name can only contain letters and spaces — no numbers or symbols.', true);
+      return;
+    }
+    if (!/^\d{10,11}$/.test(visitorPhone)) {
+      showAlert(alertBox, 'Visitor phone number must be 10-11 digits, numbers only.', true);
+      return;
+    }
+
+    const visitTime = document.getElementById('vTime').value;
+    if (visitTime && (visitTime < '08:00' || visitTime > '22:00')) {
+      showAlert(alertBox, 'Visiting hours are 8:00 AM to 10:00 PM.', true);
       return;
     }
 
     const payload = {
-      block_id: blockId,
-      level: Number(document.getElementById('rLevel').value),
-      room_number: document.getElementById('rNumber').value.trim(),
-      room_type: document.getElementById('rType').value,
-      capacity: Number(document.getElementById('rCapacity').value),
-      gender_policy: document.getElementById('rGender').value,
-      fee_monthly: Number(document.getElementById('rFee').value),
+      visitor_name: visitorName,
+      visitor_email: document.getElementById('vEmail').value.trim(),
+      visitor_relationship: document.getElementById('vRelationship').value,
+      visitor_phone: visitorPhone,
+      visit_date: document.getElementById('vDate').value,
+      visit_time: visitTime,
     };
 
+    const submitBtn = document.getElementById('submitVisitorBtn');
+    submitBtn.disabled = true;
     try {
-      const res = await fetch('/admin/rooms', {
+      const res = await fetch('/visitors', {
         method: 'POST',
-        headers: authHeadersJSON(),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alertBox.textContent = body.detail || 'Could not create room.';
-        alertBox.style.display = 'block';
-        alertBox.style.background = 'var(--error-bg)';
-        alertBox.style.color = 'var(--error-fg)';
+        showAlert(alertBox, errorMessageFrom(body, 'Could not submit your visitor request.'), true);
         return;
       }
-      document.getElementById('addRoomForm').reset();
-      addRoomCard.style.display = 'none';
-      loadRooms();
+      showAlert(alertBox, 'Visitor request submitted.', false);
+      document.getElementById('visitorForm').reset();
+      loadVisitorRequests();
     } catch (err) {
-      alertBox.textContent = 'Network error — please try again.';
-      alertBox.style.display = 'block';
-      alertBox.style.background = 'var(--error-bg)';
-      alertBox.style.color = 'var(--error-fg)';
+      showAlert(alertBox, 'Network error — please try again.', true);
+    } finally {
+      submitBtn.disabled = false;
     }
   });
 
-  loadRooms();
+  loadVisitorRequests();
 </script>
 </body>
 </html>
