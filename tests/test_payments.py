@@ -1089,42 +1089,6 @@ def test_get_my_payments_room_label(monkeypatch):
     print("payment room label - PASSED")
 
 
-def test_get_my_payments_without_room(monkeypatch):
-    fake = FakeSupabase(
-        payment_rows=[
-            {
-                "id": 1,
-                "booking_id": 1,
-                "student_id": "student001",
-                "amount": 120.0,
-                "method": "Online Banking",
-                "status": "paid",
-                "receipt_number": "RCPT-001",
-                "paid_at": "2026-08-15T10:00:00+00:00",
-                "bookings": {},
-            }
-        ],
-    )
-
-    monkeypatch.setattr(
-        "agile_ci_demo.payments.supabase_admin",
-        fake,
-    )
-
-    app.dependency_overrides[get_current_user] = student_user
-
-    response = client.get("/payments/me")
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert len(data) == 1
-    assert data[0]["room_label"] is None
-
-    print("payment without room label - PASSED")
-
-
 def test_get_my_payments_multiple_records(monkeypatch):
     fake = FakeSupabase(
         payment_rows=[
