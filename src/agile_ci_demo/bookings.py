@@ -726,9 +726,9 @@ def cancel_booking(
         # meaningless — void it too instead of leaving it stuck in the
         # admin's pending queue forever. Soft-cancel (not delete) to keep
         # it in the audit trail, same as everywhere else in this app.
-        supabase.table("room_transfer_requests").update(
-            {"status": "cancelled"}
-        ).eq("booking_id", booking_id).eq("status", "pending").execute()
+        supabase.table("room_transfer_requests").update({"status": "cancelled"}).eq(
+            "booking_id", booking_id
+        ).eq("status", "pending").execute()
     except Exception:
         # Non-critical — don't fail the cancellation itself over this.
         pass
@@ -758,9 +758,7 @@ def request_cancellation(
 
     supabase = _get_supabase()
 
-    booking_resp = (
-        supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
-    )
+    booking_resp = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
     booking_rows = _get_rows(booking_resp.data)
     if not booking_rows:
         raise HTTPException(status_code=404, detail="Booking not found")

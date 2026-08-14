@@ -16,7 +16,9 @@ Row = dict[str, Any]
 
 def _db():
     if supabase_admin is None:
-        raise HTTPException(status_code=501, detail="Server misconfigured: missing service role key")
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
     return supabase_admin
 
 
@@ -87,7 +89,9 @@ def create_payment(data: PaymentCreate, user: CurrentUser = Depends(get_current_
     if _rows(existing_paid.data):
         raise HTTPException(status_code=409, detail="This booking has already been paid for.")
 
-    room_resp = db.table("rooms").select("fee_monthly").eq("id", booking["room_id"]).limit(1).execute()
+    room_resp = (
+        db.table("rooms").select("fee_monthly").eq("id", booking["room_id"]).limit(1).execute()
+    )
     room_rows = _rows(room_resp.data)
     if not room_rows:
         raise HTTPException(status_code=404, detail="Room not found for this booking")
@@ -157,7 +161,8 @@ def download_receipt(payment_id: int, user: CurrentUser = Depends(get_current_us
     if payment["student_id"] != user.id and user.role != "admin":
         raise HTTPException(status_code=403, detail="Not your payment")
 
-    room_label = _room_label(db, booking.get("room_id")) if booking.get("room_id") else "Unknown room"
+    room_id = booking.get("room_id")
+    room_label = _room_label(db, room_id) if isinstance(room_id, int) else "Unknown room"
     paid_at = payment["paid_at"]
 
     html = f"""<!DOCTYPE html>
