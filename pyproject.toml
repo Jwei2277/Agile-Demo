@@ -34,6 +34,8 @@ dev = [
   "types-requests",
   "fastapi[testclient]",
   "httpx",
+  "reportlab",
+  "openpyxl",
 ]
 
 [tool.ruff]

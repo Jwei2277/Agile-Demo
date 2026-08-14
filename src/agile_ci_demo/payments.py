@@ -161,9 +161,7 @@ def download_receipt(payment_id: int, user: CurrentUser = Depends(get_current_us
     if payment["student_id"] != user.id and user.role != "admin":
         raise HTTPException(status_code=403, detail="Not your payment")
 
-    room_label = (
-        _room_label(db, booking.get("room_id")) if booking.get("room_id") else "Unknown room"
-    )
+    room_label = _room_label(db, booking.get("room_id")) if booking.get("room_id") else "Unknown room"
     paid_at = payment["paid_at"]
 
     html = f"""<!DOCTYPE html>
