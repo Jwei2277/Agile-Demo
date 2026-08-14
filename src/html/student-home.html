@@ -440,7 +440,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 
-.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.quick-link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 20px; }
 @media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
 .quick-link-card {
   display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
@@ -518,10 +518,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <strong>My booking</strong>
         <span class="desc">Check your application status or cancel your booking.</span>
       </a>
-      <a class="card quick-link-card" href="student-my-booking.html">
+      <a class="card quick-link-card" href="student-maintenance.html">
         <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
         <strong>Report an issue</strong>
         <span class="desc">Let facilities know about a maintenance problem in your room.</span>
+      </a>
+      <a class="card quick-link-card" href="student-payment-history.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <strong>Payment history</strong>
+        <span class="desc">See every payment you've made, and download receipts.</span>
       </a>
     </div>
   </main>

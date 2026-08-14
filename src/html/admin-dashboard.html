@@ -440,7 +440,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 
-.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.quick-link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 20px; }
 @media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
 .quick-link-card {
   display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
@@ -564,6 +564,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <strong>Rooms</strong>
         <span class="desc">Add rooms, update pricing, or take a room offline.</span>
+      </a>
+      <a class="card quick-link-card" href="admin-reports.html">
+        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <strong>Payment history</strong>
+        <span class="desc">Search past payments and export booking/payment reports.</span>
       </a>
     </div>
   </main>

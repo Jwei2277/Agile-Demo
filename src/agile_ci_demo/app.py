@@ -160,6 +160,12 @@ def student_booking_history_page():
     return FileResponse(HTML_DIR / "student-booking-history.html")
 
 
+@app.get("/student-payment-history.html")
+def student_payment_history_page():
+
+    return FileResponse(HTML_DIR / "student-payment-history.html")
+
+
 @app.get("/admin-dashboard.html")
 def admin_dashboard_page():
 

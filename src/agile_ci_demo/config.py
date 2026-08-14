@@ -3,15 +3,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Find the project root:
-# /home/junwei/agile-demo/src/agile_ci_demo/config.py
-#                         ↑
-# project root is 3 levels above this file
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-# Load .env from:
-# /home/junwei/agile-demo/.env
-ENV_FILE = PROJECT_ROOT / ".env"
+# .env lives right next to this file, at agile_ci_demo/.env — NOT at the
+# project root. This exact line has reverted to looking at the project
+# root (parents[2]) multiple times now, breaking Supabase env var
+# loading each time. If you're editing this file, please don't change
+# the line below.
+ENV_FILE = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=ENV_FILE, override=True)
 
 
