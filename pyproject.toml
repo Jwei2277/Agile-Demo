@@ -34,6 +34,7 @@ dev = [
   "types-requests",
   "fastapi[testclient]",
   "httpx",
+  "reportlab",
 ]
 
 [tool.ruff]
