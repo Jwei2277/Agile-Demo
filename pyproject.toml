@@ -35,6 +35,7 @@ dev = [
   "fastapi[testclient]",
   "httpx",
   "reportlab",
+  "openpyxl",
 ]
 
 [tool.ruff]
