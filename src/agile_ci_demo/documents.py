@@ -13,7 +13,11 @@ Row = dict[str, Any]
 
 DOCUMENT_BUCKET = "student-documents"
 ALLOWED_DOCUMENT_TYPES = {
-    "image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "application/pdf",
 }
 MAX_DOCUMENT_BYTES = 10 * 1024 * 1024  # 10 MB
 SIGNED_URL_EXPIRY_SECONDS = 60 * 10  # 10 minutes
@@ -21,7 +25,9 @@ SIGNED_URL_EXPIRY_SECONDS = 60 * 10  # 10 minutes
 
 def _db():
     if supabase_admin is None:
-        raise HTTPException(status_code=501, detail="Server misconfigured: missing service role key")
+        raise HTTPException(
+            status_code=501, detail="Server misconfigured: missing service role key"
+        )
     return supabase_admin
 
 
@@ -31,7 +37,9 @@ def _rows(data: Any) -> list[Row]:
 
 def _signed_url(db, storage_path: str) -> str | None:
     try:
-        resp = db.storage.from_(DOCUMENT_BUCKET).create_signed_url(storage_path, SIGNED_URL_EXPIRY_SECONDS)
+        resp = db.storage.from_(DOCUMENT_BUCKET).create_signed_url(
+            storage_path, SIGNED_URL_EXPIRY_SECONDS
+        )
         return resp.get("signedUrl") or resp.get("signedURL")
     except Exception:
         return None
