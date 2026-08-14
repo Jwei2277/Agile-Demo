@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelEase — My Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-950: #071a33;
+  --navy-900: #0b2545;
+  --navy-800: #123566;
+  --blue-600: #2f6fed;
+  --blue-500: #4f86f7;
+  --sky-400: #7fb0ff;
+  --sky-100: #eaf2ff;
+  --white: #ffffff;
+  --slate-600: #5b6b82;
+  --slate-400: #8fa0b8;
+  --border: #dce6f5;
+  --success-bg: #e8f7ef;
+  --success-fg: #1f8a55;
+  --error-bg: #fdeceb;
+  --error-fg: #c8352d;
+  --warning-bg: #fff4e0;
+  --warning-fg: #b3760b;
+
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--navy-900);
+  background: var(--sky-100);
+}
+img, svg { display: block; }
+button { font-family: inherit; }
+a { color: inherit; }
+
+/* ===================== Shared top nav ===================== */
+.topnav {
+  background: var(--navy-900);
+  color: var(--white);
+}
+.topnav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.brand-mark svg { color: var(--sky-400); flex-shrink: 0; }
+.eyebrow-chip {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sky-400);
+  border: 1px solid rgba(127,176,255,0.35);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex;
+  gap: 22px;
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c7d9f5;
+  flex: 1;
+}
+.nav-links a { text-decoration: none; }
+.nav-links a.current { color: var(--white); font-weight: 600; }
+.nav-links a.nav-disabled { color: #6d84a8; opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+.nav-links a:hover { color: var(--white); }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.icon-btn {
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: #c7d9f5;
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.14); }
+.icon-btn .dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ff8a65; border: 1.5px solid var(--navy-900);
+}
+.avatar-chip {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 12px 5px 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+}
+.avatar-chip:hover { background: rgba(255,255,255,0.14); }
+.avatar-circle {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sky-400), var(--blue-600));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 11px; color: var(--navy-950);
+}
+.avatar-name { font-size: 13.5px; font-weight: 600; }
+
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+}
+
+/* ===================== Layout shells ===================== */
+main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 72px; }
+.app[hidden] { display: none; }
+.view[hidden] { display: none; }
+
+/* ===================== Buttons & chips ===================== */
+.btn-primary {
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--blue-600);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover { background: #285fd6; }
+.btn-primary:active { transform: translateY(1px); }
+.btn-secondary {
+  padding: 10px 17px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy-900);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-secondary:hover { background: var(--sky-100); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary:disabled:hover { background: var(--white); }
+.btn-sm { padding: 7px 12px; font-size: 12.5px; border-radius: 7px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+.pill-success { background: var(--success-bg); color: var(--success-fg); }
+.pill-warning { background: var(--warning-bg); color: var(--warning-fg); }
+.pill-error { background: var(--error-bg); color: var(--error-fg); }
+
+/* ===================== Cards ===================== */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ---- Student: booked status ---- */
+.status-hero {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 28px 30px; display: flex; gap: 28px; flex-wrap: wrap; align-items: center;
+  position: relative; overflow: hidden;
+}
+.status-hero::before {
+  content: ""; position: absolute; inset: 0; width: 6px; background: var(--success-fg);
+}
+.status-left { flex: 1; min-width: 260px; }
+.status-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--slate-600); margin: 0 0 6px; }
+.status-room { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; }
+.status-meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13.5px; color: var(--slate-600); margin-top: 6px; }
+.status-meta-row strong { color: var(--navy-900); }
+.status-actions { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+.status-edit-hint { font-size: 11.5px; color: var(--slate-600); max-width: 190px; }
+
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .quick-actions { grid-template-columns: repeat(2, 1fr); } }
+.quick-action {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  padding: 18px; text-align: left; cursor: pointer;
+}
+.quick-action .qa-icon {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--sky-100); color: var(--blue-600);
+  display: flex; align-items: center; justify-content: center;
+}
+.quick-action .qa-icon svg { width: 19px; height: 19px; }
+.quick-action strong { font-size: 14px; }
+.quick-action span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 52px 24px; gap: 12px; margin-top: 16px;
+}
+.empty-state .empty-icon {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--success-bg); color: var(--success-fg);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.empty-state .empty-icon svg { width: 26px; height: 26px; }
+.empty-state h3 { font-family: var(--font-display); font-size: 17px; margin: 0; }
+.empty-state p { margin: 0; font-size: 13.5px; color: var(--slate-600); max-width: 380px; }
+.empty-state .empty-actions { display: flex; gap: 10px; margin-top: 10px; }
+
+.two-col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .two-col { grid-template-columns: 1fr; } }
+.side-card { padding: 20px 20px 22px; }
+.side-card h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; }
+.side-card p.hint { margin: 0 0 16px; font-size: 12.5px; color: var(--slate-600); }
+.mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.mini-stat-row:last-child { border-bottom: none; }
+.mini-stat-row strong { font-family: var(--font-display); font-size: 15px; }
+
+/* ===================== Modal + toast (replaces native confirm/prompt/alert) ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(7,26,51,0.58);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white);
+  border: 1px solid rgba(220, 230, 245, 0.95);
+  border-radius: 24px;
+  max-width: 460px; width: 100%; padding: 24px 26px 22px;
+  box-shadow: 0 24px 70px -24px rgba(7,26,51,0.55);
+  position: relative;
+  overflow: hidden;
+}
+.modal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--blue-600), var(--sky-400));
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 19px; }
+.modal-card p.modal-sub { margin: 0 0 18px; font-size: 13px; color: var(--slate-600); line-height: 1.55; }
+.modal-card .modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.modal-icon {
+  width: 42px; height: 42px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(79, 134, 247, 0.16), rgba(127, 176, 255, 0.28));
+  color: var(--blue-600);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.modal-icon.warn { background: var(--warning-bg); color: var(--warning-fg); }
+.modal-icon.info { background: var(--sky-100); color: var(--blue-600); }
+.modal-icon svg { width: 21px; height: 21px; }
+.occupant-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.occupant-option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+}
+.occupant-option.selected { border-color: var(--blue-600); background: var(--sky-100); }
+.occupant-option input[type="radio"] { margin-top: 3px; }
+.occupant-option .opt-title { font-weight: 600; font-size: 13.5px; }
+.occupant-option .opt-desc { font-size: 12px; color: var(--slate-600); margin-top: 2px; }
+.extra-occupant-fields { display: none; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.extra-occupant-fields.show { display: flex; }
+.extra-occupant-fields .form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.extra-occupant-fields .form-field input,
+.extra-occupant-fields .form-field select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.form-field label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--slate-600);
+}
+.form-field input {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.form-field textarea {
+  width: 100%; padding: 11px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: linear-gradient(180deg, #f8fbff 0%, var(--sky-100) 100%);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical; min-height: 96px;
+}
+.form-field textarea:focus-visible,
+.form-field input:focus-visible,
+.form-field select:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); border: 1px solid rgba(200,53,45,0.18); }
+.modal-error.show { display: block; }
+#roomFieldWrap { margin-bottom: 16px; }
+#roomFieldWrap label { display: block; font-size: 12px; font-weight: 600; color: var(--slate-600); margin-bottom: 6px; }
+#roomFieldWrap select {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+#roomFieldWrap select:disabled { opacity: 0.7; }
+#roomSelectHint { font-size: 12px; color: var(--slate-600); }
+
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="studentApp" class="app">
+  <header class="topnav">
+    <div class="topnav-inner">
+      <div class="brand-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>HostelEase</span>
+      </div>
+      <nav class="nav-links">
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html">Browse rooms</a>
+        <a href="student-my-booking.html" class="current">My booking</a>
+        <a href="student-visitors.html">Visitors</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
+      </nav>
+      <div class="nav-right">
+        <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none;"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></a>
+      <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="studentBooked" class="view" hidden>
+      <div class="status-hero">
+        <div class="status-left">
+          <p class="status-eyebrow">Your booking</p>
+          <h1 class="status-room" id="statusRoom">Loading…</h1>
+          <span class="pill" id="statusPill"></span>
+          <div class="status-meta-row">
+            <span>Semester: <strong id="statusSemester">—</strong></span>
+            <span>Stay: <strong id="statusStayDates">—</strong></span>
+            <span>Requested: <strong id="statusRequested">—</strong></span>
+            <span>Fee: <strong id="statusFee">—</strong></span>
+            <span>Occupants: <strong id="statusOccupants">—</strong></span>
+          </div>
+          <p class="status-note" id="statusNote" hidden></p>
+        </div>
+        <div class="status-actions">
+          <button class="btn-secondary" id="editBookingBtn">Edit booking</button>
+          <button class="btn-secondary" id="transferRoomBtn">Request room transfer</button>
+          <button class="btn-secondary" id="cancelBookingBtn">Cancel booking</button>
+          <p class="status-edit-hint" id="statusEditHint" hidden>Editing locks once your booking is approved.</p>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <a class="quick-action card" href="student-maintenance.html" style="text-decoration:none; color:inherit;">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+          <strong>Report an issue</strong>
+          <span class="desc">Submit a complaint with photos, and track its status.</span>
+        </a>
+        <a class="quick-action card" href="student-visitors.html" style="text-decoration:none; color:inherit;">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 20c.6-3.4 3-5.2 5.5-5.2s4.9 1.8 5.5 5.2M17 8.5v5M14.5 11h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+          <strong>Register a visitor</strong>
+          <span class="desc">Request approval for a guest, and track its status.</span>
+        </a>
+        <button class="quick-action card" disabled>
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+          <strong>Booking history</strong>
+          <span class="desc">Coming soon.</span>
+        </button>
+        <a class="quick-action card" href="student-profile.html" style="text-decoration:none; color:inherit;">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.9-4 3.7-6 7.5-6s6.6 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+          <strong>Update profile</strong>
+          <span class="desc">Change your name, gender, or password.</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="studentNotBookedEmpty" class="view empty-state card" hidden>
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3>No active booking yet</h3>
+      <p>You haven't applied for a room. Browse available rooms and submit an application to get started.</p>
+      <div class="empty-actions"><a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a></div>
+    </section>
+
+    <section id="waitlistSection" hidden style="margin-top:24px;">
+      <div class="section-head" style="margin:0 0 12px;">
+        <div>
+          <h2 style="font-family:var(--font-display); font-size:16px; margin:0;">My waitlist</h2>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--slate-600);">You'll be booked automatically, in order, as soon as a room opens up.</p>
+        </div>
+      </div>
+      <div id="waitlistList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Cancel booking confirmation modal -->
+<div class="modal-overlay" id="cancelModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon warn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+    <h3>Cancel this booking?</h3>
+    <p class="modal-sub">This will withdraw your application. You'll need to submit a new one if you change your mind.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="cancelModalKeepBtn">Keep booking</button>
+      <button class="btn-primary btn-sm" id="cancelModalConfirmBtn" style="background: var(--error-fg);">Yes, cancel it</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit booking modal — same layout as "Book now" on the Browse rooms page,
+     re-purposed here to edit occupant count / 2nd-occupant details on an
+     existing pending booking instead of creating a new one. -->
+<div class="modal-overlay" id="bookingModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitle">Edit booking</h3>
+        <p class="modal-sub" id="modalSub">Choose how many people will stay in this room.</p>
+      </div>
+      <div class="modal-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M12 4l8 8-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="modal-error" id="modalError" role="alert"></div>
+
+    <div class="form-field" id="roomFieldWrap">
+      <label for="roomSelect">Room</label>
+      <select id="roomSelect"><option value="">Loading rooms…</option></select>
+      <p class="modal-sub" id="roomSelectHint" style="margin:6px 0 0;"></p>
+    </div>
+
+    <div class="form-field">
+      <label for="editMoveInDate">Move-in date</label>
+      <input type="date" id="editMoveInDate" required>
+    </div>
+    <div class="form-field">
+      <label for="editMoveOutDate">Move-out date</label>
+      <input type="date" id="editMoveOutDate" required>
+      <span style="font-size:11.5px; color:var(--slate-600);">Bookings must run for at least 1 month.</span>
+    </div>
+
+    <div class="occupant-options" id="occupantOptions">
+      <label class="occupant-option selected" data-count="1">
+        <input type="radio" name="occupantCount" value="1" checked>
+        <div>
+          <div class="opt-title">1 occupant</div>
+          <div class="opt-desc">Just me.</div>
+        </div>
+      </label>
+      <label class="occupant-option" data-count="2">
+        <input type="radio" name="occupantCount" value="2">
+        <div>
+          <div class="opt-title">2 occupants (+RM50/month)</div>
+          <div class="opt-desc">Bring a roommate into this booking.</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="extra-occupant-fields" id="extraOccupantFields">
+      <div class="form-field">
+        <label for="extraName">2nd occupant's full name</label>
+        <input type="text" id="extraName" placeholder="Required">
+      </div>
+      <div class="form-field">
+        <label for="extraEmail">2nd occupant's university email</label>
+        <input type="email" id="extraEmail" placeholder="Required">
+      </div>
+      <div class="form-field">
+        <label for="extraStudentId">2nd occupant's student ID</label>
+        <input type="text" id="extraStudentId" placeholder="e.g. SD123456 — Required">
+      </div>
+      <div class="form-field">
+        <label for="extraGender">2nd occupant's gender</label>
+        <select id="extraGender">
+          <option value="" selected disabled>Select gender — Required</option>
+          <option value="Female">Female</option>
+          <option value="Male">Male</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="modalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="modalConfirmBtn">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request room transfer modal -->
+<div class="modal-overlay" id="transferModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <h3 id="transferModalTitle">Request room transfer</h3>
+        <p class="modal-sub" id="transferModalSub">Choose a different room and tell us why you want to move.</p>
+      </div>
+      <div class="modal-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div class="modal-error" id="transferModalError" role="alert"></div>
+
+    <div class="form-field">
+      <label for="transferRoomSelect">Preferred room</label>
+      <select id="transferRoomSelect"><option value="">Loading rooms…</option></select>
+    </div>
+
+    <div class="form-field">
+      <label for="transferReason">Reason for transfer</label>
+      <textarea id="transferReason" rows="4" placeholder="Briefly explain your request."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="transferModalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="transferModalConfirmBtn">Submit request</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<script>
+  const bookedSection = document.getElementById('studentBooked');
+  const emptySection = document.getElementById('studentNotBookedEmpty');
+
+  function getToken() {
+    return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
+  }
+
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+  }
+
+  let currentUserGender = null;
+
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+      currentUserGender = me.gender || null;
+    } catch (err) {
+      // Non-fatal — the rest of the page still works without the name shown.
+    }
+  }
+  loadProfileChip();
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try {
+      if (token) {
+        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      }
+    } catch (err) {
+      // Even if the server call fails (e.g. offline), still clear the
+      // local session so the user is signed out on this device.
+    }
+    window.localStorage.removeItem('access_token');
+    window.localStorage.removeItem('refresh_token');
+    window.localStorage.removeItem('user');
+    window.sessionStorage.removeItem('access_token');
+    window.sessionStorage.removeItem('refresh_token');
+    window.sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  const statusLabels = {
+    pending: { text: 'Pending review', cls: 'pill-warning' },
+    approved: { text: 'Approved', cls: 'pill-success' },
+    rejected: { text: 'Rejected', cls: 'pill-error' },
+  };
+
+  let currentBooking = null; // holds the full booking object, used to prefill the edit modal
+  let pendingTransferMessage = '';
+  const editBookingBtn = document.getElementById('editBookingBtn');
+  const transferRoomBtn = document.getElementById('transferRoomBtn');
+  const statusEditHint = document.getElementById('statusEditHint');
+  const statusNote = document.getElementById('statusNote');
+
+  function renderBookingSummary(booking) {
+    const currentRoomLabel = `${booking.room.block_name} · Room ${booking.room.room_number}`;
+    const requestedRoomLabel = booking.pending_transfer_room?.room_label || currentRoomLabel;
+    let roomLabel = currentRoomLabel;
+    let noteText = '';
+
+    if (booking.status === 'pending' && booking.pending_transfer_room) {
+      roomLabel = `Transfer requested · ${requestedRoomLabel}`;
+      noteText = `Transfer request submitted to ${requestedRoomLabel}. Awaiting admin review.`;
+    } else if (booking.status === 'approved' && booking.pending_transfer_room) {
+      roomLabel = `Transfer approved · ${requestedRoomLabel}`;
+      noteText = `Your transfer to ${requestedRoomLabel} has been approved.`;
+    } else if (booking.status === 'rejected' && booking.pending_transfer_room) {
+      roomLabel = currentRoomLabel;
+      noteText = `Your transfer request to ${requestedRoomLabel} was rejected.`;
+    }
+
+    document.getElementById('statusRoom').textContent = roomLabel;
+
+    const statusInfo = statusLabels[booking.status] || { text: booking.status, cls: 'pill-warning' };
+    const pill = document.getElementById('statusPill');
+    pill.className = `pill ${statusInfo.cls}`;
+    pill.textContent = statusInfo.text;
+    document.getElementById('statusSemester').textContent = booking.semester;
+    document.getElementById('statusStayDates').textContent =
+      `${new Date(booking.move_in_date).toLocaleDateString()} – ${new Date(booking.move_out_date).toLocaleDateString()}`;
+    document.getElementById('statusRequested').textContent = new Date(booking.requested_at).toLocaleDateString();
+    document.getElementById('statusFee').textContent = `RM ${booking.total_fee.toFixed(0)} / month`;
+    const occupantsEl = document.getElementById('statusOccupants');
+    occupantsEl.textContent = booking.occupant_count === 2
+      ? `2 — with ${booking.extra_occupant_name || 'unnamed'} (${booking.extra_occupant_gender || '—'}, ${booking.extra_occupant_student_id || '—'}, ${booking.extra_occupant_email || '—'})`
+      : '1';
+
+    if (booking.status === 'pending' || booking.status === 'approved' || booking.status === 'rejected') {
+      const note = pendingTransferMessage || noteText || (booking.status === 'pending'
+        ? 'Your booking is awaiting review.'
+        : '');
+      statusNote.textContent = note;
+      statusNote.hidden = !note;
+    } else {
+      statusNote.textContent = '';
+      statusNote.hidden = true;
+    }
+
+    const editable = booking.status === 'pending';
+    const transferEligible = booking.status === 'approved';
+    editBookingBtn.hidden = !editable;
+    transferRoomBtn.disabled = !transferEligible;
+    statusEditHint.hidden = editable || transferEligible;
+  }
+
+  async function loadBooking() {
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    try {
+      const res = await fetch('/bookings/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to load booking');
+      const booking = await res.json();
+
+      if (!booking) {
+        bookedSection.hidden = true;
+        emptySection.hidden = false;
+        currentBooking = null;
+        return;
+      }
+
+      currentBooking = booking;
+      bookedSection.hidden = false;
+      emptySection.hidden = true;
+
+      if (currentBooking && currentBooking.status === 'pending' && currentBooking.pending_transfer_room) {
+        pendingTransferMessage = `Transfer request submitted to ${currentBooking.pending_transfer_room.room_label}.`;
+      }
+
+      renderBookingSummary(currentBooking);
+
+      window.__currentBookingId = booking.id;
+    } catch (err) {
+      bookedSection.hidden = true;
+      emptySection.hidden = false;
+      currentBooking = null;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Toast helper (replaces alert() for simple success/error notices)
+  // ---------------------------------------------------------------
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  // ---------------------------------------------------------------
+  // Cancel booking modal
+  // ---------------------------------------------------------------
+  const cancelModal = document.getElementById('cancelModal');
+  document.getElementById('cancelBookingBtn').addEventListener('click', () => {
+    if (!window.__currentBookingId) return;
+    cancelModal.hidden = false;
+  });
+  document.getElementById('cancelModalKeepBtn').addEventListener('click', () => {
+    cancelModal.hidden = true;
+  });
+  cancelModal.addEventListener('click', (e) => {
+    if (e.target === cancelModal) cancelModal.hidden = true;
+  });
+  document.getElementById('cancelModalConfirmBtn').addEventListener('click', async () => {
+    const token = getToken();
+    if (!token || !window.__currentBookingId) return;
+
+    const btn = document.getElementById('cancelModalConfirmBtn');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/bookings/${window.__currentBookingId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        showToast(body.detail || `Could not cancel your booking (status ${res.status}).`, true);
+        return;
+      }
+      cancelModal.hidden = true;
+      showToast('Your booking has been cancelled.', false);
+      loadBooking();
+    } catch (err) {
+      showToast('Network error — please check your connection and try again.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------
+  // Request room transfer modal
+  // ---------------------------------------------------------------
+  const transferModal = document.getElementById('transferModal');
+  const transferRoomSelect = document.getElementById('transferRoomSelect');
+  const transferReasonInput = document.getElementById('transferReason');
+  const transferModalError = document.getElementById('transferModalError');
+  const transferModalConfirmBtn = document.getElementById('transferModalConfirmBtn');
+  const transferModalCancelBtn = document.getElementById('transferModalCancelBtn');
+
+  function closeTransferModal() {
+    transferModal.hidden = true;
+  }
+
+  async function openTransferModal(booking) {
+    transferModalError.classList.remove('show');
+    transferModalError.textContent = '';
+    transferRoomSelect.innerHTML = '<option value="">Loading rooms…</option>';
+    transferRoomSelect.disabled = true;
+    transferModalConfirmBtn.disabled = true;
+    transferReasonInput.value = '';
+    transferModal.hidden = false;
+
+    let rooms = [];
+    try {
+      const res = await fetch('/rooms');
+      rooms = res.ok ? await res.json() : [];
+    } catch (err) {
+      rooms = [];
+    }
+
+    const currentRoom = booking.room;
+    let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
+    selectable = selectable.filter(r => r.id !== currentRoom.id);
+
+    // Filter out rooms that can't actually take this booking's group:
+    // capacity must fit the occupant count, and for gender-restricted
+    // rooms every occupant (the booker + the 2nd occupant, if any) must
+    // match. A mixed-gender pair can only move to a Mixed block room.
+    selectable = selectable.filter(r => {
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
+
+    if (selectable.length) {
+      transferRoomSelect.innerHTML = selectable.map(r => {
+        const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · RM${r.fee_monthly.toFixed(0)}/mo`;
+        return `<option value="${r.id}" data-capacity="${r.capacity}" data-gender-policy="${r.gender_policy}" data-room-type="${r.room_type}" data-block-name="${r.block_name}" data-room-number="${r.room_number}" data-room-label="${r.block_name} · Room ${r.room_number}" data-fee-monthly="${r.fee_monthly}">${label}</option>`;
+      }).join('');
+      transferRoomSelect.disabled = false;
+      transferModalConfirmBtn.disabled = false;
+    } else {
+      transferRoomSelect.innerHTML = '<option value="">No eligible rooms available right now</option>';
+      transferRoomSelect.disabled = true;
+      transferModalConfirmBtn.disabled = true;
+    }
+  }
+
+  transferRoomBtn.addEventListener('click', () => {
+    if (!currentBooking || currentBooking.status !== 'approved') return;
+    openTransferModal(currentBooking);
+  });
+
+  transferModalCancelBtn.addEventListener('click', closeTransferModal);
+  transferModal.addEventListener('click', (e) => {
+    if (e.target === transferModal) closeTransferModal();
+  });
+
+  transferModalConfirmBtn.addEventListener('click', async () => {
+    if (!currentBooking) return;
+
+    const roomId = Number(transferRoomSelect.value);
+    const reason = transferReasonInput.value.trim();
+
+    if (!roomId) {
+      transferModalError.textContent = 'Choose a room before submitting your transfer request.';
+      transferModalError.classList.add('show');
+      return;
+    }
+    if (!reason) {
+      transferModalError.textContent = 'A brief reason is required for the request.';
+      transferModalError.classList.add('show');
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    transferModalConfirmBtn.disabled = true;
+    try {
+      const res = await fetch(`/bookings/${currentBooking.id}/transfer-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ room_id: roomId, reason }),
+      });
+      let body = {};
+      try {
+        body = await res.json();
+      } catch (err) {
+        body = {};
+      }
+      if (!res.ok) {
+        const detail = body?.detail || body?.message || '';
+        transferModalError.textContent = detail || 'Could not submit transfer request.';
+        transferModalError.classList.add('show');
+        return;
+      }
+      const selectedRoomOption = transferRoomSelect.selectedOptions[0];
+      const requestedRoomLabel = selectedRoomOption?.dataset.roomLabel || selectedRoomOption?.textContent || 'the selected room';
+      pendingTransferMessage = `Transfer request submitted to ${requestedRoomLabel}. Waiting for admin review.`;
+      closeTransferModal();
+      showToast('Your room transfer request has been submitted.', false);
+      loadBooking();
+    } catch (err) {
+      transferModalError.textContent = 'Network error — please try again.';
+      transferModalError.classList.add('show');
+    } finally {
+      transferModalConfirmBtn.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------
+  // Edit booking modal — reused UI from the "Book now" modal on the
+  // Browse rooms page. Pre-fills with the current booking's occupant
+  // details and PATCHes /bookings/{id} instead of POSTing a new one.
+  // ---------------------------------------------------------------
+  const bookingModal = document.getElementById('bookingModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalError = document.getElementById('modalError');
+  const roomSelect = document.getElementById('roomSelect');
+  const roomSelectHint = document.getElementById('roomSelectHint');
+  const editMoveInDateInput = document.getElementById('editMoveInDate');
+  const editMoveOutDateInput = document.getElementById('editMoveOutDate');
+
+  function isoDatePlusDays(base, days) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  editMoveInDateInput.addEventListener('change', () => {
+    if (!editMoveInDateInput.value) return;
+    editMoveOutDateInput.min = isoDatePlusDays(editMoveInDateInput.value, 30);
+    if (editMoveOutDateInput.value && editMoveOutDateInput.value < editMoveOutDateInput.min) {
+      editMoveOutDateInput.value = editMoveOutDateInput.min;
+    }
+  });
+  const occupantOptions = document.getElementById('occupantOptions');
+  const extraOccupantFields = document.getElementById('extraOccupantFields');
+  const extraNameInput = document.getElementById('extraName');
+  const extraEmailInput = document.getElementById('extraEmail');
+  const extraStudentIdInput = document.getElementById('extraStudentId');
+  const extraGenderInput = document.getElementById('extraGender');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+  async function openEditModal(booking) {
+    modalError.classList.remove('show');
+    modalError.textContent = '';
+    modalTitle.textContent = 'Edit booking';
+    modalSub.textContent = 'Change your room, dates, or occupant details below.';
+    roomSelect.innerHTML = '<option value="">Loading rooms…</option>';
+    roomSelect.disabled = true;
+    modalConfirmBtn.disabled = true;
+    bookingModal.hidden = false;
+
+    const today = new Date().toISOString().slice(0, 10);
+    editMoveInDateInput.min = today;
+    editMoveInDateInput.value = booking.move_in_date;
+    editMoveOutDateInput.min = isoDatePlusDays(booking.move_in_date, 30);
+    editMoveOutDateInput.value = booking.move_out_date;
+
+    let rooms = [];
+    try {
+      const res = await fetch('/rooms');
+      rooms = res.ok ? await res.json() : [];
+    } catch (err) {
+      rooms = [];
+    }
+
+    // Only rooms that are free (or the room already on this booking) are
+    // selectable — everything else is someone else's active booking.
+    // Also filter out rooms that couldn't actually take this booking's
+    // current occupant count/genders (mirrors the transfer-request filter).
+    const currentRoom = booking.room;
+    let selectable = rooms.filter(r => r.is_available || r.id === currentRoom.id);
+    if (!selectable.some(r => r.id === currentRoom.id)) {
+      // The rooms list won't mark the student's own room as available
+      // (it's "booked" by this very booking), so add it back in manually.
+      selectable = [{ ...currentRoom, is_available: true }, ...selectable];
+    }
+    selectable = selectable.filter(r => {
+      if (r.id === currentRoom.id) return true; // always allow keeping the current room
+      if (r.capacity < booking.occupant_count) return false;
+      if (r.gender_policy !== 'Mixed block') {
+        const requiredGender = r.gender_policy === 'Female only' ? 'Female' : 'Male';
+        if (currentUserGender !== requiredGender) return false;
+        if (booking.occupant_count === 2 && booking.extra_occupant_gender !== requiredGender) return false;
+      }
+      return true;
+    });
+    selectable.sort((a, b) => (a.id === currentRoom.id ? -1 : b.id === currentRoom.id ? 1 : 0));
+
+    roomSelect.innerHTML = selectable.map(r => {
+      const tag = r.id === currentRoom.id ? ' (current)' : '';
+      const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · RM${r.fee_monthly.toFixed(0)}/mo${tag}`;
+      return `<option value="${r.id}" data-capacity="${r.capacity}" data-gender-policy="${r.gender_policy}" data-room-type="${r.room_type}" ${r.id === currentRoom.id ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+    roomSelect.disabled = false;
+    modalConfirmBtn.disabled = false;
+    applyRoomSelection(booking);
+  }
+
+  function applyRoomSelection(booking) {
+    const opt = roomSelect.selectedOptions[0];
+    if (!opt) return;
+
+    const selectedRoomId = Number(roomSelect.value);
+    const capacity = Number(opt.dataset.capacity);
+    const genderPolicy = opt.dataset.genderPolicy;
+    const roomType = opt.dataset.roomType;
+    const isCurrentRoom = selectedRoomId === booking.room.id;
+
+    const genderNote = genderPolicy && genderPolicy !== 'Mixed block'
+      ? ` This room is ${genderPolicy.toLowerCase()}.`
+      : '';
+    roomSelectHint.textContent = capacity > 1
+      ? `${roomType} fits up to ${capacity} people.${genderNote}`
+      : `${roomType} is a single room.${genderNote}`;
+
+    if (capacity <= 1) {
+      occupantOptions.style.display = 'none';
+      extraOccupantFields.classList.remove('show');
+      occupantOptions.querySelector('input[value="1"]').checked = true;
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el =>
+        el.classList.toggle('selected', el.dataset.count === '1'));
+      return;
+    }
+
+    occupantOptions.style.display = 'flex';
+    // Carry over the existing occupant count only if we're still looking
+    // at the same room and it fits; switching to a different room resets
+    // to 1 so nobody accidentally moves a roommate into an unchecked room.
+    const keepCount = isCurrentRoom && booking.occupant_count === 2 ? '2' : '1';
+    occupantOptions.querySelector(`input[value="${keepCount}"]`).checked = true;
+    occupantOptions.querySelectorAll('.occupant-option').forEach(el =>
+      el.classList.toggle('selected', el.dataset.count === keepCount));
+    extraOccupantFields.classList.toggle('show', keepCount === '2');
+
+    if (isCurrentRoom) {
+      extraNameInput.value = booking.extra_occupant_name || '';
+      extraEmailInput.value = booking.extra_occupant_email || '';
+      extraStudentIdInput.value = booking.extra_occupant_student_id || '';
+      extraGenderInput.value = booking.extra_occupant_gender || '';
+    } else {
+      extraNameInput.value = '';
+      extraEmailInput.value = '';
+      extraStudentIdInput.value = '';
+      extraGenderInput.value = '';
+    }
+  }
+
+  roomSelect.addEventListener('change', () => applyRoomSelection(currentBooking));
+
+  function closeBookingModal() {
+    bookingModal.hidden = true;
+  }
+
+  editBookingBtn.addEventListener('click', () => {
+    if (!currentBooking || currentBooking.status !== 'pending') return;
+    openEditModal(currentBooking);
+  });
+
+  occupantOptions.querySelectorAll('.occupant-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      occupantOptions.querySelectorAll('.occupant-option').forEach(el => el.classList.remove('selected'));
+      option.classList.add('selected');
+      option.querySelector('input[type="radio"]').checked = true;
+      extraOccupantFields.classList.toggle('show', option.dataset.count === '2');
+    });
+  });
+
+  modalCancelBtn.addEventListener('click', closeBookingModal);
+  bookingModal.addEventListener('click', (e) => {
+    if (e.target === bookingModal) closeBookingModal();
+  });
+
+  modalConfirmBtn.addEventListener('click', async () => {
+    if (!currentBooking) return;
+
+    const editMoveIn = editMoveInDateInput.value;
+    const editMoveOut = editMoveOutDateInput.value;
+    if (!editMoveIn || !editMoveOut) {
+      modalError.textContent = "Choose a move-in and move-out date.";
+      modalError.classList.add('show');
+      return;
+    }
+    const editDaysBooked = (new Date(editMoveOut) - new Date(editMoveIn)) / (1000 * 60 * 60 * 24);
+    if (editDaysBooked < 30) {
+      modalError.textContent = "Bookings must run for at least 1 month (30 days).";
+      modalError.classList.add('show');
+      return;
+    }
+
+    const selectedCount = occupantOptions.style.display === 'none'
+      ? 1
+      : Number(occupantOptions.querySelector('input[name="occupantCount"]:checked').value);
+
+    let extraOccupantName = null;
+    let extraOccupantEmail = null;
+    let extraOccupantStudentId = null;
+    let extraOccupantGender = null;
+
+    if (selectedCount === 2) {
+      const name = extraNameInput.value.trim();
+      const email = extraEmailInput.value.trim();
+      const studentId = extraStudentIdInput.value.trim().toUpperCase();
+      const gender = extraGenderInput.value;
+
+      if (!name) {
+        modalError.textContent = "The 2nd occupant's full name is required.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        modalError.textContent = "Enter a valid email for the 2nd occupant.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!/^[A-Z]{2}\d{6}$/.test(studentId)) {
+        modalError.textContent = "2nd occupant's student ID must be 2 letters + 6 digits, e.g. SD123456.";
+        modalError.classList.add('show');
+        return;
+      }
+      if (!gender) {
+        modalError.textContent = "Select the 2nd occupant's gender — some rooms are gender-restricted.";
+        modalError.classList.add('show');
+        return;
+      }
+
+      extraOccupantName = name;
+      extraOccupantEmail = email;
+      extraOccupantStudentId = studentId;
+      extraOccupantGender = gender;
+    }
+
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    if (!roomSelect.value) {
+      modalError.textContent = 'Please choose a room.';
+      modalError.classList.add('show');
+      return;
+    }
+
+    modalConfirmBtn.disabled = true;
+    try {
+      const res = await fetch(`/bookings/${currentBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          room_id: Number(roomSelect.value),
+          move_in_date: editMoveIn,
+          move_out_date: editMoveOut,
+          occupant_count: selectedCount,
+          extra_occupant_name: extraOccupantName,
+          extra_occupant_email: extraOccupantEmail,
+          extra_occupant_student_id: extraOccupantStudentId,
+          extra_occupant_gender: extraOccupantGender,
+        })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        modalError.textContent = body.detail || 'Could not save changes.';
+        modalError.classList.add('show');
+        return;
+      }
+      closeBookingModal();
+      loadBooking();
+    } catch (err) {
+      modalError.textContent = 'Network error — please try again.';
+      modalError.classList.add('show');
+    } finally {
+      modalConfirmBtn.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------
+  // My waitlist
+  // ---------------------------------------------------------------
+  async function loadWaitlist() {
+    const token = getToken();
+    if (!token) return;
+    const section = document.getElementById('waitlistSection');
+    const list = document.getElementById('waitlistList');
+    try {
+      const res = await fetch('/waitlist/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) { section.hidden = true; return; }
+      const entries = await res.json();
+      if (!entries.length) { section.hidden = true; return; }
+
+      section.hidden = false;
+      list.innerHTML = entries.map((e) => {
+        const isNotified = e.status === 'notified';
+        const statusText = isNotified ? 'Now available — book it before someone else does!' : `Queue position #${e.queue_position}`;
+        return `
+          <div class="card" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-family:var(--font-display); font-size:14px;">${e.room_label}</strong>
+              <p style="margin:2px 0 0; font-size:12.5px; color:${isNotified ? 'var(--success-fg)' : 'var(--slate-600)'};">${statusText}</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              ${isNotified ? `<a class="btn-primary btn-sm" style="text-decoration:none;" href="student-room-details.html?room_id=${e.room_id}">Book now</a>` : ''}
+              <button class="btn-secondary btn-sm" data-leave-waitlist="${e.id}">Leave waitlist</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-leave-waitlist]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            const dres = await fetch(`/waitlist/${btn.dataset.leaveWaitlist}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!dres.ok && dres.status !== 204) {
+              alert('Could not leave the waitlist.');
+              btn.disabled = false;
+              return;
+            }
+            loadWaitlist();
+          } catch (err) {
+            alert('Network error — please try again.');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      section.hidden = true;
+    }
+  }
+
+  loadBooking();
+  loadWaitlist();
+</script>
+</body>
+</html>

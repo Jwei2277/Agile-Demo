@@ -1,0 +1,11 @@
+name: "CodeQL"
+
+on:
+  schedule: [{ cron: "0 3 * * 1" }]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    uses: github/codeql-action/.github/workflows/codeql.yml@v3
+    with:
+      languages: python
