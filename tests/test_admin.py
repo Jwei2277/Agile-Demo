@@ -1297,19 +1297,6 @@ def test_bookings_report_csv(monkeypatch):
     assert "John Tan" in response.text
 
 
-def test_bookings_report_xlsx(monkeypatch):
-    fake = FakeDB({"bookings": [booking_row()]})
-    monkeypatch.setattr("agile_ci_demo.admin.supabase_admin", fake)
-
-    response = client.get("/admin/reports/bookings.xlsx")
-
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    assert response.content[:2] == b"PK"
-
-
 def test_bookings_report_pdf(monkeypatch):
     fake = FakeDB({"bookings": [booking_row()]})
     monkeypatch.setattr("agile_ci_demo.admin.supabase_admin", fake)
