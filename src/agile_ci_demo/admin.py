@@ -8,9 +8,14 @@ from agile_ci_demo.deps import CurrentUser, require_admin
 from agile_ci_demo.models import (
     BlockOut,
     BookingAdminOut,
+    CancellationRequestAdminOut,
+    CancellationRequestReject,
     DashboardStats,
+    DocumentAdminOut,
+    DocumentRejectRequest,
     MaintenanceOut,
     MaintenanceUpdate,
+    PaymentAdminOut,
     RoomAdminOut,
     RoomCreate,
     RoomUpdate,
@@ -20,6 +25,7 @@ from agile_ci_demo.models import (
     WaitlistEntryAdminOut,
     total_fee_for,
 )
+from agile_ci_demo.documents import _signed_url as _document_signed_url
 from agile_ci_demo.services.supabase_service import supabase_admin
 from agile_ci_demo.waitlist import notify_next_waitlisted
 
@@ -62,6 +68,7 @@ def dashboard_stats(_: CurrentUser = Depends(require_admin)):
         db.table("bookings")
         .select("room_id, status")
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .execute()
     )
     active_bookings = _rows(active_bookings_resp.data)
@@ -116,9 +123,25 @@ def _list_bookings(status: str | None) -> list[BookingAdminOut]:
     if status and status != "all":
         query = query.eq("status", status)
     resp = query.order("requested_at", desc=True).execute()
+    rows = _rows(resp.data)
+
+    # Batch-fetch which of these bookings have a paid payment, instead of
+    # querying per-row (and instead of leaving is_paid defaulted to False,
+    # which was the actual bug — the field existed but was never set).
+    booking_ids = [int(row["id"]) for row in rows]
+    paid_booking_ids: set[int] = set()
+    if booking_ids:
+        payments_resp = (
+            db.table("payments")
+            .select("booking_id")
+            .in_("booking_id", booking_ids)
+            .eq("status", "paid")
+            .execute()
+        )
+        paid_booking_ids = {int(p["booking_id"]) for p in _rows(payments_resp.data)}
 
     out = []
-    for row in _rows(resp.data):
+    for row in rows:
         profile: Row = row.get("student") or {}
         room: Row = row.get("rooms") or {}
         block: Row = room.get("hostel_blocks") or {}
@@ -142,6 +165,9 @@ def _list_bookings(status: str | None) -> list[BookingAdminOut]:
                 extra_occupant_student_id=row.get("extra_occupant_student_id"),
                 extra_occupant_gender=row.get("extra_occupant_gender"),
                 total_fee=total_fee_for(base_fee, occupant_count),
+                checked_in_at=row.get("checked_in_at"),
+                checked_out_at=row.get("checked_out_at"),
+                is_paid=int(row["id"]) in paid_booking_ids,
             )
         )
     return out
@@ -506,7 +532,11 @@ def _waitlist_counts_by_room() -> dict[int, int]:
 def _booked_room_ids() -> set[int]:
     db = _db()
     bookings_resp = (
-        db.table("bookings").select("room_id").in_("status", ["pending", "approved"]).execute()
+        db.table("bookings")
+        .select("room_id")
+        .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
+        .execute()
     )
     return {int(b["room_id"]) for b in _rows(bookings_resp.data)}
 
@@ -765,3 +795,512 @@ def reject_visitor_request(
     request_id: int, data: VisitorRejectRequest, admin: CurrentUser = Depends(require_admin)
 ):
     _decide_visitor_request(request_id, "rejected", admin, rejection_reason=data.reason)
+
+
+# ---------------------------------------------------------------
+# Check-in / check-out
+# ---------------------------------------------------------------
+@router.post("/bookings/{booking_id}/check-in", status_code=204)
+def check_in_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
+    db = _db()
+    resp = db.table("bookings").select("id, status, checked_in_at").eq("id", booking_id).limit(1).execute()
+    rows = _rows(resp.data)
+    if not rows:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = rows[0]
+    if booking["status"] != "approved":
+        raise HTTPException(status_code=409, detail="Only approved bookings can be checked in.")
+    if booking.get("checked_in_at"):
+        raise HTTPException(status_code=409, detail="This booking is already checked in.")
+
+    paid_check = (
+        db.table("payments")
+        .select("id")
+        .eq("booking_id", booking_id)
+        .eq("status", "paid")
+        .limit(1)
+        .execute()
+    )
+    if not _rows(paid_check.data):
+        raise HTTPException(
+            status_code=409,
+            detail="This booking hasn't been paid for yet — payment is required before check-in.",
+        )
+
+    db.table("bookings").update(
+        {"checked_in_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("id", booking_id).execute()
+
+
+@router.post("/bookings/{booking_id}/check-out", status_code=204)
+def check_out_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
+    db = _db()
+    resp = (
+        db.table("bookings")
+        .select("id, status, checked_in_at, checked_out_at")
+        .eq("id", booking_id)
+        .limit(1)
+        .execute()
+    )
+    rows = _rows(resp.data)
+    if not rows:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = rows[0]
+    if not booking.get("checked_in_at"):
+        raise HTTPException(status_code=409, detail="This booking hasn't been checked in yet.")
+    if booking.get("checked_out_at"):
+        raise HTTPException(status_code=409, detail="This booking is already checked out.")
+
+    db.table("bookings").update(
+        {"checked_out_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("id", booking_id).execute()
+
+
+# ---------------------------------------------------------------
+# Document verification
+# ---------------------------------------------------------------
+@router.get("/documents", response_model=list[DocumentAdminOut])
+def list_documents(
+    status: str = Query(default="pending", description="'all' | 'pending' | 'verified' | 'rejected'"),
+    _: CurrentUser = Depends(require_admin),
+):
+    db = _db()
+    query = db.table("student_documents").select(
+        "*, profiles!student_documents_student_id_fkey(full_name, student_id)"
+    )
+    if status and status != "all":
+        query = query.eq("status", status)
+    resp = query.order("uploaded_at", desc=True).execute()
+
+    out = []
+    for row in _rows(resp.data):
+        profile: Row = row.get("profiles") or {}
+        out.append(
+            DocumentAdminOut(
+                id=int(row["id"]),
+                document_type=str(row["document_type"]),
+                file_name=str(row["file_name"]),
+                status=str(row["status"]),
+                rejection_reason=row.get("rejection_reason"),
+                uploaded_at=row["uploaded_at"],
+                verified_at=row.get("verified_at"),
+                student_name=str(profile.get("full_name", "Unknown")),
+                student_id=profile.get("student_id"),
+                view_url=_document_signed_url(db, row["file_url"]),
+            )
+        )
+    return out
+
+
+def _decide_document(document_id: int, new_status: str, admin: CurrentUser, rejection_reason: str | None = None) -> None:
+    db = _db()
+    resp = db.table("student_documents").select("id, status").eq("id", document_id).limit(1).execute()
+    if not _rows(resp.data):
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    updates: dict[str, Any] = {
+        "status": new_status,
+        "verified_at": datetime.now(timezone.utc).isoformat(),
+        "verified_by": admin.id,
+    }
+    if rejection_reason is not None:
+        updates["rejection_reason"] = rejection_reason
+
+    db.table("student_documents").update(updates).eq("id", document_id).execute()
+
+
+@router.post("/documents/{document_id}/verify", status_code=204)
+def verify_document(document_id: int, admin: CurrentUser = Depends(require_admin)):
+    _decide_document(document_id, "verified", admin)
+
+
+@router.post("/documents/{document_id}/reject", status_code=204)
+def reject_document(
+    document_id: int, data: DocumentRejectRequest, admin: CurrentUser = Depends(require_admin)
+):
+    _decide_document(document_id, "rejected", admin, rejection_reason=data.reason)
+
+
+# ---------------------------------------------------------------
+# Payments (admin view, feeds the reports below)
+# ---------------------------------------------------------------
+@router.get("/payments", response_model=list[PaymentAdminOut])
+def list_payments(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    resp = (
+        db.table("payments")
+        .select(
+            "*, profiles!payments_student_id_fkey(full_name, student_id), bookings(room_id)"
+        )
+        .order("paid_at", desc=True)
+        .execute()
+    )
+    out = []
+    for row in _rows(resp.data):
+        profile: Row = row.get("profiles") or {}
+        booking: Row = row.get("bookings") or {}
+        room_id = booking.get("room_id")
+        out.append(
+            PaymentAdminOut(
+                id=int(row["id"]),
+                booking_id=int(row["booking_id"]),
+                amount=float(row["amount"]),
+                method=str(row["method"]),
+                status=str(row["status"]),
+                receipt_number=str(row["receipt_number"]),
+                paid_at=row["paid_at"],
+                room_label=_room_label_for_maintenance(db, room_id) if room_id else None,
+                student_name=str(profile.get("full_name", "Unknown")),
+                student_id=profile.get("student_id"),
+            )
+        )
+    return out
+
+
+# ---------------------------------------------------------------
+# Reports (bookings + payments — CSV, PDF, and Excel exports)
+# ---------------------------------------------------------------
+BOOKINGS_REPORT_HEADERS = [
+    "Booking ID", "Student", "Student ID", "Room", "Status", "Semester",
+    "Move-in", "Move-out", "Occupants", "Requested at", "Checked in", "Checked out",
+]
+
+PAYMENTS_REPORT_HEADERS = [
+    "Receipt No.", "Student", "Student ID", "Booking ID", "Amount (RM)", "Method", "Status", "Paid at",
+]
+
+
+def _bookings_report_rows(db) -> list[list[str]]:
+    resp = (
+        db.table("bookings")
+        .select(
+            "*, profiles!bookings_student_id_fkey(full_name, student_id), "
+            "rooms!bookings_room_id_fkey(room_number, hostel_blocks(name))"
+        )
+        .order("requested_at", desc=True)
+        .execute()
+    )
+    rows_out = []
+    for row in _rows(resp.data):
+        profile: Row = row.get("profiles") or {}
+        room: Row = row.get("rooms") or {}
+        block: Row = room.get("hostel_blocks") or {}
+        rows_out.append([
+            str(row["id"]),
+            profile.get("full_name", "Unknown"),
+            profile.get("student_id", "") or "",
+            f"{block.get('name', '?')} · {room.get('room_number', '?')}",
+            row["status"],
+            row["semester"],
+            str(row.get("move_in_date", "") or ""),
+            str(row.get("move_out_date", "") or ""),
+            str(row.get("occupant_count", 1)),
+            str(row.get("requested_at", "") or ""),
+            str(row.get("checked_in_at") or ""),
+            str(row.get("checked_out_at") or ""),
+        ])
+    return rows_out
+
+
+def _payments_report_rows(db) -> tuple[list[list[str]], float]:
+    resp = (
+        db.table("payments")
+        .select("*, profiles!payments_student_id_fkey(full_name, student_id)")
+        .order("paid_at", desc=True)
+        .execute()
+    )
+    rows_out = []
+    total = 0.0
+    for row in _rows(resp.data):
+        profile: Row = row.get("profiles") or {}
+        rows_out.append([
+            row["receipt_number"],
+            profile.get("full_name", "Unknown"),
+            profile.get("student_id", "") or "",
+            str(row["booking_id"]),
+            f"{float(row['amount']):.2f}",
+            row["method"],
+            row["status"],
+            str(row.get("paid_at", "") or ""),
+        ])
+        if row["status"] == "paid":
+            total += float(row["amount"])
+    return rows_out, total
+
+
+def _csv_response(headers: list[str], rows: list[list[str]], filename: str, footer: list[str] | None = None):
+    import csv
+    import io
+
+    from fastapi.responses import StreamingResponse
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(row)
+    if footer:
+        writer.writerow([])
+        writer.writerow(footer)
+
+    buffer.seek(0)
+    return StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+def _xlsx_response(headers: list[str], rows: list[list[str]], filename: str, title: str, footer: list[str] | None = None):
+    import io
+
+    from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = title[:31]  # Excel sheet names are capped at 31 chars
+
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for row in rows:
+        ws.append(row)
+
+    if footer:
+        ws.append([])
+        ws.append(footer)
+
+    for column_cells in ws.columns:
+        length = max((len(str(c.value)) if c.value is not None else 0) for c in column_cells)
+        ws.column_dimensions[column_cells[0].column_letter].width = min(max(length + 2, 10), 40)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+def _pdf_response(headers: list[str], rows: list[list[str]], filename: str, title: str, footer: list[str] | None = None):
+    import io
+
+    from fastapi.responses import StreamingResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), topMargin=28, bottomMargin=28)
+    styles = getSampleStyleSheet()
+
+    table_data = [headers] + rows
+    if footer:
+        table_data.append(footer)
+
+    table = Table(table_data, repeatRows=1)
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2f6fed")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#dbe2ef")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]
+    if footer:
+        style.append(("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"))
+    table.setStyle(TableStyle(style))
+
+    elements = [Paragraph(title, styles["Title"]), Spacer(1, 12), table]
+    doc.build(elements)
+
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/reports/bookings.csv")
+def bookings_report_csv(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    return _csv_response(BOOKINGS_REPORT_HEADERS, _bookings_report_rows(db), "bookings_report.csv")
+
+
+@router.get("/reports/bookings.xlsx")
+def bookings_report_xlsx(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    return _xlsx_response(
+        BOOKINGS_REPORT_HEADERS, _bookings_report_rows(db), "bookings_report.xlsx", "Bookings"
+    )
+
+
+@router.get("/reports/bookings.pdf")
+def bookings_report_pdf(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    return _pdf_response(
+        BOOKINGS_REPORT_HEADERS, _bookings_report_rows(db), "bookings_report.pdf", "HostelEase — Bookings Report"
+    )
+
+
+@router.get("/reports/payments.csv")
+def payments_report_csv(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    rows, total = _payments_report_rows(db)
+    footer = ["", "", "", "", "", "", "Total collected (RM)", f"{total:.2f}"]
+    return _csv_response(PAYMENTS_REPORT_HEADERS, rows, "payments_report.csv", footer=footer)
+
+
+@router.get("/reports/payments.xlsx")
+def payments_report_xlsx(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    rows, total = _payments_report_rows(db)
+    footer = ["", "", "", "", "", "", "Total collected (RM)", f"{total:.2f}"]
+    return _xlsx_response(
+        PAYMENTS_REPORT_HEADERS, rows, "payments_report.xlsx", "Payments", footer=footer
+    )
+
+
+@router.get("/reports/payments.pdf")
+def payments_report_pdf(_: CurrentUser = Depends(require_admin)):
+    db = _db()
+    rows, total = _payments_report_rows(db)
+    footer = ["", "", "", "", "", "", "Total (RM)", f"{total:.2f}"]
+    return _pdf_response(
+        PAYMENTS_REPORT_HEADERS, rows, "payments_report.pdf", "HostelEase — Payments Report", footer=footer
+    )
+
+
+# ---------------------------------------------------------------
+# Cancellation & refund requests (for paid bookings)
+# ---------------------------------------------------------------
+@router.get("/cancellation-requests", response_model=list[CancellationRequestAdminOut])
+def list_cancellation_requests(
+    status: str = Query(default="pending", description="'all' | 'pending' | 'approved' | 'rejected'"),
+    _: CurrentUser = Depends(require_admin),
+):
+    db = _db()
+    query = db.table("booking_cancellation_requests").select(
+        "*, profiles!booking_cancellation_requests_student_id_fkey(full_name, student_id), "
+        "bookings(room_id)"
+    )
+    if status and status != "all":
+        query = query.eq("status", status)
+    resp = query.order("requested_at", desc=True).execute()
+
+    out = []
+    for row in _rows(resp.data):
+        profile: Row = row.get("profiles") or {}
+        booking: Row = row.get("bookings") or {}
+        room_id = booking.get("room_id")
+
+        payment_resp = (
+            db.table("payments")
+            .select("amount")
+            .eq("booking_id", row["booking_id"])
+            .eq("status", "paid")
+            .limit(1)
+            .execute()
+        )
+        payment_rows = _rows(payment_resp.data)
+        amount_paid = float(payment_rows[0]["amount"]) if payment_rows else 0.0
+
+        out.append(
+            CancellationRequestAdminOut(
+                id=int(row["id"]),
+                booking_id=int(row["booking_id"]),
+                student_name=str(profile.get("full_name", "Unknown")),
+                student_id=profile.get("student_id"),
+                room_label=_room_label_for_maintenance(db, room_id) or "Unknown room",
+                amount_paid=amount_paid,
+                reason=str(row["reason"]),
+                status=str(row["status"]),
+                rejection_reason=row.get("rejection_reason"),
+                requested_at=row["requested_at"],
+                decided_at=row.get("decided_at"),
+            )
+        )
+    return out
+
+
+def _decide_cancellation_request(
+    request_id: int, new_status: str, admin: CurrentUser, rejection_reason: str | None = None
+) -> None:
+    db = _db()
+    resp = db.table("booking_cancellation_requests").select("*").eq("id", request_id).limit(1).execute()
+    rows = _rows(resp.data)
+    if not rows:
+        raise HTTPException(status_code=404, detail="Cancellation request not found")
+    request_row = rows[0]
+
+    if request_row["status"] != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"This request is already '{request_row['status']}' — it can't be decided again.",
+        )
+
+    booking_id = int(request_row["booking_id"])
+
+    updates: dict[str, Any] = {
+        "status": new_status,
+        "decided_at": datetime.now(timezone.utc).isoformat(),
+        "decided_by": admin.id,
+    }
+    if rejection_reason is not None:
+        updates["rejection_reason"] = rejection_reason
+    db.table("booking_cancellation_requests").update(updates).eq("id", request_id).execute()
+
+    if new_status != "approved":
+        return
+
+    booking_resp = db.table("bookings").select("room_id").eq("id", booking_id).limit(1).execute()
+    booking_rows = _rows(booking_resp.data)
+    room_id = booking_rows[0]["room_id"] if booking_rows else None
+
+    db.table("bookings").update(
+        {"status": "cancelled", "decided_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("id", booking_id).execute()
+
+    # Mark the payment(s) for this booking as refunded — this is a
+    # simulated refund (no real payment gateway), matching how the
+    # payment itself was simulated.
+    db.table("payments").update({"status": "refunded"}).eq("booking_id", booking_id).eq(
+        "status", "paid"
+    ).execute()
+
+    # Same cleanup as a direct cancellation: void any pending transfer
+    # request, and let the next waitlisted student have the room.
+    try:
+        db.table("room_transfer_requests").update({"status": "cancelled"}).eq(
+            "booking_id", booking_id
+        ).eq("status", "pending").execute()
+    except Exception:
+        pass
+
+    if room_id is not None:
+        try:
+            notify_next_waitlisted(int(room_id))
+        except Exception:
+            pass
+
+
+@router.post("/cancellation-requests/{request_id}/approve", status_code=204)
+def approve_cancellation_request(request_id: int, admin: CurrentUser = Depends(require_admin)):
+    _decide_cancellation_request(request_id, "approved", admin)
+
+
+@router.post("/cancellation-requests/{request_id}/reject", status_code=204)
+def reject_cancellation_request(
+    request_id: int, data: CancellationRequestReject, admin: CurrentUser = Depends(require_admin)
+):
+    _decide_cancellation_request(request_id, "rejected", admin, rejection_reason=data.reason)

@@ -74,6 +74,7 @@ def _try_auto_book(db, room_id: int, entry: Row) -> bool:
         .select("id")
         .eq("student_id", student_id)
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .execute()
     )
     if _rows(existing.data):
@@ -106,6 +107,7 @@ def _try_auto_book(db, room_id: int, entry: Row) -> bool:
         .select("id")
         .eq("room_id", room_id)
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .execute()
     )
     if _rows(active_resp.data):
@@ -222,6 +224,7 @@ def join_waitlist(
         .select("id, move_out_date")
         .eq("room_id", room_id)
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .order("requested_at", desc=True)
         .limit(1)
         .execute()

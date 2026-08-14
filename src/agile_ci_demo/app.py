@@ -15,6 +15,8 @@ from agile_ci_demo.admin import router as admin_router
 from agile_ci_demo.profile import router as profile_router
 from agile_ci_demo.waitlist import router as waitlist_router
 from agile_ci_demo.visitor import router as visitor_router
+from agile_ci_demo.payments import router as payments_router
+from agile_ci_demo.documents import router as documents_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
@@ -50,6 +52,8 @@ app.include_router(profile_router)
 
 app.include_router(waitlist_router)
 app.include_router(visitor_router)
+app.include_router(payments_router)
+app.include_router(documents_router)
 
 
 # ==================================================
@@ -144,6 +148,18 @@ def student_visitors_page():
     return FileResponse(HTML_DIR / "student-visitors.html")
 
 
+@app.get("/student-documents.html")
+def student_documents_page():
+
+    return FileResponse(HTML_DIR / "student-documents.html")
+
+
+@app.get("/student-booking-history.html")
+def student_booking_history_page():
+
+    return FileResponse(HTML_DIR / "student-booking-history.html")
+
+
 @app.get("/admin-dashboard.html")
 def admin_dashboard_page():
 
@@ -166,6 +182,24 @@ def admin_maintenance_page():
 def admin_visitors_page():
 
     return FileResponse(HTML_DIR / "admin-visitors.html")
+
+
+@app.get("/admin-documents.html")
+def admin_documents_page():
+
+    return FileResponse(HTML_DIR / "admin-documents.html")
+
+
+@app.get("/admin-checkinout.html")
+def admin_checkinout_page():
+
+    return FileResponse(HTML_DIR / "admin-checkinout.html")
+
+
+@app.get("/admin-reports.html")
+def admin_reports_page():
+
+    return FileResponse(HTML_DIR / "admin-reports.html")
 
 
 @app.get("/admin-transfers.html")

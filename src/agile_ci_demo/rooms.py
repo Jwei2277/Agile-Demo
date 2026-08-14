@@ -40,6 +40,7 @@ def _booked_room_ids() -> set[int]:
         supabase_admin.table("bookings")
         .select("room_id")
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .execute()
     )
 

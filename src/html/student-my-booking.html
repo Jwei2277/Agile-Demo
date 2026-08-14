@@ -246,7 +246,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   max-width: 460px; width: 100%; padding: 24px 26px 22px;
   box-shadow: 0 24px 70px -24px rgba(7,26,51,0.55);
   position: relative;
-  overflow: hidden;
+  max-height: 88vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .modal-card::before {
   content: "";
@@ -363,7 +365,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <a href="student-browse-hostels.html">Browse rooms</a>
         <a href="student-my-booking.html" class="current">My booking</a>
         <a href="student-visitors.html">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Payments</a>
+        <a href="student-documents.html">Documents</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
@@ -386,13 +388,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
             <span>Requested: <strong id="statusRequested">—</strong></span>
             <span>Fee: <strong id="statusFee">—</strong></span>
             <span>Occupants: <strong id="statusOccupants">—</strong></span>
+            <span>Payment: <strong id="statusPayment">—</strong></span>
           </div>
           <p class="status-note" id="statusNote" hidden></p>
         </div>
         <div class="status-actions">
+          <button class="btn-primary" id="payNowBtn" hidden>Pay now</button>
+          <button class="btn-secondary" id="downloadReceiptBtn" hidden>Download receipt</button>
           <button class="btn-secondary" id="editBookingBtn">Edit booking</button>
           <button class="btn-secondary" id="transferRoomBtn">Request room transfer</button>
           <button class="btn-secondary" id="cancelBookingBtn">Cancel booking</button>
+          <button class="btn-secondary" id="requestCancellationBtn" hidden>Request cancellation & refund</button>
           <p class="status-edit-hint" id="statusEditHint" hidden>Editing locks once your booking is approved.</p>
         </div>
       </div>
@@ -408,11 +414,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
           <strong>Register a visitor</strong>
           <span class="desc">Request approval for a guest, and track its status.</span>
         </a>
-        <button class="quick-action card" disabled>
+        <a class="quick-action card" href="student-booking-history.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Booking history</strong>
-          <span class="desc">Coming soon.</span>
-        </button>
+          <span class="desc">Review every application you've made, past and present.</span>
+        </a>
         <a class="quick-action card" href="student-profile.html" style="text-decoration:none; color:inherit;">
           <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.9-4 3.7-6 7.5-6s6.6 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
           <strong>Update profile</strong>
@@ -425,7 +431,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <h3>No active booking yet</h3>
       <p>You haven't applied for a room. Browse available rooms and submit an application to get started.</p>
-      <div class="empty-actions"><a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a></div>
+      <div class="empty-actions">
+        <a class="btn-primary" href="student-browse-hostels.html" style="text-decoration:none;">Browse rooms</a>
+        <a class="btn-secondary" href="student-booking-history.html" style="text-decoration:none;">View booking history</a>
+      </div>
     </section>
 
     <section id="waitlistSection" hidden style="margin-top:24px;">
@@ -441,6 +450,52 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 </div>
 
 <!-- Cancel booking confirmation modal -->
+<!-- Pay now modal -->
+<!-- Request cancellation & refund modal -->
+<div class="modal-overlay" id="requestCancellationModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon warn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+    <h3>Request cancellation & refund</h3>
+    <p class="modal-sub">Since this booking is paid, an admin needs to approve this before it's cancelled and your payment refunded.</p>
+
+    <div class="modal-error" id="requestCancellationError" role="alert"></div>
+
+    <div class="modal-form-field">
+      <label for="cancellationReason">Reason</label>
+      <textarea id="cancellationReason" rows="3" placeholder="Let the admin know why you'd like to cancel." required></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="requestCancellationCancelBtn">Never mind</button>
+      <button class="btn-primary btn-sm" id="requestCancellationConfirmBtn" style="background: var(--error-fg);">Submit request</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payModal" hidden>
+  <div class="modal-card">
+    <div class="modal-icon info"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
+    <h3>Pay hostel fee</h3>
+    <p class="modal-sub" id="payModalSub">Choose a payment method to complete your booking.</p>
+
+    <div class="modal-error" id="payModalError" role="alert"></div>
+
+    <div class="modal-form-field">
+      <label for="payMethod">Payment method</label>
+      <select id="payMethod">
+        <option value="Card">Credit / Debit card</option>
+        <option value="Online Banking">Online banking</option>
+        <option value="E-Wallet">E-Wallet</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="payModalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="payModalConfirmBtn">Pay now</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="cancelModal" hidden>
   <div class="modal-card">
     <div class="modal-icon warn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
@@ -673,11 +728,95 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     }
 
     const editable = booking.status === 'pending';
-    const transferEligible = booking.status === 'approved';
+    const transferEligible = booking.status === 'approved' && !booking.is_paid;
     editBookingBtn.hidden = !editable;
     transferRoomBtn.disabled = !transferEligible;
-    statusEditHint.hidden = editable || transferEligible;
+    // Only show the "locks once approved" hint when that's the actual
+    // reason (status isn't approved) — a paid+approved booking already
+    // explains itself via the Payment row, so don't show this here too.
+    statusEditHint.hidden = editable || booking.status === 'approved';
+
+    // Payment: only relevant once a booking is approved. Once paid, show
+    // the receipt link instead of the Pay Now button.
+    const payNowBtn = document.getElementById('payNowBtn');
+    const downloadReceiptBtn = document.getElementById('downloadReceiptBtn');
+    const statusPayment = document.getElementById('statusPayment');
+
+    if (booking.status !== 'approved') {
+      statusPayment.textContent = '—';
+      payNowBtn.hidden = true;
+      downloadReceiptBtn.hidden = true;
+    } else if (booking.is_paid) {
+      statusPayment.textContent = 'Paid';
+      payNowBtn.hidden = true;
+      downloadReceiptBtn.hidden = false;
+    } else {
+      statusPayment.textContent = 'Unpaid';
+      payNowBtn.hidden = false;
+      downloadReceiptBtn.hidden = true;
+    }
+
+    // A paid booking can no longer be cancelled directly (enforced
+    // server-side too) — offer the request-based flow instead.
+    const cancelBookingBtn = document.getElementById('cancelBookingBtn');
+    const requestCancellationBtn = document.getElementById('requestCancellationBtn');
+    cancelBookingBtn.hidden = booking.is_paid;
+
+    if (booking.is_paid && booking.pending_cancellation_request) {
+      requestCancellationBtn.hidden = true;
+      const cancellationNote = 'Cancellation & refund requested — awaiting admin review.';
+      statusNote.textContent = statusNote.textContent && !statusNote.hidden
+        ? `${statusNote.textContent} ${cancellationNote}`
+        : cancellationNote;
+      statusNote.hidden = false;
+    } else if (booking.is_paid) {
+      requestCancellationBtn.hidden = false;
+    } else {
+      requestCancellationBtn.hidden = true;
+    }
   }
+
+  // Set once a payment succeeds this session, or resolved from /payments/me
+  // on load so "Download receipt" works even after a page refresh. The
+  // receipt endpoint requires auth, so it can't be a plain <a href> link —
+  // has to be fetched with the Authorization header and opened manually.
+  let lastPaymentId = null;
+
+  async function resolveReceiptUrl(bookingId) {
+    const token = getToken();
+    try {
+      const res = await fetch('/payments/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const payments = await res.json();
+      const match = payments.find((p) => p.booking_id === bookingId);
+      if (match) lastPaymentId = match.id;
+    } catch (err) {
+      // Non-fatal — the Pay Now flow sets this directly if needed.
+    }
+  }
+
+  document.getElementById('downloadReceiptBtn').addEventListener('click', async () => {
+    if (!lastPaymentId) {
+      showToast('Could not find your receipt — please refresh and try again.', true);
+      return;
+    }
+    const token = getToken();
+    try {
+      const res = await fetch(`/payments/${lastPaymentId}/receipt`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        showToast('Could not load your receipt.', true);
+        return;
+      }
+      const html = await res.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    } catch (err) {
+      showToast('Network error — please try again.', true);
+    }
+  });
 
   async function loadBooking() {
     const token = getToken();
@@ -707,6 +846,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       }
 
       renderBookingSummary(currentBooking);
+      if (currentBooking.is_paid) {
+        resolveReceiptUrl(currentBooking.id);
+      }
 
       window.__currentBookingId = booking.id;
     } catch (err) {
@@ -727,6 +869,61 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     toastStack.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
   }
+
+  // ---------------------------------------------------------------
+  // Pay now modal
+  // ---------------------------------------------------------------
+  const payModal = document.getElementById('payModal');
+  const payModalError = document.getElementById('payModalError');
+  const payModalSub = document.getElementById('payModalSub');
+
+  document.getElementById('payNowBtn').addEventListener('click', () => {
+    if (!currentBooking) return;
+    payModalError.classList.remove('show');
+    payModalError.textContent = '';
+    payModalSub.textContent = `You're paying RM ${currentBooking.total_fee.toFixed(0)} for this month.`;
+    payModal.hidden = false;
+  });
+  document.getElementById('payModalCancelBtn').addEventListener('click', () => {
+    payModal.hidden = true;
+  });
+  payModal.addEventListener('click', (e) => {
+    if (e.target === payModal) payModal.hidden = true;
+  });
+
+  document.getElementById('payModalConfirmBtn').addEventListener('click', async () => {
+    if (!currentBooking) return;
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const confirmBtn = document.getElementById('payModalConfirmBtn');
+    confirmBtn.disabled = true;
+    try {
+      const res = await fetch('/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          booking_id: currentBooking.id,
+          method: document.getElementById('payMethod').value,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        payModalError.textContent = body.detail || 'Could not process payment.';
+        payModalError.classList.add('show');
+        return;
+      }
+      lastPaymentId = body.id;
+      payModal.hidden = true;
+      showToast('Payment successful! Your receipt is ready to download.', false);
+      loadBooking();
+    } catch (err) {
+      payModalError.textContent = 'Network error — please try again.';
+      payModalError.classList.add('show');
+    } finally {
+      confirmBtn.disabled = false;
+    }
+  });
 
   // ---------------------------------------------------------------
   // Cancel booking modal
@@ -763,6 +960,62 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       loadBooking();
     } catch (err) {
       showToast('Network error — please check your connection and try again.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------
+  // Request cancellation & refund modal (paid bookings only)
+  // ---------------------------------------------------------------
+  const requestCancellationModal = document.getElementById('requestCancellationModal');
+  const requestCancellationError = document.getElementById('requestCancellationError');
+  const cancellationReasonInput = document.getElementById('cancellationReason');
+
+  document.getElementById('requestCancellationBtn').addEventListener('click', () => {
+    if (!window.__currentBookingId) return;
+    cancellationReasonInput.value = '';
+    requestCancellationError.classList.remove('show');
+    requestCancellationModal.hidden = false;
+  });
+  document.getElementById('requestCancellationCancelBtn').addEventListener('click', () => {
+    requestCancellationModal.hidden = true;
+  });
+  requestCancellationModal.addEventListener('click', (e) => {
+    if (e.target === requestCancellationModal) requestCancellationModal.hidden = true;
+  });
+  document.getElementById('requestCancellationConfirmBtn').addEventListener('click', async () => {
+    const token = getToken();
+    if (!token || !window.__currentBookingId) return;
+
+    const reason = cancellationReasonInput.value.trim();
+    requestCancellationError.classList.remove('show');
+    if (!reason) {
+      requestCancellationError.textContent = 'Let the admin know why you\'d like to cancel.';
+      requestCancellationError.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('requestCancellationConfirmBtn');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/bookings/${window.__currentBookingId}/cancellation-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        requestCancellationError.textContent = body.detail || `Could not submit request (status ${res.status}).`;
+        requestCancellationError.classList.add('show');
+        return;
+      }
+      requestCancellationModal.hidden = true;
+      showToast('Cancellation & refund request submitted — awaiting admin review.', false);
+      loadBooking();
+    } catch (err) {
+      requestCancellationError.textContent = 'Network error — please check your connection and try again.';
+      requestCancellationError.classList.add('show');
     } finally {
       btn.disabled = false;
     }
@@ -819,7 +1072,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
     if (selectable.length) {
       transferRoomSelect.innerHTML = selectable.map(r => {
-        const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · RM${r.fee_monthly.toFixed(0)}/mo`;
+        const label = `${r.block_name} · Room ${r.room_number} · ${r.room_type} · ${r.gender_policy} · RM${r.fee_monthly.toFixed(0)}/mo`;
         return `<option value="${r.id}" data-capacity="${r.capacity}" data-gender-policy="${r.gender_policy}" data-room-type="${r.room_type}" data-block-name="${r.block_name}" data-room-number="${r.room_number}" data-room-label="${r.block_name} · Room ${r.room_number}" data-fee-monthly="${r.fee_monthly}">${label}</option>`;
       }).join('');
       transferRoomSelect.disabled = false;
@@ -832,7 +1085,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   }
 
   transferRoomBtn.addEventListener('click', () => {
-    if (!currentBooking || currentBooking.status !== 'approved') return;
+    if (!currentBooking || currentBooking.status !== 'approved' || currentBooking.is_paid) return;
     openTransferModal(currentBooking);
   });
 

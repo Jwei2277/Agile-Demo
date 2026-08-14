@@ -120,6 +120,16 @@ class BookingUpdate(BaseModel):
         return self
 
 
+class CancellationRequestOut(BaseModel):
+    id: int
+    booking_id: int
+    reason: str
+    status: str
+    rejection_reason: str | None = None
+    requested_at: datetime
+    decided_at: datetime | None = None
+
+
 class BookingOut(BaseModel):
     id: int
     status: str
@@ -136,6 +146,10 @@ class BookingOut(BaseModel):
     total_fee: float
     room: RoomOut
     pending_transfer_room: RoomOut | None = None
+    checked_in_at: datetime | None = None
+    checked_out_at: datetime | None = None
+    is_paid: bool = False
+    pending_cancellation_request: CancellationRequestOut | None = None
 
 
 class BookingAdminOut(BaseModel):
@@ -155,6 +169,9 @@ class BookingAdminOut(BaseModel):
     extra_occupant_student_id: str | None = None
     extra_occupant_gender: str | None = None
     total_fee: float
+    checked_in_at: datetime | None = None
+    checked_out_at: datetime | None = None
+    is_paid: bool = False
 
 
 class TransferRoomRequestCreate(BaseModel):
@@ -181,6 +198,28 @@ class TransferRequestAdminOut(BaseModel):
     reason: str
     status: str
     requested_at: datetime
+
+
+class CancellationRequestCreate(BaseModel):
+    reason: str = Field(min_length=1)
+
+
+class CancellationRequestAdminOut(BaseModel):
+    id: int
+    booking_id: int
+    student_name: str
+    student_id: str | None = None
+    room_label: str
+    amount_paid: float
+    reason: str
+    status: str
+    rejection_reason: str | None = None
+    requested_at: datetime
+    decided_at: datetime | None = None
+
+
+class CancellationRequestReject(BaseModel):
+    reason: str = Field(min_length=1)
 
 
 class WaitlistJoinCreate(BaseModel):
@@ -416,4 +455,73 @@ class VisitorRequestAdminOut(BaseModel):
 
 
 class VisitorRejectRequest(BaseModel):
+    reason: str = Field(min_length=1)
+
+
+# ---------------------------------------------------------
+# Payments
+# ---------------------------------------------------------
+PAYMENT_METHODS = ("Card", "Online Banking", "E-Wallet")
+
+
+class PaymentCreate(BaseModel):
+    booking_id: int
+    method: str = Field(pattern=r"^(Card|Online Banking|E-Wallet)$")
+
+
+class PaymentOut(BaseModel):
+    id: int
+    booking_id: int
+    amount: float
+    method: str
+    status: str
+    receipt_number: str
+    paid_at: datetime
+    room_label: str | None = None
+
+
+class PaymentAdminOut(BaseModel):
+    id: int
+    booking_id: int
+    amount: float
+    method: str
+    status: str
+    receipt_number: str
+    paid_at: datetime
+    room_label: str | None = None
+    student_name: str
+    student_id: str | None = None
+
+
+# ---------------------------------------------------------
+# Documents
+# ---------------------------------------------------------
+DOCUMENT_TYPES = ("IC / Passport", "Proof of Enrollment", "Parental Consent", "Other")
+
+
+class DocumentOut(BaseModel):
+    id: int
+    document_type: str
+    file_name: str
+    status: str
+    rejection_reason: str | None = None
+    uploaded_at: datetime
+    verified_at: datetime | None = None
+    view_url: str | None = None
+
+
+class DocumentAdminOut(BaseModel):
+    id: int
+    document_type: str
+    file_name: str
+    status: str
+    rejection_reason: str | None = None
+    uploaded_at: datetime
+    verified_at: datetime | None = None
+    student_name: str
+    student_id: str | None = None
+    view_url: str | None = None
+
+
+class DocumentRejectRequest(BaseModel):
     reason: str = Field(min_length=1)

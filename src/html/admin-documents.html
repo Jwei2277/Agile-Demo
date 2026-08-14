@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Bookings</title>
+<title>HostelEase — Verify Documents</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -223,7 +223,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 }
 .chip-blue { background: var(--sky-100); color: var(--blue-600); }
 .chip-navy { background: rgba(11,37,69,0.06); color: var(--navy-900); }
-.chip-error { background: var(--error-bg); color: var(--error-fg); }
 
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
 .pill-success { background: var(--success-bg); color: var(--success-fg); }
@@ -455,7 +454,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
-/* ===================== Reject cancellation modal ===================== */
+
+/* ===================== Manage request modal ===================== */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(11,37,69,0.45);
   display: flex; align-items: center; justify-content: center;
@@ -464,25 +464,40 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .modal-overlay[hidden] { display: none; }
 .modal-card {
   background: var(--white); border-radius: var(--radius-lg);
-  max-width: 440px; width: 100%; padding: 24px 26px;
+  max-width: 480px; width: 100%; padding: 24px 26px;
   box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+  max-height: 88vh; overflow-y: auto;
 }
 .modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
 .modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 14px; }
+.modal-readonly-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.modal-readonly-row span:first-child { color: var(--slate-600); }
 .modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
 .modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
-.modal-form-field textarea {
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
   width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
   color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
   border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
 }
-.modal-form-field textarea:focus-visible {
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
   border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
 }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
 .modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
 .modal-error.show { display: block; }
 
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-approved { background: var(--success-bg); color: var(--success-fg); }
+.status-rejected { background: var(--error-bg); color: var(--error-fg); }
+.status-cancelled { background: #eef0f3; color: #5b6472; }
+.filter-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.filter-row .form-field { margin:0; min-width:160px; }
+.filter-row input, .filter-row select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;
+}
 .toast-stack {
   position: fixed; bottom: 24px; right: 24px; z-index: 200;
   display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
@@ -511,16 +526,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       <span class="eyebrow-chip">Admin Console</span>
       <nav class="nav-links">
         <a href="admin-dashboard.html">Dashboard</a>
-        <a href="admin-bookings.html" class="current">Bookings</a>
+        <a href="admin-bookings.html">Bookings</a>
         <a href="admin-rooms.html">Rooms</a>
         <a href="admin-maintenance.html">Maintenance</a>
         <a href="admin-visitors.html">Visitors</a>
-        <a href="admin-documents.html">Documents</a>
+        <a href="admin-documents.html" class="current">Documents</a>
         <a href="admin-reports.html">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></div>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
@@ -529,57 +544,40 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   <main>
     <div class="section-head" style="margin-top:0;">
       <div>
-        <h2>Bookings</h2>
-        <p id="bookingCountSub">Loading…</p>
+        <h2>Verify documents</h2>
+        <p id="docCountSub">Loading…</p>
       </div>
-      <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;">
-        <a class="btn-secondary btn-sm" href="admin-checkinout.html" style="text-decoration:none;">Manage check-in / check-out</a>
-        <div class="status-filter">
-          <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
-          <select id="statusFilter">
-            <option value="all" selected>All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
+      <div class="status-filter">
+        <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
+        <select id="statusFilter">
+          <option value="all" selected>All (history)</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
     </div>
-    <div class="request-list" id="bookingList">
-      <p style="color:var(--slate-600);">Loading bookings…</p>
+    <div class="request-list" id="docList">
+      <p style="color:var(--slate-600);">Loading documents…</p>
     </div>
   </main>
 </div>
 
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-<!-- Approve cancellation request modal -->
-<div class="modal-overlay" id="approveCancellationModal" hidden>
+<!-- Reject document modal -->
+<div class="modal-overlay" id="rejectModal" hidden>
   <div class="modal-card">
-    <h3>Approve this cancellation?</h3>
-    <p class="modal-sub" id="approveCancellationSub">The booking will be cancelled and the payment marked refunded.</p>
-    <div class="modal-error" id="approveCancellationError" role="alert"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary btn-sm" id="approveCancellationCancelBtn">Never mind</button>
-      <button class="btn-primary btn-sm" id="approveCancellationConfirmBtn">Approve & refund</button>
-    </div>
-  </div>
-</div>
-
-<!-- Reject cancellation request modal -->
-<div class="modal-overlay" id="rejectCancellationModal" hidden>
-  <div class="modal-card">
-    <h3>Reject this cancellation request?</h3>
-    <p class="modal-sub">The booking stays active and paid. Let the student know why.</p>
-    <div class="modal-error" id="rejectCancellationError" role="alert"></div>
+    <h3>Reject this document?</h3>
+    <p class="modal-sub">Let the student know why, so they can re-upload a corrected version.</p>
+    <div class="modal-error" id="rejectModalError" role="alert"></div>
     <div class="modal-form-field">
-      <label for="rejectCancellationReason">Rejection reason</label>
-      <textarea id="rejectCancellationReason" rows="3" placeholder="e.g. Outside the refund window — see hostel policy." required></textarea>
+      <label for="rejectReason">Rejection reason</label>
+      <textarea id="rejectReason" rows="3" placeholder="e.g. Photo is blurry, please re-upload." required></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn-secondary btn-sm" id="rejectCancellationCancelBtn">Cancel</button>
-      <button class="btn-primary btn-sm" id="rejectCancellationConfirmBtn" style="background: var(--error-fg);">Reject request</button>
+      <button class="btn-secondary btn-sm" id="rejectModalCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="rejectModalConfirmBtn" style="background: var(--error-fg);">Reject document</button>
     </div>
   </div>
 </div>
@@ -588,26 +586,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
   }
-
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    const token = getToken();
-    try {
-      if (token) {
-        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-      }
-    } catch (err) {
-      // Even if the server call fails (e.g. offline), still clear the
-      // local session so the user is signed out on this device.
-    }
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
-    window.localStorage.removeItem('user');
-    window.sessionStorage.removeItem('access_token');
-    window.sessionStorage.removeItem('refresh_token');
-    window.sessionStorage.removeItem('user');
-    window.location.href = 'login.html';
-  });
-
   function authHeaders() {
     return { 'Authorization': `Bearer ${getToken()}` };
   }
@@ -621,270 +599,172 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     setTimeout(() => toast.remove(), 4000);
   }
 
-  function statusPillHTML(status) {
-    const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[status] || 'pill-warning';
-    const label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' }[status] || status;
-    return `<span class="pill ${statusPillClass}">${label}</span>`;
-  }
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const token = getToken();
+    try {
+      if (token) {
+        await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      }
+    } catch (err) {}
+    window.localStorage.removeItem('access_token');
+    window.localStorage.removeItem('refresh_token');
+    window.localStorage.removeItem('user');
+    window.sessionStorage.removeItem('access_token');
+    window.sessionStorage.removeItem('refresh_token');
+    window.sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
 
-  function bookingRowHTML(b) {
-    const requestedAgo = new Date(b.requested_at).toLocaleDateString();
-    let actions;
-    if (b.status === 'pending') {
-      actions = `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`;
-    } else if (b.status === 'approved' && b.checked_out_at) {
-      actions = `<span class="pill pill-success">Checked out</span>`;
-    } else if (b.status === 'approved' && b.checked_in_at) {
-      actions = `<span class="pill pill-success">Checked in</span>`;
-    } else if (b.status === 'approved') {
-      actions = `<span class="pill pill-warning">Not checked in</span>`;
-    } else {
-      actions = statusPillHTML(b.status);
-    }
-    const paymentNote = b.status === 'approved' ? ` · ${b.is_paid ? '<span style="color:var(--success-fg);">Paid</span>' : '<span style="color:var(--warning-fg);">Unpaid</span>'}` : '';
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+  }
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {}
+  }
+  loadProfileChip();
+
+  const statusLabels = { pending: 'Pending', verified: 'Verified', rejected: 'Rejected' };
+  const statusPillClasses = { pending: 'pill-warning', verified: 'pill-success', rejected: 'pill-error' };
+
+  function docRowHTML(d) {
+    const uploadedAgo = new Date(d.uploaded_at).toLocaleDateString();
+    const statusClass = statusPillClasses[d.status] || 'pill-warning';
+    const viewLink = d.view_url ? `<a href="${d.view_url}" target="_blank" style="color:var(--blue-600);">View file</a> · ` : '';
+    const actions = d.status === 'pending'
+      ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${d.id}">Reject</button>
+         <button class="btn-primary btn-sm" data-action="verify" data-id="${d.id}">Verify</button>`
+      : `<span class="pill ${statusClass}">${statusLabels[d.status] || d.status}</span>`;
+    const reasonLine = d.rejection_reason ? ` · Reason: ${d.rejection_reason}` : '';
     return `
-      <div class="request-row card" data-booking-id="${b.id}">
-        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
+      <div class="request-row card" data-doc-id="${d.id}">
+        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
         <div class="request-main">
-          <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
-          <p class="request-sub">Requested ${b.room_label} · ${b.semester} · ${new Date(b.move_in_date).toLocaleDateString()}–${new Date(b.move_out_date).toLocaleDateString()}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}${paymentNote}</p>
+          <div class="request-top"><span class="request-title">${d.document_type}</span><span class="chip chip-blue">${d.student_name}${d.student_id ? ' (' + d.student_id + ')' : ''}</span></div>
+          <p class="request-sub">${viewLink}${d.file_name}${reasonLine}</p>
         </div>
-        <span class="request-time">${requestedAgo}</span>
+        <span class="request-time">${uploadedAgo}</span>
         <div class="request-actions">${actions}</div>
       </div>`;
   }
 
-  function transferRequestRowHTML(t) {
-    const requestedAgo = new Date(t.requested_at).toLocaleDateString();
-    const actions = t.status === 'pending'
-      ? `<button class="btn-secondary btn-sm" data-action="reject-transfer" data-id="${t.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve-transfer" data-id="${t.id}">Approve</button>`
-      : statusPillHTML(t.status);
-    return `
-      <div class="request-row card" data-transfer-id="${t.id}">
-        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="request-main">
-          <div class="request-top"><span class="request-title">Transfer request — ${t.student_name}</span><span class="chip chip-navy">Transfer</span></div>
-          <p class="request-sub">Requested to move from ${t.room_label} to ${t.requested_room_label}${t.reason ? ` · Reason: ${t.reason}` : ''}</p>
-        </div>
-        <span class="request-time">${requestedAgo}</span>
-        <div class="request-actions">${actions}</div>
-      </div>`;
-  }
-
-  function cancellationRequestRowHTML(c) {
-    const requestedAgo = new Date(c.requested_at).toLocaleDateString();
-    const actions = c.status === 'pending'
-      ? `<button class="btn-secondary btn-sm" data-action="reject-cancellation" data-id="${c.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve-cancellation" data-id="${c.id}">Approve & refund</button>`
-      : statusPillHTML(c.status);
-    const rejectionLine = c.rejection_reason ? ` · Rejection reason: ${c.rejection_reason}` : '';
-    return `
-      <div class="request-row card" data-cancellation-id="${c.id}">
-        <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96l-8.18-14.18a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
-        <div class="request-main">
-          <div class="request-top"><span class="request-title">Cancellation & refund — ${c.student_name}</span><span class="chip chip-error">Cancellation</span></div>
-          <p class="request-sub">${c.room_label} · Paid RM ${c.amount_paid.toFixed(2)} · Reason: ${c.reason}${rejectionLine}</p>
-        </div>
-        <span class="request-time">${requestedAgo}</span>
-        <div class="request-actions">${actions}</div>
-      </div>`;
-  }
-
-  async function loadBookings() {
+  async function loadDocuments() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
     const status = document.getElementById('statusFilter').value;
-    const list = document.getElementById('bookingList');
-    list.innerHTML = '<p style="color:var(--slate-600);">Loading bookings…</p>';
+    const list = document.getElementById('docList');
+    list.innerHTML = '<p style="color:var(--slate-600);">Loading documents…</p>';
 
     try {
-      const [bookingsRes, transfersRes, cancellationsRes] = await Promise.all([
-        fetch(`/admin/bookings?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
-        fetch(`/admin/transfer-requests?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
-        fetch(`/admin/cancellation-requests?status=${encodeURIComponent(status)}`, { headers: authHeaders() }),
-      ]);
-      if (bookingsRes.status === 403 || transfersRes.status === 403 || cancellationsRes.status === 403) {
+      const res = await fetch(`/admin/documents?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
+      if (res.status === 403) {
         alert('Admin access required.');
         window.location.href = 'login.html';
         return;
       }
-      const bookings = await bookingsRes.json();
-      const transfers = await transfersRes.json();
-      const cancellations = await cancellationsRes.json();
-      const items = [
-        ...bookings.map((item) => ({ ...item, kind: 'booking' })),
-        ...transfers.map((item) => ({ ...item, kind: 'transfer' })),
-        ...cancellations.map((item) => ({ ...item, kind: 'cancellation' })),
-      ].sort((a, b) => new Date(b.requested_at) - new Date(a.requested_at));
+      const items = await res.json();
 
-      document.getElementById('bookingCountSub').textContent =
-        `${items.length} request${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
+      document.getElementById('docCountSub').textContent =
+        `${items.length} document${items.length === 1 ? '' : 's'}${status !== 'all' ? ' · ' + status : ''}`;
 
       if (!items.length) {
         list.innerHTML = `
           <div class="empty-state card">
             <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             <h3>Nothing here</h3>
-            <p>No bookings, transfer requests, or cancellation requests match this filter.</p>
+            <p>No documents match this filter.</p>
           </div>`;
         return;
       }
 
-      list.innerHTML = items.map((item) => {
-        if (item.kind === 'transfer') return transferRequestRowHTML(item);
-        if (item.kind === 'cancellation') return cancellationRequestRowHTML(item);
-        return bookingRowHTML(item);
-      }).join('');
-      list.querySelectorAll('[data-action="approve"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'approve')));
+      list.innerHTML = items.map(docRowHTML).join('');
+      list.querySelectorAll('[data-action="verify"]').forEach((btn) =>
+        btn.addEventListener('click', () => verifyDocument(btn.dataset.id)));
       list.querySelectorAll('[data-action="reject"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideBooking(btn.dataset.id, 'reject')));
-      list.querySelectorAll('[data-action="approve-transfer"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'approve')));
-      list.querySelectorAll('[data-action="reject-transfer"]').forEach((btn) =>
-        btn.addEventListener('click', () => decideTransferRequest(btn.dataset.id, 'reject')));
-      list.querySelectorAll('[data-action="approve-cancellation"]').forEach((btn) =>
-        btn.addEventListener('click', () => approveCancellationRequest(btn.dataset.id)));
-      list.querySelectorAll('[data-action="reject-cancellation"]').forEach((btn) =>
-        btn.addEventListener('click', () => openRejectCancellationModal(btn.dataset.id)));
+        btn.addEventListener('click', () => openRejectModal(btn.dataset.id)));
     } catch (err) {
-      list.innerHTML = '<p style="color:var(--error-fg);">Could not load bookings. Please try again.</p>';
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load documents. Please try again.</p>';
     }
   }
 
-  async function decideBooking(id, action) {
+  async function verifyDocument(id) {
     try {
-      const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
+      const res = await fetch(`/admin/documents/${id}/verify`, { method: 'POST', headers: authHeaders() });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => ({}));
-        showToast(body.detail || `Could not ${action} the booking (status ${res.status}).`, true);
+        showToast(body.detail || `Could not verify this document (status ${res.status}).`, true);
         return;
       }
-      showToast(action === 'approve' ? 'Booking approved.' : 'Booking rejected.', false);
-      loadBookings();
+      showToast('Document verified.', false);
+      loadDocuments();
     } catch (err) {
       showToast('Network error — please check your connection and try again.', true);
     }
   }
 
-  async function decideTransferRequest(id, action) {
-    try {
-      const res = await fetch(`/admin/transfer-requests/${id}/${action}`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) {
-        const body = await res.json().catch(() => ({}));
-        showToast(body.detail || 'Could not update transfer request.', true);
-        return;
-      }
-      showToast(action === 'approve' ? 'Transfer approved.' : 'Transfer rejected.', false);
-      loadBookings();
-    } catch (err) {
-      showToast('Network error — please try again.', true);
-    }
+  const rejectModal = document.getElementById('rejectModal');
+  const rejectModalError = document.getElementById('rejectModalError');
+  const rejectReasonInput = document.getElementById('rejectReason');
+  let rejectTargetId = null;
+
+  function openRejectModal(id) {
+    rejectTargetId = id;
+    rejectReasonInput.value = '';
+    rejectModalError.classList.remove('show');
+    rejectModal.hidden = false;
   }
-
-  const approveCancellationModal = document.getElementById('approveCancellationModal');
-  const approveCancellationError = document.getElementById('approveCancellationError');
-  let approveCancellationTargetId = null;
-
-  function approveCancellationRequest(id) {
-    approveCancellationTargetId = id;
-    approveCancellationError.classList.remove('show');
-    approveCancellationModal.hidden = false;
-  }
-  document.getElementById('approveCancellationCancelBtn').addEventListener('click', () => {
-    approveCancellationModal.hidden = true;
-    approveCancellationTargetId = null;
+  document.getElementById('rejectModalCancelBtn').addEventListener('click', () => {
+    rejectModal.hidden = true;
   });
-  approveCancellationModal.addEventListener('click', (e) => {
-    if (e.target === approveCancellationModal) {
-      approveCancellationModal.hidden = true;
-      approveCancellationTargetId = null;
-    }
-  });
-  document.getElementById('approveCancellationConfirmBtn').addEventListener('click', async () => {
-    if (!approveCancellationTargetId) return;
-    approveCancellationError.classList.remove('show');
-
-    const confirmBtn = document.getElementById('approveCancellationConfirmBtn');
-    confirmBtn.disabled = true;
-    try {
-      const res = await fetch(`/admin/cancellation-requests/${approveCancellationTargetId}/approve`, {
-        method: 'POST',
-        headers: authHeaders(),
-      });
-      if (!res.ok && res.status !== 204) {
-        const body = await res.json().catch(() => ({}));
-        approveCancellationError.textContent = body.detail || 'Could not approve this cancellation request.';
-        approveCancellationError.classList.add('show');
-        return;
-      }
-      approveCancellationModal.hidden = true;
-      loadBookings();
-    } catch (err) {
-      approveCancellationError.textContent = 'Network error — please try again.';
-      approveCancellationError.classList.add('show');
-    } finally {
-      confirmBtn.disabled = false;
-      approveCancellationTargetId = null;
-    }
+  rejectModal.addEventListener('click', (e) => {
+    if (e.target === rejectModal) rejectModal.hidden = true;
   });
 
-  const rejectCancellationModal = document.getElementById('rejectCancellationModal');
-  const rejectCancellationError = document.getElementById('rejectCancellationError');
-  const rejectCancellationReasonInput = document.getElementById('rejectCancellationReason');
-  let rejectCancellationTargetId = null;
-
-  function openRejectCancellationModal(id) {
-    rejectCancellationTargetId = id;
-    rejectCancellationReasonInput.value = '';
-    rejectCancellationError.classList.remove('show');
-    rejectCancellationModal.hidden = false;
-  }
-  document.getElementById('rejectCancellationCancelBtn').addEventListener('click', () => {
-    rejectCancellationModal.hidden = true;
-  });
-  rejectCancellationModal.addEventListener('click', (e) => {
-    if (e.target === rejectCancellationModal) rejectCancellationModal.hidden = true;
-  });
-  document.getElementById('rejectCancellationConfirmBtn').addEventListener('click', async () => {
-    if (!rejectCancellationTargetId) return;
-    const reason = rejectCancellationReasonInput.value.trim();
-    rejectCancellationError.classList.remove('show');
+  document.getElementById('rejectModalConfirmBtn').addEventListener('click', async () => {
+    if (!rejectTargetId) return;
+    const reason = rejectReasonInput.value.trim();
+    rejectModalError.classList.remove('show');
     if (!reason) {
-      rejectCancellationError.textContent = 'Enter a reason for the rejection.';
-      rejectCancellationError.classList.add('show');
+      rejectModalError.textContent = 'Enter a reason for the rejection.';
+      rejectModalError.classList.add('show');
       return;
     }
 
-    const confirmBtn = document.getElementById('rejectCancellationConfirmBtn');
+    const confirmBtn = document.getElementById('rejectModalConfirmBtn');
     confirmBtn.disabled = true;
     try {
-      const res = await fetch(`/admin/cancellation-requests/${rejectCancellationTargetId}/reject`, {
+      const res = await fetch(`/admin/documents/${rejectTargetId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ reason }),
       });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => ({}));
-        rejectCancellationError.textContent = body.detail || 'Could not reject this request.';
-        rejectCancellationError.classList.add('show');
+        rejectModalError.textContent = body.detail || 'Could not reject this document.';
+        rejectModalError.classList.add('show');
         return;
       }
-      rejectCancellationModal.hidden = true;
-      loadBookings();
+      rejectModal.hidden = true;
+      showToast('Document rejected.', false);
+      loadDocuments();
     } catch (err) {
-      rejectCancellationError.textContent = 'Network error — please try again.';
-      rejectCancellationError.classList.add('show');
+      rejectModalError.textContent = 'Network error — please try again.';
+      rejectModalError.classList.add('show');
     } finally {
       confirmBtn.disabled = false;
     }
   });
 
-  document.getElementById('statusFilter').addEventListener('change', loadBookings);
-  loadBookings();
+  document.getElementById('statusFilter').addEventListener('change', loadDocuments);
+  loadDocuments();
 </script>
 </body>
 </html>
