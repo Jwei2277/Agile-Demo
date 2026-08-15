@@ -8,8 +8,8 @@ from agile_ci_demo.models import (
     BookingCreate,
     BookingOut,
     BookingUpdate,
-    CancellationRequestCreate,
-    CancellationRequestOut,
+    REQUIRED_ENROLLMENT_DOCUMENT_TYPES,
+    REQUIRED_IDENTITY_DOCUMENT_TYPE,
     RoomOut,
     TransferRoomRequestCreate,
     TransferRoomRequestOut,
@@ -121,33 +121,6 @@ def _booking_out(
         # over it.
         is_paid = False
 
-    pending_cancellation_request = None
-    try:
-        db = _get_supabase()
-        cancellation_resp = (
-            db.table("booking_cancellation_requests")
-            .select("*")
-            .eq("booking_id", int(row["id"]))
-            .eq("status", "pending")
-            .order("requested_at", desc=True)
-            .limit(1)
-            .execute()
-        )
-        cancellation_rows = _get_rows(cancellation_resp.data)
-        if cancellation_rows:
-            c = cancellation_rows[0]
-            pending_cancellation_request = CancellationRequestOut(
-                id=int(c["id"]),
-                booking_id=int(c["booking_id"]),
-                reason=str(c["reason"]),
-                status=str(c["status"]),
-                rejection_reason=c.get("rejection_reason"),
-                requested_at=c["requested_at"],
-                decided_at=c.get("decided_at"),
-            )
-    except Exception:
-        pending_cancellation_request = None
-
     return BookingOut(
         id=int(row["id"]),
         status=str(row["status"]),
@@ -170,7 +143,6 @@ def _booking_out(
         checked_in_at=row.get("checked_in_at"),
         checked_out_at=row.get("checked_out_at"),
         is_paid=is_paid,
-        pending_cancellation_request=pending_cancellation_request,
     )
 
 
@@ -241,6 +213,30 @@ def create_booking(
         raise HTTPException(
             status_code=409,
             detail="You already have an active or pending booking",
+        )
+
+    documents_resp = (
+        supabase.table("student_documents")
+        .select("document_type")
+        .eq("student_id", user.id)
+        .execute()
+    )
+    uploaded_types = {str(d["document_type"]) for d in _get_rows(documents_resp.data)}
+    has_identity_doc = REQUIRED_IDENTITY_DOCUMENT_TYPE in uploaded_types
+    has_enrollment_doc = any(t in uploaded_types for t in REQUIRED_ENROLLMENT_DOCUMENT_TYPES)
+
+    if not (has_identity_doc and has_enrollment_doc):
+        missing = []
+        if not has_identity_doc:
+            missing.append(REQUIRED_IDENTITY_DOCUMENT_TYPE)
+        if not has_enrollment_doc:
+            missing.append(" or ".join(REQUIRED_ENROLLMENT_DOCUMENT_TYPES))
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Please upload the following before booking, so we can verify your "
+                f"identity: {', '.join(missing)}. You can upload these on the Documents page."
+            ),
         )
 
     try:
@@ -537,18 +533,10 @@ def request_room_transfer(
             detail="Transfer requests are only available for approved bookings",
         )
 
-    paid_check = (
-        supabase.table("payments")
-        .select("id")
-        .eq("booking_id", booking_id)
-        .eq("status", "paid")
-        .limit(1)
-        .execute()
-    )
-    if _get_rows(paid_check.data):
+    if booking.get("checked_in_at"):
         raise HTTPException(
             status_code=409,
-            detail="This booking has already been paid for — room transfers aren't available once payment is complete. Contact an admin if you need to change rooms.",
+            detail="This booking is already checked in — room transfers aren't available once you've moved in. Contact an admin if you need to change rooms.",
         )
 
     if int(booking["room_id"]) == data.room_id:
@@ -692,18 +680,10 @@ def cancel_booking(
             detail="Booking is already closed",
         )
 
-    paid_check = (
-        supabase.table("payments")
-        .select("id")
-        .eq("booking_id", booking_id)
-        .eq("status", "paid")
-        .limit(1)
-        .execute()
-    )
-    if _get_rows(paid_check.data):
+    if booking.get("checked_in_at"):
         raise HTTPException(
             status_code=409,
-            detail="This booking has already been paid for and can't be cancelled directly. Use 'Request cancellation & refund' instead — an admin will need to approve it.",
+            detail="This booking is already checked in and paid — it can no longer be cancelled. Contact an admin if you need to move out.",
         )
 
     (
@@ -740,93 +720,3 @@ def cancel_booking(
         # cancellation itself if this has a problem.
         pass
 
-
-@router.post(
-    "/{booking_id}/cancellation-request",
-    status_code=201,
-    response_model=CancellationRequestOut,
-)
-def request_cancellation(
-    booking_id: int,
-    data: CancellationRequestCreate,
-    user: CurrentUser = Depends(get_current_user),
-):
-    """For a PAID booking only — self-service DELETE is blocked once
-    paid, so this is the replacement: the student asks, and an admin has
-    to approve it before the booking actually gets cancelled and the
-    payment marked refunded."""
-
-    supabase = _get_supabase()
-
-    booking_resp = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
-    booking_rows = _get_rows(booking_resp.data)
-    if not booking_rows:
-        raise HTTPException(status_code=404, detail="Booking not found")
-    booking = booking_rows[0]
-
-    if booking["student_id"] != user.id:
-        raise HTTPException(status_code=403, detail="Not your booking")
-
-    if booking["status"] != "approved":
-        raise HTTPException(
-            status_code=409,
-            detail="Only approved bookings can have a cancellation requested.",
-        )
-
-    paid_check = (
-        supabase.table("payments")
-        .select("id")
-        .eq("booking_id", booking_id)
-        .eq("status", "paid")
-        .limit(1)
-        .execute()
-    )
-    if not _get_rows(paid_check.data):
-        raise HTTPException(
-            status_code=409,
-            detail="This booking hasn't been paid for yet — cancel it directly instead.",
-        )
-
-    existing_pending = (
-        supabase.table("booking_cancellation_requests")
-        .select("id")
-        .eq("booking_id", booking_id)
-        .eq("status", "pending")
-        .limit(1)
-        .execute()
-    )
-    if _get_rows(existing_pending.data):
-        raise HTTPException(
-            status_code=409,
-            detail="You already have a pending cancellation request for this booking.",
-        )
-
-    insert_resp = (
-        supabase.table("booking_cancellation_requests")
-        .insert(
-            {
-                "booking_id": booking_id,
-                "student_id": user.id,
-                "reason": data.reason,
-                "status": "pending",
-            }
-        )
-        .execute()
-    )
-    rows = _get_rows(insert_resp.data)
-    if not rows:
-        raise HTTPException(
-            status_code=400,
-            detail="The cancellation request was rejected by the database — please try again.",
-        )
-
-    row = rows[0]
-    return CancellationRequestOut(
-        id=int(row["id"]),
-        booking_id=int(row["booking_id"]),
-        reason=str(row["reason"]),
-        status=str(row["status"]),
-        rejection_reason=row.get("rejection_reason"),
-        requested_at=row["requested_at"],
-        decided_at=row.get("decided_at"),
-    )

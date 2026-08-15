@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any, cast
@@ -8,14 +9,14 @@ from agile_ci_demo.deps import CurrentUser, require_admin
 from agile_ci_demo.models import (
     BlockOut,
     BookingAdminOut,
-    CancellationRequestAdminOut,
-    CancellationRequestReject,
     DashboardStats,
     DocumentAdminOut,
     DocumentRejectRequest,
     MaintenanceOut,
     MaintenanceUpdate,
     PaymentAdminOut,
+    REQUIRED_ENROLLMENT_DOCUMENT_TYPES,
+    REQUIRED_IDENTITY_DOCUMENT_TYPE,
     RoomAdminOut,
     RoomCreate,
     RoomUpdate,
@@ -140,6 +141,30 @@ def _list_bookings(status: str | None) -> list[BookingAdminOut]:
         )
         paid_booking_ids = {int(p["booking_id"]) for p in _rows(payments_resp.data)}
 
+    # Same batching approach for document verification — a student
+    # counts as verified once they have a 'verified' IC/Passport AND a
+    # 'verified' Proof of Enrollment or Student Card.
+    student_ids = list({row["student_id"] for row in rows if row.get("student_id")})
+    verified_student_ids: set[str] = set()
+    if student_ids:
+        docs_resp = (
+            db.table("student_documents")
+            .select("student_id, document_type")
+            .in_("student_id", student_ids)
+            .eq("status", "verified")
+            .execute()
+        )
+        verified_types_by_student: dict[str, set[str]] = {}
+        for d in _rows(docs_resp.data):
+            verified_types_by_student.setdefault(str(d["student_id"]), set()).add(
+                str(d["document_type"])
+            )
+        for sid, types in verified_types_by_student.items():
+            if REQUIRED_IDENTITY_DOCUMENT_TYPE in types and any(
+                t in types for t in REQUIRED_ENROLLMENT_DOCUMENT_TYPES
+            ):
+                verified_student_ids.add(sid)
+
     out = []
     for row in rows:
         profile: Row = row.get("student") or {}
@@ -168,6 +193,7 @@ def _list_bookings(status: str | None) -> list[BookingAdminOut]:
                 checked_in_at=row.get("checked_in_at"),
                 checked_out_at=row.get("checked_out_at"),
                 is_paid=int(row["id"]) in paid_booking_ids,
+                documents_verified=str(row.get("student_id")) in verified_student_ids,
             )
         )
     return out
@@ -259,6 +285,28 @@ def _decide_booking(booking_id: int, new_status: str, admin: CurrentUser) -> Non
             status_code=409,
             detail=f"This booking is already '{rows[0]['status']}' — it can't be decided again.",
         )
+
+    if new_status == "approved":
+        student_id = rows[0]["student_id"]
+        documents_resp = (
+            db.table("student_documents")
+            .select("document_type, status")
+            .eq("student_id", student_id)
+            .eq("status", "verified")
+            .execute()
+        )
+        verified_types = {str(d["document_type"]) for d in _rows(documents_resp.data)}
+        has_identity_doc = REQUIRED_IDENTITY_DOCUMENT_TYPE in verified_types
+        has_enrollment_doc = any(t in verified_types for t in REQUIRED_ENROLLMENT_DOCUMENT_TYPES)
+        if not (has_identity_doc and has_enrollment_doc):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This student's identity documents (IC/Passport and Proof of "
+                    "Enrollment/Student Card) haven't been verified yet — verify them on "
+                    "the Documents page before approving this booking."
+                ),
+            )
 
     db.table("bookings").update(
         {
@@ -805,7 +853,7 @@ def check_in_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
     db = _db()
     resp = (
         db.table("bookings")
-        .select("id, status, checked_in_at")
+        .select("id, status, checked_in_at, room_id, occupant_count, student_id")
         .eq("id", booking_id)
         .limit(1)
         .execute()
@@ -819,7 +867,13 @@ def check_in_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
     if booking.get("checked_in_at"):
         raise HTTPException(status_code=409, detail="This booking is already checked in.")
 
-    paid_check = (
+    db.table("bookings").update({"checked_in_at": datetime.now(timezone.utc).isoformat()}).eq(
+        "id", booking_id
+    ).execute()
+
+    # Payment is collected offline in person at check-in — record it now
+    # if it isn't already on file, rather than requiring it beforehand.
+    existing_paid = (
         db.table("payments")
         .select("id")
         .eq("booking_id", booking_id)
@@ -827,15 +881,26 @@ def check_in_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
         .limit(1)
         .execute()
     )
-    if not _rows(paid_check.data):
-        raise HTTPException(
-            status_code=409,
-            detail="This booking hasn't been paid for yet — payment is required before check-in.",
+    if not _rows(existing_paid.data):
+        room_resp = (
+            db.table("rooms").select("fee_monthly").eq("id", booking["room_id"]).limit(1).execute()
         )
-
-    db.table("bookings").update({"checked_in_at": datetime.now(timezone.utc).isoformat()}).eq(
-        "id", booking_id
-    ).execute()
+        room_rows = _rows(room_resp.data)
+        if room_rows:
+            base_fee = float(room_rows[0]["fee_monthly"])
+            amount = total_fee_for(base_fee, int(booking.get("occupant_count", 1)))
+            receipt_number = f"RCPT-{datetime.now(timezone.utc):%Y%m%d}-{secrets.token_hex(4).upper()}"
+            db.table("payments").insert(
+                {
+                    "booking_id": booking_id,
+                    "student_id": booking["student_id"],
+                    "amount": amount,
+                    "method": "Offline (Cash/Bank Transfer)",
+                    "status": "paid",
+                    "receipt_number": receipt_number,
+                    "paid_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ).execute()
 
 
 @router.post("/bookings/{booking_id}/check-out", status_code=204)
@@ -843,7 +908,7 @@ def check_out_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
     db = _db()
     resp = (
         db.table("bookings")
-        .select("id, status, checked_in_at, checked_out_at")
+        .select("id, status, checked_in_at, checked_out_at, room_id")
         .eq("id", booking_id)
         .limit(1)
         .execute()
@@ -860,6 +925,14 @@ def check_out_booking(booking_id: int, _: CurrentUser = Depends(require_admin)):
     db.table("bookings").update({"checked_out_at": datetime.now(timezone.utc).isoformat()}).eq(
         "id", booking_id
     ).execute()
+
+    # The room is now vacated — auto-book the earliest eligible student
+    # on the waitlist for it, same as when a booking is cancelled or
+    # rejected.
+    try:
+        notify_next_waitlisted(int(booking["room_id"]))
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------
@@ -942,6 +1015,7 @@ def list_payments(_: CurrentUser = Depends(require_admin)):
     resp = (
         db.table("payments")
         .select("*, profiles!payments_student_id_fkey(full_name, student_id), bookings(room_id)")
+        .neq("status", "pending")
         .order("paid_at", desc=True)
         .execute()
     )
@@ -955,10 +1029,10 @@ def list_payments(_: CurrentUser = Depends(require_admin)):
                 id=int(row["id"]),
                 booking_id=int(row["booking_id"]),
                 amount=float(row["amount"]),
-                method=str(row["method"]),
+                method=row.get("method"),
                 status=str(row["status"]),
                 receipt_number=str(row["receipt_number"]),
-                paid_at=row["paid_at"],
+                paid_at=row.get("paid_at"),
                 room_label=_room_label_for_maintenance(db, room_id) if room_id else None,
                 student_name=str(profile.get("full_name", "Unknown")),
                 student_id=profile.get("student_id"),
@@ -1035,6 +1109,7 @@ def _payments_report_rows(db) -> tuple[list[list[str]], float]:
     resp = (
         db.table("payments")
         .select("*, profiles!payments_student_id_fkey(full_name, student_id)")
+        .neq("status", "pending")
         .order("paid_at", desc=True)
         .execute()
     )
@@ -1049,7 +1124,7 @@ def _payments_report_rows(db) -> tuple[list[list[str]], float]:
                 profile.get("student_id", "") or "",
                 str(row["booking_id"]),
                 f"{float(row['amount']):.2f}",
-                row["method"],
+                row.get("method") or "",
                 row["status"],
                 str(row.get("paid_at", "") or ""),
             ]
@@ -1232,135 +1307,3 @@ def payments_report_pdf(_: CurrentUser = Depends(require_admin)):
         footer=footer,
     )
 
-
-# ---------------------------------------------------------------
-# Cancellation & refund requests (for paid bookings)
-# ---------------------------------------------------------------
-@router.get("/cancellation-requests", response_model=list[CancellationRequestAdminOut])
-def list_cancellation_requests(
-    status: str = Query(
-        default="pending", description="'all' | 'pending' | 'approved' | 'rejected'"
-    ),
-    _: CurrentUser = Depends(require_admin),
-):
-    db = _db()
-    query = db.table("booking_cancellation_requests").select(
-        "*, profiles!booking_cancellation_requests_student_id_fkey(full_name, student_id), "
-        "bookings(room_id)"
-    )
-    if status and status != "all":
-        query = query.eq("status", status)
-    resp = query.order("requested_at", desc=True).execute()
-
-    out = []
-    for row in _rows(resp.data):
-        profile: Row = row.get("profiles") or {}
-        booking: Row = row.get("bookings") or {}
-        room_id = booking.get("room_id")
-
-        payment_resp = (
-            db.table("payments")
-            .select("amount")
-            .eq("booking_id", row["booking_id"])
-            .eq("status", "paid")
-            .limit(1)
-            .execute()
-        )
-        payment_rows = _rows(payment_resp.data)
-        amount_paid = float(payment_rows[0]["amount"]) if payment_rows else 0.0
-
-        out.append(
-            CancellationRequestAdminOut(
-                id=int(row["id"]),
-                booking_id=int(row["booking_id"]),
-                student_name=str(profile.get("full_name", "Unknown")),
-                student_id=profile.get("student_id"),
-                room_label=_room_label_for_maintenance(db, room_id) or "Unknown room",
-                amount_paid=amount_paid,
-                reason=str(row["reason"]),
-                status=str(row["status"]),
-                rejection_reason=row.get("rejection_reason"),
-                requested_at=row["requested_at"],
-                decided_at=row.get("decided_at"),
-            )
-        )
-    return out
-
-
-def _decide_cancellation_request(
-    request_id: int, new_status: str, admin: CurrentUser, rejection_reason: str | None = None
-) -> None:
-    db = _db()
-    resp = (
-        db.table("booking_cancellation_requests")
-        .select("*")
-        .eq("id", request_id)
-        .limit(1)
-        .execute()
-    )
-    rows = _rows(resp.data)
-    if not rows:
-        raise HTTPException(status_code=404, detail="Cancellation request not found")
-    request_row = rows[0]
-
-    if request_row["status"] != "pending":
-        raise HTTPException(
-            status_code=409,
-            detail=f"This request is already '{request_row['status']}' — it can't be decided again.",
-        )
-
-    booking_id = int(request_row["booking_id"])
-
-    updates: dict[str, Any] = {
-        "status": new_status,
-        "decided_at": datetime.now(timezone.utc).isoformat(),
-        "decided_by": admin.id,
-    }
-    if rejection_reason is not None:
-        updates["rejection_reason"] = rejection_reason
-    db.table("booking_cancellation_requests").update(updates).eq("id", request_id).execute()
-
-    if new_status != "approved":
-        return
-
-    booking_resp = db.table("bookings").select("room_id").eq("id", booking_id).limit(1).execute()
-    booking_rows = _rows(booking_resp.data)
-    room_id = booking_rows[0]["room_id"] if booking_rows else None
-
-    db.table("bookings").update(
-        {"status": "cancelled", "decided_at": datetime.now(timezone.utc).isoformat()}
-    ).eq("id", booking_id).execute()
-
-    # Mark the payment(s) for this booking as refunded — this is a
-    # simulated refund (no real payment gateway), matching how the
-    # payment itself was simulated.
-    db.table("payments").update({"status": "refunded"}).eq("booking_id", booking_id).eq(
-        "status", "paid"
-    ).execute()
-
-    # Same cleanup as a direct cancellation: void any pending transfer
-    # request, and let the next waitlisted student have the room.
-    try:
-        db.table("room_transfer_requests").update({"status": "cancelled"}).eq(
-            "booking_id", booking_id
-        ).eq("status", "pending").execute()
-    except Exception:
-        pass
-
-    if room_id is not None:
-        try:
-            notify_next_waitlisted(int(room_id))
-        except Exception:
-            pass
-
-
-@router.post("/cancellation-requests/{request_id}/approve", status_code=204)
-def approve_cancellation_request(request_id: int, admin: CurrentUser = Depends(require_admin)):
-    _decide_cancellation_request(request_id, "approved", admin)
-
-
-@router.post("/cancellation-requests/{request_id}/reject", status_code=204)
-def reject_cancellation_request(
-    request_id: int, data: CancellationRequestReject, admin: CurrentUser = Depends(require_admin)
-):
-    _decide_cancellation_request(request_id, "rejected", admin, rejection_reason=data.reason)

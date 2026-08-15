@@ -4,7 +4,12 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException
 
 from agile_ci_demo.deps import CurrentUser, get_current_user
-from agile_ci_demo.models import WaitlistEntryOut, WaitlistJoinCreate
+from agile_ci_demo.models import (
+    REQUIRED_ENROLLMENT_DOCUMENT_TYPES,
+    REQUIRED_IDENTITY_DOCUMENT_TYPE,
+    WaitlistEntryOut,
+    WaitlistJoinCreate,
+)
 from agile_ci_demo.services.supabase_service import supabase_admin
 
 router = APIRouter(prefix="/waitlist", tags=["waitlist"])
@@ -191,6 +196,31 @@ def join_waitlist(
     room_id: int, data: WaitlistJoinCreate, user: CurrentUser = Depends(get_current_user)
 ):
     db = _db()
+
+    documents_resp = (
+        db.table("student_documents")
+        .select("document_type")
+        .eq("student_id", user.id)
+        .execute()
+    )
+    uploaded_types = {str(d["document_type"]) for d in _rows(documents_resp.data)}
+    has_identity_doc = REQUIRED_IDENTITY_DOCUMENT_TYPE in uploaded_types
+    has_enrollment_doc = any(t in uploaded_types for t in REQUIRED_ENROLLMENT_DOCUMENT_TYPES)
+
+    if not (has_identity_doc and has_enrollment_doc):
+        missing = []
+        if not has_identity_doc:
+            missing.append(REQUIRED_IDENTITY_DOCUMENT_TYPE)
+        if not has_enrollment_doc:
+            missing.append(" or ".join(REQUIRED_ENROLLMENT_DOCUMENT_TYPES))
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Please upload the following before joining the waitlist, so we can "
+                f"verify your identity: {', '.join(missing)}. You can upload these on "
+                "the Documents page."
+            ),
+        )
 
     room_resp = (
         db.table("rooms").select("*, hostel_blocks(name)").eq("id", room_id).limit(1).execute()

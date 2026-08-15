@@ -120,16 +120,6 @@ class BookingUpdate(BaseModel):
         return self
 
 
-class CancellationRequestOut(BaseModel):
-    id: int
-    booking_id: int
-    reason: str
-    status: str
-    rejection_reason: str | None = None
-    requested_at: datetime
-    decided_at: datetime | None = None
-
-
 class BookingOut(BaseModel):
     id: int
     status: str
@@ -149,7 +139,6 @@ class BookingOut(BaseModel):
     checked_in_at: datetime | None = None
     checked_out_at: datetime | None = None
     is_paid: bool = False
-    pending_cancellation_request: CancellationRequestOut | None = None
 
 
 class BookingAdminOut(BaseModel):
@@ -172,6 +161,7 @@ class BookingAdminOut(BaseModel):
     checked_in_at: datetime | None = None
     checked_out_at: datetime | None = None
     is_paid: bool = False
+    documents_verified: bool = False
 
 
 class TransferRoomRequestCreate(BaseModel):
@@ -198,28 +188,6 @@ class TransferRequestAdminOut(BaseModel):
     reason: str
     status: str
     requested_at: datetime
-
-
-class CancellationRequestCreate(BaseModel):
-    reason: str = Field(min_length=1)
-
-
-class CancellationRequestAdminOut(BaseModel):
-    id: int
-    booking_id: int
-    student_name: str
-    student_id: str | None = None
-    room_label: str
-    amount_paid: float
-    reason: str
-    status: str
-    rejection_reason: str | None = None
-    requested_at: datetime
-    decided_at: datetime | None = None
-
-
-class CancellationRequestReject(BaseModel):
-    reason: str = Field(min_length=1)
 
 
 class WaitlistJoinCreate(BaseModel):
@@ -461,22 +429,20 @@ class VisitorRejectRequest(BaseModel):
 # ---------------------------------------------------------
 # Payments
 # ---------------------------------------------------------
-PAYMENT_METHODS = ("Card", "Online Banking", "E-Wallet")
-
-
-class PaymentCreate(BaseModel):
-    booking_id: int
-    method: str = Field(pattern=r"^(Card|Online Banking|E-Wallet)$")
+# Payment is collected offline (cash/bank transfer) in person by an
+# admin at check-in — see admin.py's check_in_booking(). There's no
+# student-initiated payment flow, so no PaymentCreate model is needed.
+PAYMENT_METHODS = ("Offline (Cash/Bank Transfer)",)
 
 
 class PaymentOut(BaseModel):
     id: int
     booking_id: int
     amount: float
-    method: str
+    method: str | None = None
     status: str
     receipt_number: str
-    paid_at: datetime
+    paid_at: datetime | None = None
     room_label: str | None = None
 
 
@@ -484,10 +450,10 @@ class PaymentAdminOut(BaseModel):
     id: int
     booking_id: int
     amount: float
-    method: str
+    method: str | None = None
     status: str
     receipt_number: str
-    paid_at: datetime
+    paid_at: datetime | None = None
     room_label: str | None = None
     student_name: str
     student_id: str | None = None
@@ -496,7 +462,12 @@ class PaymentAdminOut(BaseModel):
 # ---------------------------------------------------------
 # Documents
 # ---------------------------------------------------------
-DOCUMENT_TYPES = ("IC / Passport", "Proof of Enrollment", "Parental Consent", "Other")
+DOCUMENT_TYPES = ("IC / Passport", "Proof of Enrollment", "Student Card", "Parental Consent", "Other")
+
+# Required for identity verification before a booking can be submitted:
+# IC/Passport, plus either Proof of Enrollment or Student Card.
+REQUIRED_IDENTITY_DOCUMENT_TYPE = "IC / Passport"
+REQUIRED_ENROLLMENT_DOCUMENT_TYPES = ("Proof of Enrollment", "Student Card")
 
 
 class DocumentOut(BaseModel):
