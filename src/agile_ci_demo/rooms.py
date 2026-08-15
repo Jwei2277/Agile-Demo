@@ -40,6 +40,7 @@ def _booked_room_ids() -> set[int]:
         supabase_admin.table("bookings")
         .select("room_id")
         .in_("status", ["pending", "approved"])
+        .is_("checked_out_at", "null")
         .execute()
     )
 
@@ -59,7 +60,7 @@ def list_rooms(
     ),
     room_type: str | None = Query(
         default=None,
-        description=("'Single Room' | 'Master Room' | 'Balcony Room' | 'Middle Room'"),
+        description=("'Single Room' | 'Master Room' | " "'Balcony Room' | 'Middle Room'"),
     ),
     block: str | None = Query(
         default=None,

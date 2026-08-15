@@ -1,6 +1,6 @@
-import io
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
+import io
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,6 +16,7 @@ client = TestClient(app)
 
 
 class FakeResponse:
+
     def __init__(self, data):
 
         self.data = data
@@ -27,6 +28,7 @@ class FakeResponse:
 
 
 class FakeBucket:
+
     def upload(self, *args, **kwargs):
 
         return None
@@ -37,6 +39,7 @@ class FakeBucket:
 
 
 class FakeStorage:
+
     def from_(self, name):
 
         return FakeBucket()
@@ -48,6 +51,7 @@ class FakeStorage:
 
 
 class FakeQuery:
+
     def __init__(self, table):
 
         self.table = table
@@ -77,7 +81,7 @@ class FakeQuery:
 
         row = {
             "id": len(self.table) + 1,
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "resolved_at": None,
             **payload,
         }
@@ -99,6 +103,7 @@ class FakeQuery:
 
 
 class FakeSupabase:
+
     def __init__(self):
 
         self.storage = FakeStorage()
@@ -123,7 +128,7 @@ class FakeSupabase:
                     "photo_url": None,
                     "assigned_staff": None,
                     "remarks": None,
-                    "created_at": datetime.now(UTC).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
                     "resolved_at": None,
                 }
             ],

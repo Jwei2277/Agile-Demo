@@ -454,6 +454,48 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+/* ===================== Edit fee modal + toast ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 380px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box;
+}
+.modal-form-field input:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 </head>
@@ -473,7 +515,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <a href="admin-rooms.html" class="current">Rooms</a>
         <a href="admin-maintenance.html">Maintenance</a>
         <a href="admin-visitors.html">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
+        <a href="admin-documents.html">Documents</a>
+        <a href="admin-reports.html">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
@@ -566,6 +609,25 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   </main>
 </div>
 
+<!-- Edit fee modal -->
+<div class="modal-overlay" id="editFeeModal" hidden>
+  <div class="modal-card">
+    <h3>Edit monthly fee</h3>
+    <p class="modal-sub" id="editFeeModalSub">Set the new base monthly fee for this room.</p>
+    <div class="modal-error" id="editFeeModalError" role="alert"></div>
+    <div class="modal-form-field">
+      <label for="editFeeInput">Monthly fee (RM)</label>
+      <input type="number" id="editFeeInput" min="1" step="1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn-sm" id="editFeeCancelBtn">Cancel</button>
+      <button class="btn-primary btn-sm" id="editFeeConfirmBtn">Save fee</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
 <script>
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
@@ -597,6 +659,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
   }
 
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
   function roomRowHTML(r) {
     const activeBadgeClass = r.is_active ? 'pill-success' : 'pill-error';
     const activeBadgeText = r.is_active ? 'Active' : 'Inactive';
@@ -618,7 +689,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <td>${r.waitlist_count > 0 ? `<span class="pill pill-warning">${r.waitlist_count} waiting</span>` : '—'}</td>
         <td><span class="pill ${activeBadgeClass}">${activeBadgeText}</span></td>
         <td class="actions-cell">
-          <button class="btn-secondary btn-sm" data-action="edit-fee" data-id="${r.id}">Edit fee</button>
+          <button class="btn-secondary btn-sm" data-action="edit-fee" data-id="${r.id}" data-fee="${r.fee_monthly}" data-room-label="${r.block_name} · ${r.room_number}">Edit fee</button>
           <button class="btn-secondary btn-sm" data-action="toggle-active" data-id="${r.id}" data-active="${r.is_active}">${r.is_active ? 'Deactivate' : 'Activate'}</button>
         </td>
       </tr>`;
@@ -655,7 +726,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
       tbody.innerHTML = rooms.map(roomRowHTML).join('');
       tbody.querySelectorAll('[data-action="edit-fee"]').forEach((btn) =>
-        btn.addEventListener('click', () => editFee(btn.dataset.id)));
+        btn.addEventListener('click', () => editFee(btn.dataset.id, btn.dataset.fee, btn.dataset.roomLabel)));
       tbody.querySelectorAll('[data-action="toggle-active"]').forEach((btn) =>
         btn.addEventListener('click', () => toggleActive(btn.dataset.id, btn.dataset.active === 'true')));
     } catch (err) {
@@ -663,25 +734,60 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     }
   }
 
-  async function editFee(id) {
-    const newFee = prompt('New monthly fee (RM):');
-    if (!newFee || isNaN(Number(newFee))) return;
+  const editFeeModal = document.getElementById('editFeeModal');
+  const editFeeModalError = document.getElementById('editFeeModalError');
+  const editFeeInput = document.getElementById('editFeeInput');
+  let editFeeTargetId = null;
+
+  function editFee(id, currentFee, roomLabel) {
+    editFeeTargetId = id;
+    editFeeInput.value = currentFee || '';
+    document.getElementById('editFeeModalSub').textContent = `Set the new base monthly fee for ${roomLabel || 'this room'}.`;
+    editFeeModalError.classList.remove('show');
+    editFeeModal.hidden = false;
+    editFeeInput.focus();
+  }
+  document.getElementById('editFeeCancelBtn').addEventListener('click', () => {
+    editFeeModal.hidden = true;
+  });
+  editFeeModal.addEventListener('click', (e) => {
+    if (e.target === editFeeModal) editFeeModal.hidden = true;
+  });
+  document.getElementById('editFeeConfirmBtn').addEventListener('click', async () => {
+    if (!editFeeTargetId) return;
+    editFeeModalError.classList.remove('show');
+
+    const newFee = editFeeInput.value;
+    if (!newFee || isNaN(Number(newFee)) || Number(newFee) <= 0) {
+      editFeeModalError.textContent = 'Enter a valid fee amount.';
+      editFeeModalError.classList.add('show');
+      return;
+    }
+
+    const confirmBtn = document.getElementById('editFeeConfirmBtn');
+    confirmBtn.disabled = true;
     try {
-      const res = await fetch(`/admin/rooms/${id}`, {
+      const res = await fetch(`/admin/rooms/${editFeeTargetId}`, {
         method: 'PATCH',
         headers: authHeadersJSON(),
         body: JSON.stringify({ fee_monthly: Number(newFee) }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the fee (status ${res.status}).`);
+        editFeeModalError.textContent = body.detail || `Could not update the fee (status ${res.status}).`;
+        editFeeModalError.classList.add('show');
         return;
       }
+      editFeeModal.hidden = true;
+      showToast('Fee updated.', false);
       loadRooms();
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      editFeeModalError.textContent = 'Network error — please check your connection and try again.';
+      editFeeModalError.classList.add('show');
+    } finally {
+      confirmBtn.disabled = false;
     }
-  }
+  });
 
   async function toggleActive(id, currentlyActive) {
     try {
@@ -692,12 +798,13 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not update the room (status ${res.status}).`);
+        showToast(body.detail || `Could not update the room (status ${res.status}).`, true);
         return;
       }
+      showToast(currentlyActive ? 'Room deactivated.' : 'Room activated.', false);
       loadRooms();
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      showToast('Network error — please check your connection and try again.', true);
     }
   }
 

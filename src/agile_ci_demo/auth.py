@@ -1,18 +1,18 @@
 import hashlib
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, EmailStr, Field
-from supabase import AuthApiError
+from agile_ci_demo.deps import CurrentUser, get_current_user, _extract_bearer_token
 
-from agile_ci_demo.config import APP_BASE_URL
-from agile_ci_demo.deps import CurrentUser, _extract_bearer_token, get_current_user
 from agile_ci_demo.services.supabase_service import (
     supabase,
     supabase_admin,
 )
+from agile_ci_demo.config import APP_BASE_URL
+from supabase import AuthApiError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -184,8 +184,8 @@ def _is_trusted_device(student_id: str, token: str | None) -> bool:
         return False
 
     row = cast(dict[str, Any], resp.data[0])
-    expires_at = datetime.fromisoformat(row["expires_at"])
-    return expires_at > datetime.now(UTC)
+    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
+    return expires_at > datetime.now(timezone.utc)
 
 
 def _issue_trusted_device_token(student_id: str) -> str:
@@ -199,7 +199,9 @@ def _issue_trusted_device_token(student_id: str) -> str:
         {
             "student_id": student_id,
             "token_hash": _hash_device_token(token),
-            "expires_at": (datetime.now(UTC) + timedelta(days=TRUSTED_DEVICE_DAYS)).isoformat(),
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(days=TRUSTED_DEVICE_DAYS)
+            ).isoformat(),
         }
     ).execute()
     return token

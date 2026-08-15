@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Dashboard</title>
+<title>HostelEase — Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -440,7 +440,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 
-.quick-link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 20px; }
+.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
 @media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
 .quick-link-card {
   display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
@@ -454,8 +454,64 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+/* ===================== Manage request modal ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 480px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+  max-height: 88vh; overflow-y: auto;
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 14px; }
+.modal-readonly-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.modal-readonly-row span:first-child { color: var(--slate-600); }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field input, .modal-form-field select, .modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field input:focus-visible, .modal-form-field select:focus-visible, .modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-approved { background: var(--success-bg); color: var(--success-fg); }
+.status-rejected { background: var(--error-bg); color: var(--error-fg); }
+.status-cancelled { background: #eef0f3; color: #5b6472; }
+.filter-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.filter-row .form-field { margin:0; min-width:160px; }
+.filter-row input, .filter-row select {
+  padding: 9px 10px; font-size: 13.5px; font-family: var(--font-body); color: var(--navy-900);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;
+}
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
 </head>
 <body>
@@ -469,115 +525,104 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       </div>
       <span class="eyebrow-chip">Admin Console</span>
       <nav class="nav-links">
-        <a href="admin-dashboard.html" class="current">Dashboard</a>
+        <a href="admin-dashboard.html">Dashboard</a>
         <a href="admin-bookings.html">Bookings</a>
         <a href="admin-rooms.html">Rooms</a>
         <a href="admin-maintenance.html">Maintenance</a>
         <a href="admin-visitors.html">Visitors</a>
         <a href="admin-documents.html">Documents</a>
-        <a href="admin-reports.html">Reports</a>
+        <a href="admin-reports.html" class="current">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></div>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <div class="dash-hero">
+    <div class="section-head" style="margin-top:0;">
       <div>
-        <h1 id="dashHeading">Good day</h1>
-        <p>Here's what's happening across all hostel blocks today.</p>
-      </div>
-      <select class="semester-select"><option>Semester 1, 2026/27</option><option>Semester 2, 2025/26</option></select>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Available rooms</span>
-        <span class="stat-value" id="valAvailableRooms">—</span>
-        <span class="stat-sub">Rooms with at least one free bed</span>
-      </div>
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.6"/></svg>Occupied beds</span>
-        <span class="stat-value" id="valOccupiedRooms">—</span>
-        <span class="stat-sub" id="subOccupiedRooms">Of — total</span>
-      </div>
-      <a class="stat-card card attention" id="statPendingBookings" href="admin-bookings.html" style="text-decoration:none; color:inherit; cursor:pointer;">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg>Pending bookings</span>
-        <span class="stat-value" id="valPendingBookings">—</span>
-        <span class="stat-sub">Awaiting your review — click to review</span>
-      </a>
-      <a class="stat-card card attention" id="statPendingMaint" href="admin-maintenance.html" style="text-decoration:none; color:inherit; cursor:pointer;">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Maintenance requests</span>
-        <span class="stat-value" id="valPendingMaint">—</span>
-        <span class="stat-sub">Unassigned — click to review</span>
-      </a>
-    </div>
-
-    <div class="occ-panel card">
-      <div class="occ-grid" id="occGrid" aria-hidden="true"></div>
-      <div class="occ-copy">
-        <strong class="big" id="occPctBig">— occupancy</strong>
-        <p id="occCopyText">Loading occupancy…</p>
+        <h2>Reports</h2>
+        <p>Export booking and payment records for analysis.</p>
       </div>
     </div>
 
-    <div class="section-head">
-      <div>
-        <h2>Charts</h2>
-        <p>A quick visual breakdown of bookings and room inventory.</p>
-      </div>
-    </div>
-    <div class="two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
-      <div class="card" style="padding:20px 22px;">
-        <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 12px;">Bookings by status</h3>
-        <canvas id="bookingsChart" height="220"></canvas>
-      </div>
-      <div class="card" style="padding:20px 22px;">
-        <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 12px;">Rooms by type</h3>
-        <canvas id="roomsChart" height="220"></canvas>
-      </div>
-    </div>
-    <style>@media (max-width: 860px) { .two-col { grid-template-columns: 1fr !important; } }</style>
-
-    <div class="section-head">
-      <div>
-        <h2>Manage</h2>
-        <p>Jump to a dedicated page for each area.</p>
-      </div>
-    </div>
     <div class="quick-link-grid">
-      <a class="card quick-link-card" href="admin-bookings.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.7"/></svg></div>
-        <strong>Bookings</strong>
-        <span class="desc">Review, approve, or reject student booking applications.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-maintenance.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
-        <strong>Maintenance</strong>
-        <span class="desc">Track and resolve maintenance requests from students.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-rooms.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <strong>Rooms</strong>
-        <span class="desc">Add rooms, update pricing, or take a room offline.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-reports.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
-        <strong>Payment history</strong>
-        <span class="desc">Search past payments and export booking/payment reports.</span>
-      </a>
+      <div class="card" style="padding:20px 22px;">
+        <div class="qa-icon" style="margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <strong style="font-family:var(--font-display); font-size:15.5px;">Bookings report</strong>
+        <p class="desc" style="margin:6px 0 14px;">Every booking — student, room, status, dates, and check-in/out records.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-primary btn-sm" id="bookingsPdfBtn">PDF</button>
+          <button class="btn-primary btn-sm" id="bookingsExcelBtn">Excel</button>
+          <button class="btn-secondary btn-sm" id="bookingsPrintBtn">Print</button>
+        </div>
+      </div>
+      <div class="card" style="padding:20px 22px;">
+        <div class="qa-icon" style="margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <strong style="font-family:var(--font-display); font-size:15.5px;">Payments report</strong>
+        <p class="desc" style="margin:6px 0 14px;">Every payment — receipt number, student, amount, method, and total collected.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-primary btn-sm" id="paymentsPdfBtn">PDF</button>
+          <button class="btn-primary btn-sm" id="paymentsExcelBtn">Excel</button>
+          <button class="btn-secondary btn-sm" id="paymentsPrintBtn">Print</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div>
+        <h2>Payment History</h2>
+        <p id="paymentsCountSub">Loading…</p>
+      </div>
+      <div class="filter-row">
+        <div class="form-field">
+          <label for="paymentSearch">Search</label>
+          <input type="text" id="paymentSearch" placeholder="Student name, ID, or receipt no.">
+        </div>
+        <div class="form-field">
+          <label for="paymentStatusFilter">Status</label>
+          <select id="paymentStatusFilter">
+            <option value="all" selected>All</option>
+            <option value="paid">Paid</option>
+            <option value="refunded">Refunded</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <table class="room-table" id="paymentsTable">
+        <thead>
+          <tr><th>Receipt</th><th>Student</th><th>Room</th><th>Amount</th><th>Method</th><th>Status</th><th>Paid at</th></tr>
+        </thead>
+        <tbody id="paymentsTableBody">
+          <tr><td colspan="7" style="color:var(--slate-600);">Loading payments…</td></tr>
+        </tbody>
+      </table>
     </div>
   </main>
 </div>
 
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
 <script>
-  const occGrid = document.getElementById('occGrid');
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
+  }
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${getToken()}` };
+  }
+
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
   }
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -586,10 +631,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       if (token) {
         await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       }
-    } catch (err) {
-      // Even if the server call fails (e.g. offline), still clear the
-      // local session so the user is signed out on this device.
-    }
+    } catch (err) {}
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
     window.localStorage.removeItem('user');
@@ -602,111 +644,189 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   function initials(name) {
     return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {}
+  }
+  loadProfileChip();
 
-  async function loadDashboard() {
+  // CSV endpoints require auth, so a plain <a href> can't be used directly —
+  // fetch with the Authorization header, then trigger the download from
+  // the resulting blob.
+  async function downloadFile(url, filename, btn) {
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+    btn.disabled = true;
+    try {
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) {
+        showToast('Could not generate the report.', true);
+        return;
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+      showToast(`${filename} downloaded.`, false);
+    } catch (err) {
+      showToast('Network error — please try again.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('bookingsPdfBtn').addEventListener('click', (e) => {
+    downloadFile('/admin/reports/bookings.pdf', 'bookings_report.pdf', e.target);
+  });
+  document.getElementById('bookingsExcelBtn').addEventListener('click', (e) => {
+    downloadFile('/admin/reports/bookings.xlsx', 'bookings_report.xlsx', e.target);
+  });
+  document.getElementById('paymentsPdfBtn').addEventListener('click', (e) => {
+    downloadFile('/admin/reports/payments.pdf', 'payments_report.pdf', e.target);
+  });
+  document.getElementById('paymentsExcelBtn').addEventListener('click', (e) => {
+    downloadFile('/admin/reports/payments.xlsx', 'payments_report.xlsx', e.target);
+  });
+
+  // Print: fetch the same data already shown on this page and render it
+  // as a plain printer-friendly table in a new tab, then trigger the
+  // browser's print dialog (which also offers "Save as PDF").
+  function openPrintView(title, headers, rows) {
+    const rowsHtml = rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? ''}</td>`).join('')}</tr>`).join('');
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${title}</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color: #0b2545; margin: 32px; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #dbe2ef; padding: 6px 8px; text-align: left; }
+  th { background: #2f6fed; color: white; }
+  tr:nth-child(even) { background: #f8fafc; }
+</style></head>
+<body>
+  <h1>${title}</h1>
+  <table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>
+  <script>window.onload = () => window.print();<\/script>
+</body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+  }
+
+  document.getElementById('bookingsPrintBtn').addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/admin/bookings?status=all', { headers: authHeaders() });
+      if (!res.ok) { showToast('Could not load bookings for printing.', true); return; }
+      const bookings = await res.json();
+      const headers = ['Booking ID', 'Student', 'Room', 'Status', 'Semester', 'Move-in', 'Move-out', 'Occupants', 'Fee (RM)'];
+      const rows = bookings.map((b) => [
+        b.id, `${b.student_name}${b.student_id ? ' (' + b.student_id + ')' : ''}`, b.room_label, b.status,
+        b.semester, b.move_in_date, b.move_out_date, b.occupant_count, b.total_fee.toFixed(2),
+      ]);
+      openPrintView('HostelEase — Bookings Report', headers, rows);
+    } catch (err) {
+      showToast('Network error — please try again.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('paymentsPrintBtn').addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/admin/payments', { headers: authHeaders() });
+      if (!res.ok) { showToast('Could not load payments for printing.', true); return; }
+      const payments = await res.json();
+      const headers = ['Receipt No.', 'Student', 'Room', 'Amount (RM)', 'Method', 'Status', 'Paid at'];
+      const rows = payments.map((p) => [
+        p.receipt_number, `${p.student_name}${p.student_id ? ' (' + p.student_id + ')' : ''}`, p.room_label || '—',
+        p.amount.toFixed(2), p.method, p.status, new Date(p.paid_at).toLocaleString(),
+      ]);
+      openPrintView('HostelEase — Payments Report', headers, rows);
+    } catch (err) {
+      showToast('Network error — please try again.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  let allPayments = [];
+
+  async function loadPayments() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
+    const tbody = document.getElementById('paymentsTableBody');
     try {
-      const meRes = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (meRes.ok) {
-        const me = await meRes.json();
-        const firstName = (me.full_name || 'there').split(' ')[0];
-        document.getElementById('dashHeading').textContent = `Good day, ${firstName}`;
-        document.getElementById('avatarName').textContent = me.full_name || me.email;
-        document.getElementById('avatarInitials').textContent = initials(me.full_name);
-      }
-
-      const statsRes = await fetch('/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (statsRes.status === 403) {
-        alert('Admin access required.');
+      const res = await fetch('/admin/payments', { headers: authHeaders() });
+      if (res.status === 403) {
+        showToast('Admin access required.', true);
         window.location.href = 'login.html';
         return;
       }
-      const stats = await statsRes.json();
-
-      document.getElementById('valAvailableRooms').textContent = stats.available_rooms;
-      document.getElementById('valOccupiedRooms').textContent = stats.occupied_rooms;
-      document.getElementById('subOccupiedRooms').textContent = `Of ${stats.total_rooms} total (${stats.occupancy_pct}%)`;
-      document.getElementById('valPendingBookings').textContent = stats.pending_bookings;
-      document.getElementById('valPendingMaint').textContent = stats.pending_maintenance;
-      document.getElementById('occPctBig').textContent = `${stats.occupancy_pct}% occupancy`;
-      document.getElementById('occCopyText').textContent =
-        `${stats.occupied_rooms} of ${stats.total_rooms} beds are filled this semester. Each square represents roughly 1% of total capacity.`;
-
-      occGrid.innerHTML = '';
-      const totalSquares = 40;
-      const litSquares = Math.round((stats.occupancy_pct / 100) * totalSquares);
-      for (let i = 0; i < totalSquares; i++) {
-        const s = document.createElement('span');
-        if (i < litSquares) s.classList.add('lit');
-        occGrid.appendChild(s);
-      }
-
-      renderCharts(stats);
+      allPayments = await res.json();
+      renderPayments();
     } catch (err) {
-      document.getElementById('occCopyText').textContent = 'Could not load dashboard data.';
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--error-fg);">Could not load payments.</td></tr>';
     }
   }
 
-  let bookingsChartInstance = null;
-  let roomsChartInstance = null;
+  function renderPayments() {
+    const tbody = document.getElementById('paymentsTableBody');
+    const search = document.getElementById('paymentSearch').value.trim().toLowerCase();
+    const statusFilter = document.getElementById('paymentStatusFilter').value;
 
-  function renderCharts(stats) {
-    const bookingLabels = Object.keys(stats.bookings_by_status);
-    const bookingValues = Object.values(stats.bookings_by_status);
-    const bookingColors = {
-      pending: '#b3760b', approved: '#1f8a55', rejected: '#c8352d', cancelled: '#8fa0b8',
-    };
-
-    const bookingsCtx = document.getElementById('bookingsChart');
-    if (bookingsChartInstance) bookingsChartInstance.destroy();
-    if (bookingLabels.length && bookingValues.some(v => v > 0)) {
-      bookingsChartInstance = new Chart(bookingsCtx, {
-        type: 'bar',
-        data: {
-          labels: bookingLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
-          datasets: [{
-            data: bookingValues,
-            backgroundColor: bookingLabels.map(l => bookingColors[l] || '#2f6fed'),
-            borderRadius: 6,
-          }],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-        },
-      });
-    } else {
-      bookingsCtx.getContext('2d').clearRect(0, 0, bookingsCtx.width, bookingsCtx.height);
+    let payments = allPayments;
+    if (statusFilter !== 'all') {
+      payments = payments.filter((p) => p.status === statusFilter);
+    }
+    if (search) {
+      payments = payments.filter((p) =>
+        p.student_name.toLowerCase().includes(search) ||
+        (p.student_id || '').toLowerCase().includes(search) ||
+        p.receipt_number.toLowerCase().includes(search));
     }
 
-    const roomTypeLabels = Object.keys(stats.rooms_by_type);
-    const roomTypeValues = Object.values(stats.rooms_by_type);
-    const roomsCtx = document.getElementById('roomsChart');
-    if (roomsChartInstance) roomsChartInstance.destroy();
-    if (roomTypeLabels.length) {
-      roomsChartInstance = new Chart(roomsCtx, {
-        type: 'doughnut',
-        data: {
-          labels: roomTypeLabels,
-          datasets: [{
-            data: roomTypeValues,
-            backgroundColor: ['#2f6fed', '#4f86f7', '#7fb0ff', '#b3760b', '#1f8a55'],
-          }],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11.5 } } } },
-        },
-      });
-    } else {
-      roomsCtx.getContext('2d').clearRect(0, 0, roomsCtx.width, roomsCtx.height);
+    document.getElementById('paymentsCountSub').textContent =
+      `${payments.length} payment${payments.length === 1 ? '' : 's'}${statusFilter !== 'all' ? ' · ' + statusFilter : ''}${allPayments.length !== payments.length ? ` (of ${allPayments.length} total)` : ''}`;
+
+    if (!payments.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--slate-600);">No payments match this filter.</td></tr>';
+      return;
     }
+
+    const statusPillClass = { paid: 'pill-success', refunded: 'pill-warning', failed: 'pill-error' };
+    tbody.innerHTML = payments.map((p) => `
+      <tr>
+        <td>${p.receipt_number}</td>
+        <td>${p.student_name}${p.student_id ? ' (' + p.student_id + ')' : ''}</td>
+        <td>${p.room_label || '—'}</td>
+        <td>RM ${p.amount.toFixed(2)}</td>
+        <td>${p.method}</td>
+        <td><span class="pill ${statusPillClass[p.status] || 'pill-warning'}">${p.status}</span></td>
+        <td>${new Date(p.paid_at).toLocaleString()}</td>
+      </tr>`).join('');
   }
 
-  loadDashboard();
+  document.getElementById('paymentSearch').addEventListener('input', renderPayments);
+  document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
+
+  loadPayments();
 </script>
 </body>
 </html>

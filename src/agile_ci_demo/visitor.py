@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -108,5 +108,5 @@ def cancel_visitor_request(request_id: int, user: CurrentUser = Depends(get_curr
         )
 
     db.table("visitor_requests").update(
-        {"status": "cancelled", "decided_at": datetime.now(UTC).isoformat()}
+        {"status": "cancelled", "decided_at": datetime.now(timezone.utc).isoformat()}
     ).eq("id", request_id).execute()

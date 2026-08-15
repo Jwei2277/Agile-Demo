@@ -1,19 +1,22 @@
-# clean main branch due to several issues, and cobine with sprint 1 and 2
 from pathlib import Path
+from typing import Dict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from agile_ci_demo.admin import router as admin_router
+
 from agile_ci_demo.auth import router as auth_router
+from agile_ci_demo.rooms import router as rooms_router
 from agile_ci_demo.bookings import router as bookings_router
 from agile_ci_demo.maintenance import router as maintenance_router
+from agile_ci_demo.admin import router as admin_router
 from agile_ci_demo.profile import router as profile_router
-from agile_ci_demo.rooms import router as rooms_router
-from agile_ci_demo.visitor import router as visitor_router
 from agile_ci_demo.waitlist import router as waitlist_router
+from agile_ci_demo.visitor import router as visitor_router
+from agile_ci_demo.payments import router as payments_router
+from agile_ci_demo.documents import router as documents_router
 
 app = FastAPI(title="Agile CI Demo", version="0.1.0")
 
@@ -49,6 +52,8 @@ app.include_router(profile_router)
 
 app.include_router(waitlist_router)
 app.include_router(visitor_router)
+app.include_router(payments_router)
+app.include_router(documents_router)
 
 
 # ==================================================
@@ -143,6 +148,24 @@ def student_visitors_page():
     return FileResponse(HTML_DIR / "student-visitors.html")
 
 
+@app.get("/student-documents.html")
+def student_documents_page():
+
+    return FileResponse(HTML_DIR / "student-documents.html")
+
+
+@app.get("/student-booking-history.html")
+def student_booking_history_page():
+
+    return FileResponse(HTML_DIR / "student-booking-history.html")
+
+
+@app.get("/student-payment-history.html")
+def student_payment_history_page():
+
+    return FileResponse(HTML_DIR / "student-payment-history.html")
+
+
 @app.get("/admin-dashboard.html")
 def admin_dashboard_page():
 
@@ -165,6 +188,24 @@ def admin_maintenance_page():
 def admin_visitors_page():
 
     return FileResponse(HTML_DIR / "admin-visitors.html")
+
+
+@app.get("/admin-documents.html")
+def admin_documents_page():
+
+    return FileResponse(HTML_DIR / "admin-documents.html")
+
+
+@app.get("/admin-checkinout.html")
+def admin_checkinout_page():
+
+    return FileResponse(HTML_DIR / "admin-checkinout.html")
+
+
+@app.get("/admin-reports.html")
+def admin_reports_page():
+
+    return FileResponse(HTML_DIR / "admin-reports.html")
 
 
 @app.get("/admin-transfers.html")
@@ -197,6 +238,7 @@ def admin_dashboard_clear_page():
 
 
 class Item(BaseModel):
+
     id: int
 
     title: str
@@ -204,13 +246,14 @@ class Item(BaseModel):
     done: bool = False
 
 
-_db: dict[int, Item] = {}
+_db: Dict[int, Item] = {}
 
 
 @app.post("/items", status_code=201)
 def create_item(item: Item) -> Item:
 
     if item.id in _db:
+
         raise HTTPException(status_code=409, detail="Item with that ID already exists")
 
     _db[item.id] = item
@@ -222,6 +265,7 @@ def create_item(item: Item) -> Item:
 def get_item(item_id: int) -> Item:
 
     if item_id not in _db:
+
         raise HTTPException(status_code=404, detail="Not found")
 
     return _db[item_id]
@@ -231,6 +275,7 @@ def get_item(item_id: int) -> Item:
 def mark_done(item_id: int) -> Item:
 
     if item_id not in _db:
+
         raise HTTPException(status_code=404, detail="Not found")
 
     item = _db[item_id]

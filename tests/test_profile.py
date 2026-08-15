@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 from supabase import AuthApiError
 
 from agile_ci_demo.app import app
@@ -17,6 +17,7 @@ client = TestClient(app)
 
 
 class FakeResponse:
+
     def __init__(self, data):
 
         self.data = data
@@ -28,6 +29,7 @@ class FakeResponse:
 
 
 class FakeQuery:
+
     def __init__(self, table):
 
         self.table = table
@@ -41,6 +43,7 @@ class FakeQuery:
     def update(self, values):
 
         for row in self.table:
+
             row.update(values)
 
         return self
@@ -64,9 +67,11 @@ class FakeQuery:
 
 
 class FakeAuth:
+
     def sign_in_with_password(self, payload):
 
         if payload["password"] != "password123":
+
             raise AuthApiError({"message": "Invalid login credentials"})
 
         return True
@@ -86,6 +91,7 @@ class FakeAuth:
 
 
 class FakeSupabase:
+
     def __init__(self):
 
         self.auth = FakeAuth()

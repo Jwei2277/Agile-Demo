@@ -13,6 +13,7 @@ client = TestClient(app)
 
 
 class FakeUser:
+
     def __init__(self, user_id, email):
 
         self.id = user_id
@@ -20,6 +21,7 @@ class FakeUser:
 
 
 class FakeSession:
+
     def __init__(self):
 
         self.access_token = "fake-access-token"
@@ -27,6 +29,7 @@ class FakeSession:
 
 
 class FakeAuthResponse:
+
     def __init__(self, user=None, session=None):
 
         self.user = user
@@ -34,6 +37,7 @@ class FakeAuthResponse:
 
 
 class FakeResponse:
+
     def __init__(self, data):
 
         self.data = data
@@ -45,6 +49,7 @@ class FakeResponse:
 
 
 class FakeQuery:
+
     def __init__(self, table):
 
         self.table = table
@@ -85,6 +90,7 @@ class FakeQuery:
 
 
 class FakeAuth:
+
     def sign_up(self, data):
 
         return FakeAuthResponse(
@@ -111,7 +117,8 @@ class FakeAuth:
     def sign_in_with_password(self, data):
 
         if data["password"] != "password123":
-            raise ValueError("Invalid credentials")
+
+            raise Exception("Invalid credentials")
 
         return FakeAuthResponse(
             FakeUser(
@@ -148,6 +155,7 @@ class FakeAuth:
 
 
 class FakeSupabase:
+
     def __init__(self):
 
         self.auth = FakeAuth()

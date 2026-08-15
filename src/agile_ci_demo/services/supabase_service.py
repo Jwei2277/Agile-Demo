@@ -1,9 +1,8 @@
 from supabase import create_client
-
 from agile_ci_demo.config import (
+    SUPABASE_URL,
     SUPABASE_KEY,
     SUPABASE_SERVICE_ROLE_KEY,
-    SUPABASE_URL,
 )
 
 if SUPABASE_URL is None or SUPABASE_KEY is None:

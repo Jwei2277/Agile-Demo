@@ -2,10 +2,10 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
-from supabase import AuthApiError
 
-from agile_ci_demo.deps import CurrentUser, _extract_bearer_token, get_current_user
+from agile_ci_demo.deps import CurrentUser, get_current_user, _extract_bearer_token
 from agile_ci_demo.services.supabase_service import supabase, supabase_admin
+from supabase import AuthApiError
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 

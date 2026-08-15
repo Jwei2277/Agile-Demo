@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,6 +8,8 @@ from agile_ci_demo.models import (
     BookingCreate,
     BookingOut,
     BookingUpdate,
+    REQUIRED_ENROLLMENT_DOCUMENT_TYPES,
+    REQUIRED_IDENTITY_DOCUMENT_TYPE,
     RoomOut,
     TransferRoomRequestCreate,
     TransferRoomRequestOut,
@@ -102,6 +104,23 @@ def _booking_out(
         except HTTPException:
             pending_transfer_room = None
 
+    is_paid = False
+    try:
+        db = _get_supabase()
+        payment_resp = (
+            db.table("payments")
+            .select("id")
+            .eq("booking_id", int(row["id"]))
+            .eq("status", "paid")
+            .limit(1)
+            .execute()
+        )
+        is_paid = bool(payment_resp.data)
+    except Exception:
+        # Payment lookup is best-effort — never fail a booking response
+        # over it.
+        is_paid = False
+
     return BookingOut(
         id=int(row["id"]),
         status=str(row["status"]),
@@ -121,6 +140,9 @@ def _booking_out(
         ),
         room=room,
         pending_transfer_room=pending_transfer_room,
+        checked_in_at=row.get("checked_in_at"),
+        checked_out_at=row.get("checked_out_at"),
+        is_paid=is_paid,
     )
 
 
@@ -134,25 +156,26 @@ def _check_capacity_and_gender(
     if occupant_count > room.capacity:
         raise HTTPException(
             status_code=400,
-            detail=(f"{room.room_type} only accommodates up to {room.capacity} occupant(s)."),
+            detail=(f"{room.room_type} only accommodates " f"up to {room.capacity} occupant(s)."),
         )
 
     if room.gender_policy in (
         "Female only",
         "Male only",
     ):
+
         required_gender = "Female" if room.gender_policy == "Female only" else "Male"
 
         if user.gender != required_gender:
             raise HTTPException(
                 status_code=403,
-                detail=(f"This room is restricted to {required_gender.lower()} students."),
+                detail=(f"This room is restricted to " f"{required_gender.lower()} students."),
             )
 
         if occupant_count == 2 and extra_occupant_gender != required_gender:
             raise HTTPException(
                 status_code=403,
-                detail=(f"This room is restricted to {required_gender.lower()} occupants."),
+                detail=(f"This room is restricted to " f"{required_gender.lower()} occupants."),
             )
 
 
@@ -182,6 +205,7 @@ def create_booking(
                 "approved",
             ],
         )
+        .is_("checked_out_at", "null")
         .execute()
     )
 
@@ -189,6 +213,30 @@ def create_booking(
         raise HTTPException(
             status_code=409,
             detail="You already have an active or pending booking",
+        )
+
+    documents_resp = (
+        supabase.table("student_documents")
+        .select("document_type")
+        .eq("student_id", user.id)
+        .execute()
+    )
+    uploaded_types = {str(d["document_type"]) for d in _get_rows(documents_resp.data)}
+    has_identity_doc = REQUIRED_IDENTITY_DOCUMENT_TYPE in uploaded_types
+    has_enrollment_doc = any(t in uploaded_types for t in REQUIRED_ENROLLMENT_DOCUMENT_TYPES)
+
+    if not (has_identity_doc and has_enrollment_doc):
+        missing = []
+        if not has_identity_doc:
+            missing.append(REQUIRED_IDENTITY_DOCUMENT_TYPE)
+        if not has_enrollment_doc:
+            missing.append(" or ".join(REQUIRED_ENROLLMENT_DOCUMENT_TYPES))
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Please upload the following before booking, so we can verify your "
+                f"identity: {', '.join(missing)}. You can upload these on the Documents page."
+            ),
         )
 
     try:
@@ -248,6 +296,45 @@ def create_booking(
 
 
 @router.get(
+    "/history",
+    response_model=list[BookingOut],
+)
+def get_my_booking_history(
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Every booking the student has ever made, regardless of status —
+    active, cancelled, rejected, or otherwise. GET /me only returns the
+    single currently-active one; this is the full record."""
+
+    supabase = _get_supabase()
+
+    resp = (
+        supabase.table("bookings")
+        .select("*")
+        .eq(
+            "student_id",
+            user.id,
+        )
+        .order(
+            "requested_at",
+            desc=True,
+        )
+        .execute()
+    )
+
+    out = []
+    for booking in _get_rows(resp.data):
+        try:
+            room = _room_out_for(int(booking["room_id"]))
+        except HTTPException:
+            # The room may have been deleted since — skip rather than
+            # break the whole history over one bad row.
+            continue
+        out.append(_booking_out(booking, room))
+    return out
+
+
+@router.get(
     "/me",
     response_model=BookingOut | None,
 )
@@ -271,6 +358,7 @@ def get_my_booking(
                 "approved",
             ],
         )
+        .is_("checked_out_at", "null")
         .order(
             "requested_at",
             desc=True,
@@ -445,6 +533,12 @@ def request_room_transfer(
             detail="Transfer requests are only available for approved bookings",
         )
 
+    if booking.get("checked_in_at"):
+        raise HTTPException(
+            status_code=409,
+            detail="This booking is already checked in — room transfers aren't available once you've moved in. Contact an admin if you need to change rooms.",
+        )
+
     if int(booking["room_id"]) == data.room_id:
         raise HTTPException(
             status_code=400,
@@ -452,12 +546,15 @@ def request_room_transfer(
         )
 
     try:
+
         room = _room_out_for(data.room_id)
 
     except HTTPException:
+
         raise
 
     except Exception:
+
         raise HTTPException(
             status_code=404,
             detail="Room not found",
@@ -484,7 +581,7 @@ def request_room_transfer(
         ),
     )
 
-    requested_at = datetime.now(UTC).isoformat()
+    requested_at = datetime.now(timezone.utc).isoformat()
 
     payload = {
         "booking_id": booking_id,
@@ -500,6 +597,7 @@ def request_room_transfer(
     rows = _get_rows(insert_resp.data)
 
     if not rows:
+
         raise HTTPException(
             status_code=400,
             detail="Could not create transfer request",
@@ -582,12 +680,18 @@ def cancel_booking(
             detail="Booking is already closed",
         )
 
+    if booking.get("checked_in_at"):
+        raise HTTPException(
+            status_code=409,
+            detail="This booking is already checked in and paid — it can no longer be cancelled. Contact an admin if you need to move out.",
+        )
+
     (
         supabase.table("bookings")
         .update(
             {
                 "status": "cancelled",
-                "decided_at": (datetime.now(UTC).isoformat()),
+                "decided_at": (datetime.now(timezone.utc).isoformat()),
             }
         )
         .eq(
@@ -596,6 +700,18 @@ def cancel_booking(
         )
         .execute()
     )
+
+    try:
+        # A pending transfer request tied to a now-cancelled booking is
+        # meaningless — void it too instead of leaving it stuck in the
+        # admin's pending queue forever. Soft-cancel (not delete) to keep
+        # it in the audit trail, same as everywhere else in this app.
+        supabase.table("room_transfer_requests").update({"status": "cancelled"}).eq(
+            "booking_id", booking_id
+        ).eq("status", "pending").execute()
+    except Exception:
+        # Non-critical — don't fail the cancellation itself over this.
+        pass
 
     try:
         notify_next_waitlisted(int(booking["room_id"]))

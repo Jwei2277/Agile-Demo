@@ -34,6 +34,8 @@ dev = [
   "types-requests",
   "fastapi[testclient]",
   "httpx",
+  "reportlab",
+  "openpyxl",
 ]
 
 [tool.ruff]
@@ -53,10 +55,3 @@ python_version = "3.11"
 mypy_path = "src"
 explicit_package_bases = true
 ignore_missing_imports = true
-
-[tool.ruff.lint]
-ignore = [
-    "B008",
-    "BLE001",
-    "S110",
-]

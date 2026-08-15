@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HostelEase — Admin Dashboard</title>
+<title>HostelEase — My Documents</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -440,7 +440,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 
-.quick-link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 20px; }
+.quick-link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
 @media (max-width: 860px) { .quick-link-grid { grid-template-columns: 1fr; } }
 .quick-link-card {
   display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit;
@@ -454,128 +454,114 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+
+.status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.status-pending { background: var(--warning-bg); color: var(--warning-fg); }
+.status-assigned { background: var(--sky-100); color: var(--blue-600); }
+.status-in_progress { background: var(--sky-100); color: var(--blue-600); }
+.status-completed { background: var(--success-bg); color: var(--success-fg); }
+.status-closed { background: #eef0f3; color: #5b6472; }
+.status-cancelled { background: var(--error-bg); color: var(--error-fg); }
+.priority-pill { display:inline-flex; align-items:center; font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; }
+.priority-Low { background: #eef0f3; color: #5b6472; }
+.priority-Normal { background: var(--sky-100); color: var(--blue-600); }
+.priority-High { background: var(--error-bg); color: var(--error-fg); }
+.complaint-card { display:flex; gap:14px; padding:16px 18px; }
+.complaint-thumb { width:64px; height:64px; border-radius:10px; object-fit:cover; background:var(--sky-100); flex-shrink:0; }
+.complaint-body { flex:1; min-width:0; }
+.complaint-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.complaint-title { font-family:var(--font-display); font-size:14.5px; font-weight:600; }
+.complaint-meta { font-size:12.5px; color:var(--slate-600); margin:2px 0; }
+.complaint-remarks { font-size:12.5px; color:var(--navy-900); background:var(--sky-100); border-radius:8px; padding:8px 10px; margin-top:8px; }
+.photo-preview { display:none; margin-top:10px; }
+.photo-preview img { max-width:160px; max-height:160px; border-radius:10px; border:1px solid var(--border); }
+
+.status-verified { background: var(--success-bg); color: var(--success-fg); }
+.status-rejected { background: var(--error-bg); color: var(--error-fg); }
+.doc-card { display:flex; align-items:center; gap:14px; padding:16px 18px; }
+.doc-icon { width:44px; height:44px; border-radius:10px; background:var(--sky-100); color:var(--blue-600); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.doc-icon svg { width:22px; height:22px; }
+.doc-body { flex:1; min-width:0; }
+.doc-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.doc-title { font-family:var(--font-display); font-size:14.5px; font-weight:600; }
+.doc-meta { font-size:12.5px; color:var(--slate-600); margin:2px 0; }
+.doc-reason { font-size:12.5px; color:var(--error-fg); background:var(--error-bg); border-radius:8px; padding:8px 10px; margin-top:8px; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
 </head>
 <body>
 
-<div id="adminApp" class="app">
+<div id="studentApp" class="app">
   <header class="topnav">
     <div class="topnav-inner">
       <div class="brand-mark">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>HostelEase</span>
       </div>
-      <span class="eyebrow-chip">Admin Console</span>
+      <span class="eyebrow-chip">Student Portal</span>
       <nav class="nav-links">
-        <a href="admin-dashboard.html" class="current">Dashboard</a>
-        <a href="admin-bookings.html">Bookings</a>
-        <a href="admin-rooms.html">Rooms</a>
-        <a href="admin-maintenance.html">Maintenance</a>
-        <a href="admin-visitors.html">Visitors</a>
-        <a href="admin-documents.html">Documents</a>
-        <a href="admin-reports.html">Reports</a>
+        <a href="student-home.html">Home</a>
+        <a href="student-browse-hostels.html">Browse rooms</a>
+        <a href="student-my-booking.html">My booking</a>
+        <a href="student-visitors.html">Visitors</a>
+        <a href="student-documents.html" class="current">Documents</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
-        <div class="avatar-chip"><div class="avatar-circle" id="avatarInitials">AD</div><span class="avatar-name" id="avatarName">Admin</span></div>
+        <a href="student-profile.html" class="avatar-chip" style="text-decoration:none;"><div class="avatar-circle" id="avatarInitials">··</div><span class="avatar-name" id="avatarName">Loading…</span></a>
       <button class="btn-secondary btn-sm" id="logoutBtn" style="margin-left:6px;">Log out</button>
       </div>
     </div>
   </header>
 
   <main>
-    <div class="dash-hero">
+    <div class="section-head" style="margin-top:0;">
       <div>
-        <h1 id="dashHeading">Good day</h1>
-        <p>Here's what's happening across all hostel blocks today.</p>
+        <h2>My documents</h2>
+        <p>Upload supporting documents so your hostel application can be verified.</p>
       </div>
-      <select class="semester-select"><option>Semester 1, 2026/27</option><option>Semester 2, 2025/26</option></select>
     </div>
 
-    <div class="stat-grid">
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Available rooms</span>
-        <span class="stat-value" id="valAvailableRooms">—</span>
-        <span class="stat-sub">Rooms with at least one free bed</span>
-      </div>
-      <div class="stat-card card">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.6"/></svg>Occupied beds</span>
-        <span class="stat-value" id="valOccupiedRooms">—</span>
-        <span class="stat-sub" id="subOccupiedRooms">Of — total</span>
-      </div>
-      <a class="stat-card card attention" id="statPendingBookings" href="admin-bookings.html" style="text-decoration:none; color:inherit; cursor:pointer;">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg>Pending bookings</span>
-        <span class="stat-value" id="valPendingBookings">—</span>
-        <span class="stat-sub">Awaiting your review — click to review</span>
-      </a>
-      <a class="stat-card card attention" id="statPendingMaint" href="admin-maintenance.html" style="text-decoration:none; color:inherit; cursor:pointer;">
-        <span class="stat-label"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Maintenance requests</span>
-        <span class="stat-value" id="valPendingMaint">—</span>
-        <span class="stat-sub">Unassigned — click to review</span>
-      </a>
-    </div>
-
-    <div class="occ-panel card">
-      <div class="occ-grid" id="occGrid" aria-hidden="true"></div>
-      <div class="occ-copy">
-        <strong class="big" id="occPctBig">— occupancy</strong>
-        <p id="occCopyText">Loading occupancy…</p>
-      </div>
+    <div class="card" style="padding:22px 24px; max-width:560px;">
+      <form id="documentForm">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-field">
+            <label for="dType">Document type</label>
+            <select id="dType">
+              <option value="IC / Passport">IC / Passport</option>
+              <option value="Proof of Enrollment">Proof of Enrollment</option>
+              <option value="Student Card">Student Card</option>
+              <option value="Parental Consent">Parental Consent</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="dFile">File</label>
+            <input type="file" id="dFile" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" required>
+            <span style="font-size:11.5px; color:var(--slate-600);">JPEG, PNG, WEBP, GIF, or PDF — up to 10 MB.</span>
+          </div>
+        </div>
+        <div class="form-alert" id="documentAlert" role="alert" style="display:none; margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13px;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary btn-sm" id="submitDocumentBtn">Upload document</button>
+        </div>
+      </form>
     </div>
 
     <div class="section-head">
       <div>
-        <h2>Charts</h2>
-        <p>A quick visual breakdown of bookings and room inventory.</p>
+        <h2>Uploaded documents</h2>
+        <p>Status of everything you've submitted.</p>
       </div>
     </div>
-    <div class="two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
-      <div class="card" style="padding:20px 22px;">
-        <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 12px;">Bookings by status</h3>
-        <canvas id="bookingsChart" height="220"></canvas>
-      </div>
-      <div class="card" style="padding:20px 22px;">
-        <h3 style="font-family:var(--font-display); font-size:15px; margin:0 0 12px;">Rooms by type</h3>
-        <canvas id="roomsChart" height="220"></canvas>
-      </div>
-    </div>
-    <style>@media (max-width: 860px) { .two-col { grid-template-columns: 1fr !important; } }</style>
 
-    <div class="section-head">
-      <div>
-        <h2>Manage</h2>
-        <p>Jump to a dedicated page for each area.</p>
-      </div>
-    </div>
-    <div class="quick-link-grid">
-      <a class="card quick-link-card" href="admin-bookings.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.7"/></svg></div>
-        <strong>Bookings</strong>
-        <span class="desc">Review, approve, or reject student booking applications.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-maintenance.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 3.5l6 6L9 21H3v-6L14.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
-        <strong>Maintenance</strong>
-        <span class="desc">Track and resolve maintenance requests from students.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-rooms.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <strong>Rooms</strong>
-        <span class="desc">Add rooms, update pricing, or take a room offline.</span>
-      </a>
-      <a class="card quick-link-card" href="admin-reports.html">
-        <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/></svg></div>
-        <strong>Payment history</strong>
-        <span class="desc">Search past payments and export booking/payment reports.</span>
-      </a>
+    <div id="documentList" style="display:flex; flex-direction:column; gap:12px;">
+      <p style="color:var(--slate-600);">Loading your documents…</p>
     </div>
   </main>
 </div>
 
 <script>
-  const occGrid = document.getElementById('occGrid');
   function getToken() {
     return window.localStorage.getItem('access_token') || window.sessionStorage.getItem('access_token');
   }
@@ -603,110 +589,114 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 
-  async function loadDashboard() {
+  async function loadProfileChip() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const me = await res.json();
+      document.getElementById('avatarName').textContent = me.full_name || me.email;
+      document.getElementById('avatarInitials').textContent = initials(me.full_name);
+    } catch (err) {
+      // Non-fatal.
+    }
+  }
+  loadProfileChip();
+
+  function showAlert(el, message, isError) {
+    el.textContent = message;
+    el.style.display = 'block';
+    el.style.background = isError ? 'var(--error-bg)' : 'var(--success-bg)';
+    el.style.color = isError ? 'var(--error-fg)' : 'var(--success-fg)';
+  }
+
+  const statusLabels = { pending: 'Pending review', verified: 'Verified', rejected: 'Rejected' };
+
+  function documentCardHTML(d) {
+    const statusClass = `status-${d.status}`;
+    const statusText = statusLabels[d.status] || d.status;
+    const reasonBlock = d.rejection_reason
+      ? `<div class="doc-reason"><strong>Reason:</strong> ${d.rejection_reason}</div>`
+      : '';
+    const viewLink = d.view_url
+      ? `<a href="${d.view_url}" target="_blank" style="font-size:12.5px; color:var(--blue-600);">View file</a>`
+      : '';
+    return `
+      <div class="card doc-card">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        <div class="doc-body">
+          <div class="doc-top">
+            <span class="doc-title">${d.document_type}</span>
+            <span class="status-pill ${statusClass}">${statusText}</span>
+          </div>
+          <p class="doc-meta">${d.file_name} · Uploaded ${new Date(d.uploaded_at).toLocaleDateString()}${d.verified_at ? ' · Reviewed ' + new Date(d.verified_at).toLocaleDateString() : ''}</p>
+          ${viewLink}
+          ${reasonBlock}
+        </div>
+      </div>`;
+  }
+
+  async function loadDocuments() {
     const token = getToken();
     if (!token) { window.location.href = 'login.html'; return; }
 
+    const list = document.getElementById('documentList');
     try {
-      const meRes = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (meRes.ok) {
-        const me = await meRes.json();
-        const firstName = (me.full_name || 'there').split(' ')[0];
-        document.getElementById('dashHeading').textContent = `Good day, ${firstName}`;
-        document.getElementById('avatarName').textContent = me.full_name || me.email;
-        document.getElementById('avatarInitials').textContent = initials(me.full_name);
-      }
+      const res = await fetch('/documents/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) throw new Error('failed');
+      const documents = await res.json();
 
-      const statsRes = await fetch('/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (statsRes.status === 403) {
-        alert('Admin access required.');
-        window.location.href = 'login.html';
+      list.innerHTML = documents.length
+        ? documents.map(documentCardHTML).join('')
+        : '<div class="card" style="padding:20px; color:var(--slate-600);">You haven\'t uploaded any documents yet.</div>';
+    } catch (err) {
+      list.innerHTML = '<p style="color:var(--error-fg);">Could not load your documents.</p>';
+    }
+  }
+
+  document.getElementById('documentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = getToken();
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    const alertBox = document.getElementById('documentAlert');
+    alertBox.style.display = 'none';
+
+    const fileInput = document.getElementById('dFile');
+    if (!fileInput.files[0]) {
+      showAlert(alertBox, 'Choose a file to upload.', true);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('document_type', document.getElementById('dType').value);
+    formData.append('file', fileInput.files[0]);
+
+    const submitBtn = document.getElementById('submitDocumentBtn');
+    submitBtn.disabled = true;
+    try {
+      const res = await fetch('/documents', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showAlert(alertBox, body.detail || 'Could not upload your document.', true);
         return;
       }
-      const stats = await statsRes.json();
-
-      document.getElementById('valAvailableRooms').textContent = stats.available_rooms;
-      document.getElementById('valOccupiedRooms').textContent = stats.occupied_rooms;
-      document.getElementById('subOccupiedRooms').textContent = `Of ${stats.total_rooms} total (${stats.occupancy_pct}%)`;
-      document.getElementById('valPendingBookings').textContent = stats.pending_bookings;
-      document.getElementById('valPendingMaint').textContent = stats.pending_maintenance;
-      document.getElementById('occPctBig').textContent = `${stats.occupancy_pct}% occupancy`;
-      document.getElementById('occCopyText').textContent =
-        `${stats.occupied_rooms} of ${stats.total_rooms} beds are filled this semester. Each square represents roughly 1% of total capacity.`;
-
-      occGrid.innerHTML = '';
-      const totalSquares = 40;
-      const litSquares = Math.round((stats.occupancy_pct / 100) * totalSquares);
-      for (let i = 0; i < totalSquares; i++) {
-        const s = document.createElement('span');
-        if (i < litSquares) s.classList.add('lit');
-        occGrid.appendChild(s);
-      }
-
-      renderCharts(stats);
+      showAlert(alertBox, 'Document uploaded.', false);
+      document.getElementById('documentForm').reset();
+      loadDocuments();
     } catch (err) {
-      document.getElementById('occCopyText').textContent = 'Could not load dashboard data.';
+      showAlert(alertBox, 'Network error — please try again.', true);
+    } finally {
+      submitBtn.disabled = false;
     }
-  }
+  });
 
-  let bookingsChartInstance = null;
-  let roomsChartInstance = null;
-
-  function renderCharts(stats) {
-    const bookingLabels = Object.keys(stats.bookings_by_status);
-    const bookingValues = Object.values(stats.bookings_by_status);
-    const bookingColors = {
-      pending: '#b3760b', approved: '#1f8a55', rejected: '#c8352d', cancelled: '#8fa0b8',
-    };
-
-    const bookingsCtx = document.getElementById('bookingsChart');
-    if (bookingsChartInstance) bookingsChartInstance.destroy();
-    if (bookingLabels.length && bookingValues.some(v => v > 0)) {
-      bookingsChartInstance = new Chart(bookingsCtx, {
-        type: 'bar',
-        data: {
-          labels: bookingLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
-          datasets: [{
-            data: bookingValues,
-            backgroundColor: bookingLabels.map(l => bookingColors[l] || '#2f6fed'),
-            borderRadius: 6,
-          }],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-        },
-      });
-    } else {
-      bookingsCtx.getContext('2d').clearRect(0, 0, bookingsCtx.width, bookingsCtx.height);
-    }
-
-    const roomTypeLabels = Object.keys(stats.rooms_by_type);
-    const roomTypeValues = Object.values(stats.rooms_by_type);
-    const roomsCtx = document.getElementById('roomsChart');
-    if (roomsChartInstance) roomsChartInstance.destroy();
-    if (roomTypeLabels.length) {
-      roomsChartInstance = new Chart(roomsCtx, {
-        type: 'doughnut',
-        data: {
-          labels: roomTypeLabels,
-          datasets: [{
-            data: roomTypeValues,
-            backgroundColor: ['#2f6fed', '#4f86f7', '#7fb0ff', '#b3760b', '#1f8a55'],
-          }],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11.5 } } } },
-        },
-      });
-    } else {
-      roomsCtx.getContext('2d').clearRect(0, 0, roomsCtx.width, roomsCtx.height);
-    }
-  }
-
-  loadDashboard();
+  loadDocuments();
 </script>
 </body>
 </html>

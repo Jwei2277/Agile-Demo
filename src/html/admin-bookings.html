@@ -223,6 +223,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 }
 .chip-blue { background: var(--sky-100); color: var(--blue-600); }
 .chip-navy { background: rgba(11,37,69,0.06); color: var(--navy-900); }
+.chip-error { background: var(--error-bg); color: var(--error-fg); }
 
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
 .pill-success { background: var(--success-bg); color: var(--success-fg); }
@@ -454,6 +455,47 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 .quick-link-card .qa-icon svg { width: 19px; height: 19px; }
 .quick-link-card strong { font-family: var(--font-display); font-size: 15.5px; }
 .quick-link-card span.desc { font-size: 12.5px; color: var(--slate-600); line-height: 1.4; }
+/* ===================== Modals & toast ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,37,69,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  max-width: 440px; width: 100%; padding: 24px 26px;
+  box-shadow: 0 24px 60px -20px rgba(11,37,69,0.5);
+}
+.modal-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 17px; }
+.modal-card p.modal-sub { margin: 0 0 16px; font-size: 13px; color: var(--slate-600); }
+.modal-form-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.modal-form-field label { font-size: 12px; font-weight: 600; color: var(--slate-600); }
+.modal-form-field textarea {
+  width: 100%; padding: 10px 12px; font-size: 13.5px; font-family: var(--font-body);
+  color: var(--navy-900); background: var(--sky-100); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); outline: none; box-sizing: border-box; resize: vertical;
+}
+.modal-form-field textarea:focus-visible {
+  border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,111,237,0.18);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-error { display: none; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: var(--error-bg); color: var(--error-fg); }
+.modal-error.show { display: block; }
+
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: var(--radius-sm); box-shadow: 0 14px 34px -14px rgba(11,37,69,0.45);
+  font-size: 13.5px; font-weight: 600; max-width: 340px;
+  animation: toast-in 0.2s ease;
+}
+.toast.success { background: var(--success-bg); color: var(--success-fg); }
+.toast.error { background: var(--error-bg); color: var(--error-fg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 </head>
@@ -473,7 +515,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <a href="admin-rooms.html">Rooms</a>
         <a href="admin-maintenance.html">Maintenance</a>
         <a href="admin-visitors.html">Visitors</a>
-        <a href="#" class="nav-disabled" title="Coming soon">Reports</a>
+        <a href="admin-documents.html">Documents</a>
+        <a href="admin-reports.html">Reports</a>
       </nav>
       <div class="nav-right">
         <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6h-15S6 12.5 6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="dot"></span></button>
@@ -489,15 +532,18 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
         <h2>Bookings</h2>
         <p id="bookingCountSub">Loading…</p>
       </div>
-      <div class="status-filter">
-        <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
-        <select id="statusFilter">
-          <option value="pending" selected>Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="all">All</option>
-        </select>
+      <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;">
+        <a class="btn-secondary btn-sm" href="admin-checkinout.html" style="text-decoration:none;">Manage check-in / check-out</a>
+        <div class="status-filter">
+          <label for="statusFilter" style="font-size:12.5px; font-weight:600; color:var(--slate-600);">Status</label>
+          <select id="statusFilter">
+            <option value="all" selected>All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="request-list" id="bookingList">
@@ -505,6 +551,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     </div>
   </main>
 </div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
 <script>
   function getToken() {
@@ -534,6 +582,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     return { 'Authorization': `Bearer ${getToken()}` };
   }
 
+  const toastStack = document.getElementById('toastStack');
+  function showToast(message, isError) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : 'success'}`;
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
   function statusPillHTML(status) {
     const statusPillClass = { pending: 'pill-warning', approved: 'pill-success', rejected: 'pill-error', cancelled: 'pill-error' }[status] || 'pill-warning';
     const label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled' }[status] || status;
@@ -542,16 +599,29 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
   function bookingRowHTML(b) {
     const requestedAgo = new Date(b.requested_at).toLocaleDateString();
-    const actions = b.status === 'pending'
-      ? `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
-         <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`
-      : statusPillHTML(b.status);
+    let actions;
+    if (b.status === 'pending') {
+      actions = `<button class="btn-secondary btn-sm" data-action="reject" data-id="${b.id}">Reject</button>
+         <button class="btn-primary btn-sm" data-action="approve" data-id="${b.id}">Approve</button>`;
+    } else if (b.status === 'approved' && b.checked_out_at) {
+      actions = `<span class="pill pill-success">Checked out</span>`;
+    } else if (b.status === 'approved' && b.checked_in_at) {
+      actions = `<span class="pill pill-success">Checked in</span>`;
+    } else if (b.status === 'approved') {
+      actions = `<span class="pill pill-warning">Not checked in</span>`;
+    } else {
+      actions = statusPillHTML(b.status);
+    }
+    const paymentNote = b.status === 'approved' ? ` · ${b.is_paid ? '<span style="color:var(--success-fg);">Paid</span>' : '<span style="color:var(--warning-fg);">Unpaid</span>'}` : '';
+    const documentsNote = b.status === 'pending'
+      ? ` · Documents: ${b.documents_verified ? '<span style="color:var(--success-fg);">Verified</span>' : '<span style="color:var(--error-fg);">Not verified yet</span>'}`
+      : '';
     return `
       <div class="request-row card" data-booking-id="${b.id}">
         <div class="request-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg></div>
         <div class="request-main">
           <div class="request-top"><span class="request-title">Booking application — ${b.student_name}</span><span class="chip chip-blue">Booking</span></div>
-          <p class="request-sub">Requested ${b.room_label} · ${b.semester} · ${new Date(b.move_in_date).toLocaleDateString()}–${new Date(b.move_out_date).toLocaleDateString()}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}</p>
+          <p class="request-sub">Requested ${b.room_label} · ${b.semester} · ${new Date(b.move_in_date).toLocaleDateString()}–${new Date(b.move_out_date).toLocaleDateString()}${b.student_id ? ' · ' + b.student_id : ''} · RM ${b.total_fee.toFixed(0)}/mo${b.occupant_count === 2 ? ` · 2 occupants (2nd: ${b.extra_occupant_name || 'unnamed'}, ${b.extra_occupant_gender || '—'}, ${b.extra_occupant_student_id || '—'}, ${b.extra_occupant_email || '—'})` : ' · 1 occupant'}${paymentNote}${documentsNote}</p>
         </div>
         <span class="request-time">${requestedAgo}</span>
         <div class="request-actions">${actions}</div>
@@ -633,25 +703,30 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
       const res = await fetch(`/admin/bookings/${id}/${action}`, { method: 'POST', headers: authHeaders() });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => ({}));
-        alert(body.detail || `Could not ${action} the booking (status ${res.status}).`);
+        showToast(body.detail || `Could not ${action} the booking (status ${res.status}).`, true);
         return;
       }
+      showToast(action === 'approve' ? 'Booking approved.' : 'Booking rejected.', false);
       loadBookings();
     } catch (err) {
-      alert('Network error — please check your connection and try again.');
+      showToast('Network error — please check your connection and try again.', true);
     }
   }
 
   async function decideTransferRequest(id, action) {
     try {
       const res = await fetch(`/admin/transfer-requests/${id}/${action}`, { method: 'POST', headers: authHeaders() });
-      if (!res.ok && res.status !== 204) { alert('Could not update transfer request.'); return; }
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}));
+        showToast(body.detail || 'Could not update transfer request.', true);
+        return;
+      }
+      showToast(action === 'approve' ? 'Transfer approved.' : 'Transfer rejected.', false);
       loadBookings();
     } catch (err) {
-      alert('Network error — please try again.');
+      showToast('Network error — please try again.', true);
     }
   }
-
   document.getElementById('statusFilter').addEventListener('change', loadBookings);
   loadBookings();
 </script>
