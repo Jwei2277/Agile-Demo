@@ -661,13 +661,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
     const stageLabel = { not_checked_in: 'Not checked in', checked_in: 'Checked in', checked_out: 'Checked out' }[stage];
     const paidPill = b.is_paid
       ? '<span class="paid-pill paid-yes">Paid</span>'
-      : '<span class="paid-pill paid-no">Unpaid</span>';
+      : '<span class="paid-pill paid-no">Pay at check-in</span>';
 
     let actions;
-    if (!b.is_paid) {
-      actions = '<span style="font-size:12px; color:var(--slate-600);">Payment required first</span>';
-    } else if (stage === 'not_checked_in') {
-      actions = `<button class="btn-primary btn-sm" data-action="check-in" data-id="${b.id}" data-name="${b.student_name}">Check in</button>`;
+    if (stage === 'not_checked_in') {
+      actions = `<button class="btn-primary btn-sm" data-action="check-in" data-id="${b.id}" data-name="${b.student_name}" data-fee="${b.total_fee}" data-paid="${b.is_paid}">Check in & collect payment</button>`;
     } else if (stage === 'checked_in') {
       actions = `<button class="btn-secondary btn-sm" data-action="check-out" data-id="${b.id}" data-name="${b.student_name}">Check out</button>`;
     } else {
@@ -733,7 +731,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
 
     list.innerHTML = items.map(rowHTML).join('');
     list.querySelectorAll('[data-action="check-in"]').forEach((btn) =>
-      btn.addEventListener('click', () => openCheckInModal(btn.dataset.id, btn.dataset.name)));
+      btn.addEventListener('click', () => openCheckInModal(btn.dataset.id, btn.dataset.name, btn.dataset.fee, btn.dataset.paid === 'true')));
     list.querySelectorAll('[data-action="check-out"]').forEach((btn) =>
       btn.addEventListener('click', () => openCheckOutModal(btn.dataset.id, btn.dataset.name)));
   }
@@ -745,9 +743,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-600); outl
   const checkInModalError = document.getElementById('checkInModalError');
   let checkInTargetId = null;
 
-  function openCheckInModal(id, name) {
+  function openCheckInModal(id, name, fee, alreadyPaid) {
     checkInTargetId = id;
-    document.getElementById('checkInModalSub').textContent = `This marks ${name}'s move-in as complete.`;
+    document.getElementById('checkInModalSub').textContent = alreadyPaid
+      ? `This marks ${name}'s move-in as complete.`
+      : `This marks ${name}'s move-in as complete and records RM ${Number(fee).toFixed(2)} as collected in cash/bank transfer.`;
     checkInModalError.classList.remove('show');
     checkInModal.hidden = false;
   }

@@ -1,17 +1,21 @@
-import secrets
-from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 
 from agile_ci_demo.deps import CurrentUser, get_current_user
-from agile_ci_demo.models import PaymentCreate, PaymentOut, total_fee_for
+from agile_ci_demo.models import PaymentOut
 from agile_ci_demo.services.supabase_service import supabase_admin
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 Row = dict[str, Any]
+
+# Payment is collected offline, in person, at check-in — see
+# admin.py's check_in_booking(), which creates the actual payment
+# record. There's no student-initiated online payment flow here
+# anymore; this module just exposes the resulting records (history +
+# receipt download).
 
 
 def _db():
@@ -55,118 +59,12 @@ def _payment_out(db, row: Row) -> PaymentOut:
         id=int(row["id"]),
         booking_id=int(row["booking_id"]),
         amount=float(row["amount"]),
-        method=str(row["method"]),
+        method=row.get("method"),
         status=str(row["status"]),
         receipt_number=str(row["receipt_number"]),
-        paid_at=row["paid_at"],
+        paid_at=row.get("paid_at"),
         room_label=row.get("_room_label"),
     )
-
-
-@router.post("", status_code=201, response_model=PaymentOut)
-def create_payment(
-    data: PaymentCreate,
-    user: CurrentUser = Depends(get_current_user),
-):
-    """Simulated online payment — there's no real payment gateway here,
-    but the flow is modeled the way a real one would be: the student
-    picks a method, we 'charge' them the booking's total fee, and record
-    a receipt. Every attempt is logged (even if it were to fail), but
-    given this is a simulation it always succeeds.
-    """
-    db = _db()
-
-    booking_resp = db.table("bookings").select("*").eq("id", data.booking_id).limit(1).execute()
-
-    booking_rows = _rows(booking_resp.data)
-
-    if not booking_rows:
-        raise HTTPException(
-            status_code=404,
-            detail="Booking not found",
-        )
-
-    booking = booking_rows[0]
-
-    if booking["student_id"] != user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Not your booking",
-        )
-
-    if booking["status"] != "approved":
-        raise HTTPException(
-            status_code=409,
-            detail="Only approved bookings can be paid for.",
-        )
-
-    existing_paid = (
-        db.table("payments")
-        .select("id")
-        .eq("booking_id", data.booking_id)
-        .eq("status", "paid")
-        .limit(1)
-        .execute()
-    )
-
-    if _rows(existing_paid.data):
-        raise HTTPException(
-            status_code=409,
-            detail="This booking has already been paid for.",
-        )
-
-    room_resp = (
-        db.table("rooms").select("fee_monthly").eq("id", booking["room_id"]).limit(1).execute()
-    )
-
-    room_rows = _rows(room_resp.data)
-
-    if not room_rows:
-        raise HTTPException(
-            status_code=404,
-            detail="Room not found for this booking",
-        )
-
-    base_fee = float(room_rows[0]["fee_monthly"])
-
-    amount = total_fee_for(
-        base_fee,
-        int(booking.get("occupant_count", 1)),
-    )
-
-    receipt_number = f"RCPT-{datetime.now(timezone.utc):%Y%m%d}-" f"{secrets.token_hex(4).upper()}"
-
-    insert_resp = (
-        db.table("payments")
-        .insert(
-            {
-                "booking_id": data.booking_id,
-                "student_id": user.id,
-                "amount": amount,
-                "method": data.method,
-                "status": "paid",
-                "receipt_number": receipt_number,
-            }
-        )
-        .execute()
-    )
-
-    rows = _rows(insert_resp.data)
-
-    if not rows:
-        raise HTTPException(
-            status_code=400,
-            detail="Could not record payment — please try again.",
-        )
-
-    row = rows[0]
-
-    row["_room_label"] = _room_label(
-        db,
-        booking.get("room_id"),
-    )
-
-    return _payment_out(db, row)
 
 
 @router.get("/me", response_model=list[PaymentOut])
@@ -179,6 +77,7 @@ def my_payments(
         db.table("payments")
         .select("*, bookings(room_id)")
         .eq("student_id", user.id)
+        .eq("status", "paid")
         .order("paid_at", desc=True)
         .execute()
     )
@@ -229,10 +128,9 @@ def download_receipt(
     booking: Row = payment.get("bookings") or {}
 
     if payment["student_id"] != user.id and user.role != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Not your payment",
-        )
+        raise HTTPException(status_code=403, detail="Not your payment")
+    if payment["status"] != "paid":
+        raise HTTPException(status_code=409, detail="This payment hasn't been completed yet.")
 
     room_label = _room_label(
         db,
@@ -324,34 +222,12 @@ def download_receipt(
     <span class="paid-badge">PAID</span>
 
     <h1>HostelEase Payment Receipt</h1>
-
-    <p class="sub">
-      Receipt No. {payment['receipt_number']}
-    </p>
-
-    <div class="amount">
-      RM {payment['amount']:.2f}
-    </div>
-
-    <div class="row">
-      <span>Room</span>
-      <span>{room_label}</span>
-    </div>
-
-    <div class="row">
-      <span>Payment method</span>
-      <span>{payment['method']}</span>
-    </div>
-
-    <div class="row">
-      <span>Date paid</span>
-      <span>{paid_at}</span>
-    </div>
-
-    <div class="row">
-      <span>Booking ID</span>
-      <span>#{payment['booking_id']}</span>
-    </div>
+    <p class="sub">Receipt No. {payment['receipt_number']}</p>
+    <div class="amount">RM {payment['amount']:.2f}</div>
+    <div class="row"><span>Room</span><span>{room_label}</span></div>
+    <div class="row"><span>Payment method</span><span>{payment.get('method') or 'Offline'}</span></div>
+    <div class="row"><span>Date paid</span><span>{paid_at}</span></div>
+    <div class="row"><span>Booking ID</span><span>#{payment['booking_id']}</span></div>
   </div>
 
   <button onclick="window.print()">
